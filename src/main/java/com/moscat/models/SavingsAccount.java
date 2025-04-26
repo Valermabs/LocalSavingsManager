@@ -1,5 +1,6 @@
 package com.moscat.models;
 
+import com.moscat.utils.Constants;
 import java.util.Date;
 
 /**
@@ -13,9 +14,12 @@ public class SavingsAccount {
     private String accountType;
     private double balance;
     private double interestRate;
+    private double interestEarned;
     private String status;
     private Date openedDate;
+    private Date openDate;
     private Date lastTransactionDate;
+    private Date lastActivityDate;
     private Date createdAt;
     private Date updatedAt;
     
@@ -221,5 +225,87 @@ public class SavingsAccount {
      */
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    /**
+     * Checks if the account is active
+     * 
+     * @return true if active, false otherwise
+     */
+    public boolean isActive() {
+        return Constants.SAVINGS_STATUS_ACTIVE.equals(status);
+    }
+    
+    /**
+     * Checks if the account is dormant
+     * 
+     * @return true if dormant, false otherwise
+     */
+    public boolean isDormant() {
+        return Constants.SAVINGS_STATUS_DORMANT.equals(status);
+    }
+    
+    /**
+     * Gets the opening date (alias for opened date)
+     * 
+     * @return Opening date
+     */
+    public Date getOpenDate() {
+        return openedDate;
+    }
+    
+    /**
+     * Sets the open date
+     * 
+     * @param openDate Open date
+     */
+    public void setOpenDate(Date openDate) {
+        this.openedDate = openDate;
+        this.openDate = openDate;
+    }
+    
+    /**
+     * Gets the last activity date
+     * 
+     * @return Last activity date
+     */
+    public Date getLastActivityDate() {
+        return lastActivityDate != null ? lastActivityDate : lastTransactionDate;
+    }
+    
+    /**
+     * Sets the last activity date
+     * 
+     * @param lastActivityDate Last activity date
+     */
+    public void setLastActivityDate(Date lastActivityDate) {
+        this.lastActivityDate = lastActivityDate;
+    }
+    
+    /**
+     * Gets the interest earned
+     * 
+     * @return Interest earned
+     */
+    public double getInterestEarned() {
+        return interestEarned;
+    }
+    
+    /**
+     * Sets the interest earned
+     * 
+     * @param interestEarned Interest earned
+     */
+    public void setInterestEarned(double interestEarned) {
+        this.interestEarned = interestEarned;
+    }
+    
+    /**
+     * Gets the total balance (alias for balance)
+     * 
+     * @return Total balance
+     */
+    public double getTotalBalance() {
+        return balance;
     }
 }

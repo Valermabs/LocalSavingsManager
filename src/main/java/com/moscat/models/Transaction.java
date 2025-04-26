@@ -9,12 +9,14 @@ public class Transaction {
     
     private int id;
     private String transactionId;
+    private String referenceNumber;   // Added for compatibility
     private int accountId;
     private String transactionType;
     private double amount;
     private Date transactionDate;
     private String description;
     private double balanceAfter;
+    private double runningBalance;    // Added for compatibility
     private int performedById;
     private String performedByUsername;
     private Date createdAt;
@@ -59,6 +61,24 @@ public class Transaction {
      */
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
+    }
+    
+    /**
+     * Gets the reference number
+     * 
+     * @return Reference number
+     */
+    public String getReferenceNumber() {
+        return referenceNumber;
+    }
+    
+    /**
+     * Sets the reference number
+     * 
+     * @param referenceNumber Reference number
+     */
+    public void setReferenceNumber(String referenceNumber) {
+        this.referenceNumber = referenceNumber;
     }
     
     /**
@@ -170,6 +190,24 @@ public class Transaction {
     }
     
     /**
+     * Gets the running balance (alias for balanceAfter)
+     * 
+     * @return Running balance
+     */
+    public double getRunningBalance() {
+        return runningBalance;
+    }
+    
+    /**
+     * Sets the running balance
+     * 
+     * @param runningBalance Running balance
+     */
+    public void setRunningBalance(double runningBalance) {
+        this.runningBalance = runningBalance;
+    }
+    
+    /**
      * Gets the performed by user ID
      * 
      * @return Performed by user ID
@@ -185,6 +223,15 @@ public class Transaction {
      */
     public void setPerformedById(int performedById) {
         this.performedById = performedById;
+    }
+    
+    /**
+     * Sets the user ID (alias for performedById)
+     * 
+     * @param userId User ID
+     */
+    public void setUserId(int userId) {
+        this.performedById = userId;
     }
     
     /**

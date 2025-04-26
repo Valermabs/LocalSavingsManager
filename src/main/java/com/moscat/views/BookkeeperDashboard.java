@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class BookkeeperDashboard extends DashboardView {
     
+    private JFrame parentFrame;
+    
     /**
      * Constructs a new BookkeeperDashboard
      * 
@@ -22,6 +24,7 @@ public class BookkeeperDashboard extends DashboardView {
      */
     public BookkeeperDashboard(JFrame parentFrame) {
         super(parentFrame);
+        this.parentFrame = parentFrame;
         setTitle("Bookkeeper Dashboard");
     }
     
@@ -286,8 +289,24 @@ public class BookkeeperDashboard extends DashboardView {
      * @param transactionType Transaction type code
      * @return Human-readable transaction type
      */
-    @Override
     protected String getTransactionTypeDisplay(String transactionType) {
-        return super.getTransactionTypeDisplay(transactionType);
+        switch (transactionType) {
+            case Constants.TRANSACTION_DEPOSIT:
+                return "Deposit";
+            case Constants.TRANSACTION_WITHDRAWAL:
+                return "Withdrawal";
+            case Constants.TRANSACTION_TRANSFER:
+                return "Transfer";
+            case Constants.TRANSACTION_LOAN_PAYMENT:
+                return "Loan Payment";
+            case Constants.TRANSACTION_LOAN_RELEASE:
+                return "Loan Release";
+            case Constants.TRANSACTION_INTEREST:
+                return "Interest";
+            case Constants.TRANSACTION_FEE:
+                return "Fee";
+            default:
+                return transactionType;
+        }
     }
 }

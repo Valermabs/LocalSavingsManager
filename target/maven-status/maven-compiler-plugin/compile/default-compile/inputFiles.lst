@@ -12,8 +12,8 @@
 /home/runner/workspace/src/main/java/com/moscat/views/DashboardView.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/AuthController.java
 /home/runner/workspace/src/main/java/com/moscat/utils/Constants.java
-/home/runner/workspace/src/main/java/com/moscat/models/Loan.java
 /home/runner/workspace/src/main/java/com/moscat/models/LoanAmortization.java
+/home/runner/workspace/src/main/java/com/moscat/models/Loan.java
 /home/runner/workspace/src/main/java/com/moscat/views/LoginView.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/MemberController.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/ReportController.java

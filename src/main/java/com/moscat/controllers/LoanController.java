@@ -26,6 +26,437 @@ import java.util.List;
 public class LoanController {
     
     /**
+     * Calculates a loan based on provided parameters
+     * 
+     * @param memberId Member ID
+     * @param loanType Loan type
+     * @param principalAmount Principal amount
+     * @param termYears Term in years
+     * @return Calculated loan object
+     */
+    public static Loan calculateLoan(int memberId, String loanType, double principalAmount, int termYears) {
+        Loan loan = new Loan();
+        loan.setMemberId(memberId);
+        loan.setLoanType(loanType);
+        loan.setPrincipalAmount(principalAmount);
+        loan.setTermYears(termYears);
+        
+        // Default interest rate based on loan type
+        double interestRate;
+        switch (loanType) {
+            case Constants.LOAN_TYPE_EMERGENCY:
+                interestRate = 10.0; // 10%
+                break;
+            case Constants.LOAN_TYPE_EDUCATIONAL:
+                interestRate = 8.0; // 8%
+                break;
+            case Constants.LOAN_TYPE_BUSINESS:
+                interestRate = 12.0; // 12%
+                break;
+            default: // Personal and others
+                interestRate = 12.0; // 12%
+        }
+        loan.setInterestRate(interestRate);
+        
+        // Calculate amortization schedule
+        loan.calculateAmortizationSchedule();
+        
+        return loan;
+    }
+    
+    /**
+     * Submits a loan application
+     * 
+     * @param loan Loan object with application details
+     * @return True if application submitted successfully, false otherwise
+     */
+    public static boolean applyForLoan(Loan loan) {
+        int loanId = createLoanApplication(loan);
+        return loanId > 0;
+    }
+    
+    /**
+     * Gets all loans from the database
+     * 
+     * @return List of all loans
+     */
+    public static List<Loan> getAllLoans() {
+        List<Loan> loans = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            String query = "SELECT * FROM loans ORDER BY application_date DESC";
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Loan loan = extractLoanFromResultSet(rs);
+                loans.add(loan);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseManager.closeResources(rs, stmt, conn);
+        }
+        
+        return loans;
+    }
+    
+    /**
+     * Searches for loans based on a search term
+     * 
+     * @param searchTerm Search term (loan number, member name, etc.)
+     * @return List of matching loans
+     */
+    public static List<Loan> searchLoans(String searchTerm) {
+        List<Loan> loans = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            String query = "SELECT l.* FROM loans l " +
+                "JOIN members m ON l.member_id = m.id " +
+                "WHERE l.loan_number LIKE ? " +
+                "OR m.first_name LIKE ? " +
+                "OR m.last_name LIKE ? " +
+                "OR CONCAT(m.first_name, ' ', m.last_name) LIKE ? " +
+                "ORDER BY l.application_date DESC";
+            
+            stmt = conn.prepareStatement(query);
+            String searchPattern = "%" + searchTerm + "%";
+            stmt.setString(1, searchPattern);
+            stmt.setString(2, searchPattern);
+            stmt.setString(3, searchPattern);
+            stmt.setString(4, searchPattern);
+            
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Loan loan = extractLoanFromResultSet(rs);
+                loans.add(loan);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseManager.closeResources(rs, stmt, conn);
+        }
+        
+        return loans;
+    }
+    
+    /**
+     * Gets the amortization schedule for a loan
+     * 
+     * @param loan Loan to calculate schedule for
+     * @return List of amortization entries
+     */
+    public static List<AmortizationEntry> getAmortizationSchedule(Loan loan) {
+        List<AmortizationEntry> schedule = new ArrayList<>();
+        
+        // Only create schedule if loan is active or approved
+        if (loan == null || (!loan.isActive() && !loan.isApproved())) {
+            return schedule;
+        }
+        
+        double monthlyInterestRate = loan.getInterestRate() / 100 / 12;
+        int numberOfPayments = loan.getTermYears() * 12;
+        double loanAmount = loan.getPrincipalAmount();
+        
+        // Calculate monthly payment using the formula: P = (r*PV) / (1 - (1+r)^-n)
+        double monthlyPayment = (monthlyInterestRate * loanAmount) / 
+                (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
+        
+        // Set start date to release date if available, otherwise use current date
+        Calendar calendar = Calendar.getInstance();
+        if (loan.getReleaseDate() != null) {
+            calendar.setTime(loan.getReleaseDate());
+        }
+        
+        double remainingBalance = loanAmount;
+        
+        for (int i = 1; i <= numberOfPayments; i++) {
+            double interestPayment = remainingBalance * monthlyInterestRate;
+            double principalPayment = monthlyPayment - interestPayment;
+            double endingBalance = remainingBalance - principalPayment;
+            
+            if (endingBalance < 0.01) {
+                endingBalance = 0; // Avoid tiny floating point balance at the end
+            }
+            
+            AmortizationEntry entry = new AmortizationEntry();
+            entry.setPaymentNumber(i);
+            entry.setPaymentDate((java.util.Date) calendar.getTime().clone());
+            entry.setBeginningBalance(remainingBalance);
+            entry.setPayment(monthlyPayment);
+            entry.setInterestPayment(interestPayment);
+            entry.setPrincipalPayment(principalPayment);
+            entry.setEndingBalance(endingBalance);
+            
+            schedule.add(entry);
+            
+            // Advance to next month
+            calendar.add(Calendar.MONTH, 1);
+            
+            // Update remaining balance
+            remainingBalance = endingBalance;
+        }
+        
+        return schedule;
+    }
+    
+    /**
+     * Processes a loan payment
+     * 
+     * @param loanNumber Loan number
+     * @param amount Payment amount
+     * @param notes Payment notes
+     * @return True if payment processed successfully, false otherwise
+     */
+    public static boolean processLoanPayment(String loanNumber, double amount, String notes) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        boolean success = false;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            conn.setAutoCommit(false);
+            
+            // First, get the loan details
+            Loan loan = getLoanByNumber(loanNumber);
+            if (loan == null || !loan.isActive()) {
+                // Loan not found or not active
+                return false;
+            }
+            
+            // Calculate remaining balance after payment
+            double newBalance = loan.getRemainingBalance() - amount;
+            if (newBalance < 0) {
+                newBalance = 0;
+            }
+            
+            // Update loan remaining balance and last payment date
+            String updateQuery = "UPDATE loans SET remaining_balance = ?, last_payment_date = ? WHERE loan_number = ?";
+            stmt = conn.prepareStatement(updateQuery);
+            stmt.setDouble(1, newBalance);
+            stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            stmt.setString(3, loanNumber);
+            
+            int rowsUpdated = stmt.executeUpdate();
+            
+            if (rowsUpdated > 0) {
+                // Insert payment record
+                String insertQuery = "INSERT INTO loan_payments (loan_id, payment_date, amount, notes) VALUES (?, ?, ?, ?)";
+                stmt = conn.prepareStatement(insertQuery);
+                stmt.setInt(1, loan.getId());
+                stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+                stmt.setDouble(3, amount);
+                stmt.setString(4, notes);
+                
+                stmt.executeUpdate();
+                
+                // If balance is 0, update status to PAID
+                if (newBalance == 0) {
+                    String statusQuery = "UPDATE loans SET status = ? WHERE loan_number = ?";
+                    stmt = conn.prepareStatement(statusQuery);
+                    stmt.setString(1, Constants.LOAN_STATUS_COMPLETED);
+                    stmt.setString(2, loanNumber);
+                    stmt.executeUpdate();
+                }
+                
+                conn.commit();
+                success = true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            try {
+                if (conn != null) {
+                    conn.rollback();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            DatabaseManager.closeResources(rs, stmt, conn);
+        }
+        
+        return success;
+    }
+    
+    /**
+     * Approves a loan application
+     * 
+     * @param loanNumber Loan number to approve
+     * @return True if approved successfully, false otherwise
+     */
+    public static boolean approveLoan(String loanNumber) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        boolean success = false;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            String query = "UPDATE loans SET status = ?, approval_date = ? WHERE loan_number = ? AND status = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, Constants.LOAN_STATUS_APPROVED);
+            stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            stmt.setString(3, loanNumber);
+            stmt.setString(4, Constants.LOAN_STATUS_PENDING);
+            
+            int rowsUpdated = stmt.executeUpdate();
+            success = rowsUpdated > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseManager.closeResources(null, stmt, conn);
+        }
+        
+        return success;
+    }
+    
+    /**
+     * Rejects a loan application
+     * 
+     * @param loanNumber Loan number to reject
+     * @return True if rejected successfully, false otherwise
+     */
+    public static boolean rejectLoan(String loanNumber) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        boolean success = false;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            String query = "UPDATE loans SET status = ?, approval_date = ? WHERE loan_number = ? AND status = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, Constants.LOAN_STATUS_REJECTED);
+            stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            stmt.setString(3, loanNumber);
+            stmt.setString(4, Constants.LOAN_STATUS_PENDING);
+            
+            int rowsUpdated = stmt.executeUpdate();
+            success = rowsUpdated > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseManager.closeResources(null, stmt, conn);
+        }
+        
+        return success;
+    }
+    
+    /**
+     * Gets a loan by its loan number
+     * 
+     * @param loanNumber Loan number to find
+     * @return Loan object if found, null otherwise
+     */
+    public static Loan getLoanByNumber(String loanNumber) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        Loan loan = null;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            String query = "SELECT * FROM loans WHERE loan_number = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, loanNumber);
+            
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                loan = extractLoanFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseManager.closeResources(rs, stmt, conn);
+        }
+        
+        return loan;
+    }
+    
+    /**
+     * Gets a loan by its ID
+     * 
+     * @param loanId Loan ID to find
+     * @return Loan object if found, null otherwise
+     */
+    public static Loan getLoanById(int loanId) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        Loan loan = null;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            String query = "SELECT * FROM loans WHERE id = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, loanId);
+            
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                loan = extractLoanFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseManager.closeResources(rs, stmt, conn);
+        }
+        
+        return loan;
+    }
+    
+    /**
+     * Extracts a Loan object from a ResultSet
+     * 
+     * @param rs ResultSet containing loan data
+     * @return Populated Loan object
+     * @throws SQLException If there's an error extracting data
+     */
+    private static Loan extractLoanFromResultSet(ResultSet rs) throws SQLException {
+        Loan loan = new Loan();
+        loan.setId(rs.getInt("id"));
+        loan.setMemberId(rs.getInt("member_id"));
+        loan.setLoanNumber(rs.getString("loan_number"));
+        loan.setLoanType(rs.getString("loan_type"));
+        loan.setPurpose(rs.getString("purpose"));
+        loan.setPrincipalAmount(rs.getDouble("principal_amount"));
+        loan.setInterestRate(rs.getDouble("interest_rate"));
+        loan.setTermYears(rs.getInt("term_years"));
+        loan.setPreviousLoanBalance(rs.getDouble("previous_loan_balance"));
+        loan.setTotalDeductions(rs.getDouble("total_deductions"));
+        loan.setNetLoanProceeds(rs.getDouble("net_loan_proceeds"));
+        loan.setMonthlyAmortization(rs.getDouble("monthly_amortization"));
+        loan.setRemainingBalance(rs.getDouble("remaining_balance"));
+        loan.setApplicationDate(rs.getDate("application_date"));
+        loan.setApprovalDate(rs.getDate("approval_date"));
+        loan.setReleaseDate(rs.getDate("release_date"));
+        loan.setMaturityDate(rs.getDate("maturity_date"));
+        loan.setLastPaymentDate(rs.getDate("last_payment_date"));
+        loan.setStatus(rs.getString("status"));
+        loan.setProcessedBy(rs.getInt("processed_by"));
+        
+        return loan;
+    }
+    
+    /**
      * Creates a new loan application
      * 
      * @param loan Loan object
@@ -65,7 +496,7 @@ public class LoanController {
             stmt.setDouble(9, loan.getNetLoanProceeds());
             stmt.setDouble(10, loan.getMonthlyAmortization());
             stmt.setDouble(11, loan.getPrincipalAmount()); // Initial remaining balance is the principal
-            stmt.setDate(12, DateUtils.getCurrentDate());
+            stmt.setDate(12, DateUtils.toSqlDate(DateUtils.getCurrentDate()));
             stmt.setString(13, Constants.LOAN_PENDING); // Initial status is PENDING
             stmt.setInt(14, loan.getProcessedBy());
             
@@ -138,7 +569,7 @@ public class LoanController {
             
             try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
                 stmt.setString(1, Constants.LOAN_APPROVED);
-                stmt.setDate(2, DateUtils.getCurrentDate());
+                stmt.setDate(2, DateUtils.toSqlDate(DateUtils.getCurrentDate()));
                 stmt.setInt(3, userId);
                 stmt.setInt(4, loanId);
                 
@@ -268,7 +699,7 @@ public class LoanController {
             
             try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
                 stmt.setString(1, Constants.LOAN_ACTIVE);
-                stmt.setDate(2, DateUtils.getCurrentDate());
+                stmt.setDate(2, DateUtils.toSqlDate(DateUtils.getCurrentDate()));
                 stmt.setDate(3, maturityDate);
                 stmt.setInt(4, loanId);
                 
@@ -285,7 +716,7 @@ public class LoanController {
             String updateAccountQuery = "UPDATE savings_accounts SET balance = ?, last_activity_date = ? WHERE id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(updateAccountQuery)) {
                 stmt.setDouble(1, newBalance);
-                stmt.setDate(2, DateUtils.getCurrentDate());
+                stmt.setDate(2, DateUtils.toSqlDate(DateUtils.getCurrentDate()));
                 stmt.setInt(3, account.getId());
                 
                 int rowsAffected = stmt.executeUpdate();
@@ -408,7 +839,7 @@ public class LoanController {
             String updateAccountQuery = "UPDATE savings_accounts SET balance = ?, last_activity_date = ? WHERE id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(updateAccountQuery)) {
                 stmt.setDouble(1, newAccountBalance);
-                stmt.setDate(2, DateUtils.getCurrentDate());
+                stmt.setDate(2, DateUtils.toSqlDate(DateUtils.getCurrentDate()));
                 stmt.setInt(3, accountId);
                 
                 int rowsAffected = stmt.executeUpdate();

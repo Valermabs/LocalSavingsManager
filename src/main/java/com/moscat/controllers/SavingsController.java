@@ -3,11 +3,13 @@ package com.moscat.controllers;
 import com.moscat.models.Member;
 import com.moscat.models.SavingsAccount;
 import com.moscat.models.Transaction;
+import com.moscat.models.InterestSettings;
 import com.moscat.utils.Constants;
 import com.moscat.utils.DatabaseManager;
 import com.moscat.utils.DateUtils;
 
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -882,5 +884,132 @@ public class SavingsController {
         long timestamp = System.currentTimeMillis();
         int random = (int) (Math.random() * 1000);
         return "TXN" + timestamp % 10000000 + random;
+    }
+    
+    /**
+     * Generates a reference number for various types of transactions
+     * 
+     * @param prefix The prefix to use for the reference number (e.g., "LN" for loan)
+     * @return Reference number
+     */
+    public static String generateReferenceNumber(String prefix) {
+        String dateStr = new SimpleDateFormat("yyyyMMdd").format(new Date());
+        String randomStr = String.format("%06d", (int) (Math.random() * 999999));
+        
+        return prefix + dateStr + randomStr;
+    }
+    
+    /**
+     * Gets a savings account by ID (alias for getSavingsAccountById)
+     * 
+     * @param accountId Account ID
+     * @return SavingsAccount or null if not found
+     */
+    public static SavingsAccount getAccountById(int accountId) {
+        return getSavingsAccountById(accountId);
+    }
+    
+    /**
+     * Gets a savings account by account number (alias for getSavingsAccountByNumber)
+     * 
+     * @param accountNumber Account number
+     * @return SavingsAccount or null if not found
+     */
+    public static SavingsAccount getAccountByNumber(String accountNumber) {
+        return getSavingsAccountByNumber(accountNumber);
+    }
+    
+    /**
+     * Gets the current interest settings
+     * 
+     * @return The current interest settings
+     */
+    public static InterestSettings getCurrentInterestSettings() {
+        String query = "SELECT * FROM interest_settings ORDER BY effective_date DESC LIMIT 1";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            if (rs.next()) {
+                return mapResultSetToInterestSettings(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Gets the history of interest settings
+     * 
+     * @return List of interest settings, ordered by effective date descending
+     */
+    public static List<InterestSettings> getInterestSettingsHistory() {
+        List<InterestSettings> settingsList = new ArrayList<>();
+        String query = "SELECT * FROM interest_settings ORDER BY effective_date DESC";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                InterestSettings settings = mapResultSetToInterestSettings(rs);
+                settingsList.add(settings);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return settingsList;
+    }
+    
+    /**
+     * Creates new interest settings
+     * 
+     * @param settings The interest settings to create
+     * @return true if creation successful, false otherwise
+     */
+    public static boolean createInterestSettings(InterestSettings settings) {
+        String query = "INSERT INTO interest_settings (regular_savings_rate, time_deposit_rate, " +
+                "share_capital_rate, effective_date, created_date, created_by) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setDouble(1, settings.getRegularSavingsRate());
+            stmt.setDouble(2, settings.getTimeDepositRate());
+            stmt.setDouble(3, settings.getShareCapitalRate());
+            stmt.setDate(4, DateUtils.toSqlDate(settings.getEffectiveDate()));
+            stmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+            stmt.setInt(6, settings.getCreatedBy());
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Maps a ResultSet row to an InterestSettings object
+     * 
+     * @param rs ResultSet containing interest settings data
+     * @return InterestSettings object
+     * @throws SQLException if an error occurs while accessing the ResultSet
+     */
+    private static InterestSettings mapResultSetToInterestSettings(ResultSet rs) throws SQLException {
+        InterestSettings settings = new InterestSettings();
+        settings.setId(rs.getInt("id"));
+        settings.setRegularSavingsRate(rs.getDouble("regular_savings_rate"));
+        settings.setTimeDepositRate(rs.getDouble("time_deposit_rate"));
+        settings.setShareCapitalRate(rs.getDouble("share_capital_rate"));
+        settings.setEffectiveDate(rs.getDate("effective_date"));
+        settings.setCreatedDate(rs.getTimestamp("created_date"));
+        settings.setCreatedBy(rs.getInt("created_by"));
+        return settings;
     }
 }

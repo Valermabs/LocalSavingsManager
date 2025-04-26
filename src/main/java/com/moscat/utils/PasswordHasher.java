@@ -17,6 +17,16 @@ public class PasswordHasher {
     private static final int SALT_LENGTH = 16;
     
     /**
+     * Alias for hash method for backward compatibility
+     * 
+     * @param password Plain text password
+     * @return Hashed password
+     */
+    public static String hashPassword(String password) {
+        return hash(password);
+    }
+    
+    /**
      * Hashes a password with a random salt
      * 
      * @param password Plain text password

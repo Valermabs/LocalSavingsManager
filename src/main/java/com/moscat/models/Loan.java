@@ -12,6 +12,7 @@ public class Loan {
     private int memberId;
     private String loanNumber;
     private String loanType; // REGULAR, PETTY_CASH, BONUS
+    private String purpose;
     private double principalAmount;
     private double interestRate;
     private int termYears;
@@ -24,6 +25,7 @@ public class Loan {
     private Date approvalDate;
     private Date releaseDate;
     private Date maturityDate;
+    private Date lastPaymentDate;
     private String status; // PENDING, APPROVED, REJECTED, ACTIVE, PAID
     private int processedBy; // User ID who processed the loan
     
@@ -121,6 +123,14 @@ public class Loan {
         this.loanType = loanType;
     }
     
+    public String getPurpose() {
+        return purpose;
+    }
+    
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
+    
     public double getPrincipalAmount() {
         return principalAmount;
     }
@@ -215,6 +225,14 @@ public class Loan {
     
     public void setMaturityDate(Date maturityDate) {
         this.maturityDate = maturityDate;
+    }
+    
+    public Date getLastPaymentDate() {
+        return lastPaymentDate;
+    }
+    
+    public void setLastPaymentDate(Date lastPaymentDate) {
+        this.lastPaymentDate = lastPaymentDate;
     }
     
     public String getStatus() {

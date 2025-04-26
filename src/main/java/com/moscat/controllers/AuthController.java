@@ -108,6 +108,15 @@ public class AuthController {
     }
     
     /**
+     * Checks if the current user is a super admin
+     * 
+     * @return true if super admin, false otherwise
+     */
+    public static boolean isSuperAdmin() {
+        return currentUser != null && currentUser.isSuperAdmin();
+    }
+    
+    /**
      * Gets a user by ID
      * 
      * @param userId User ID

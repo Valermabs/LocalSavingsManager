@@ -3,166 +3,228 @@ package com.moscat.models;
 import java.util.Date;
 
 /**
- * Model for savings account interest settings
+ * Model class for interest rate settings for savings accounts
  */
 public class InterestSettings {
     
     private int id;
     private double interestRate;
+    private double regularSavingsRate;
+    private double timeDepositRate;
+    private double shareCapitalRate;
     private double minimumBalance;
     private String calculationMethod;
     private Date effectiveDate;
     private String changeBasis;
     private String status;
-    private Date createdAt;
+    private Date createdDate;
+    private int createdBy;
     
     /**
      * Default constructor
      */
     public InterestSettings() {
+        // Default constructor
     }
     
     /**
-     * Gets the ID
+     * Constructor with all fields
      * 
-     * @return ID
+     * @param id ID
+     * @param regularSavingsRate Regular savings interest rate
+     * @param timeDepositRate Time deposit interest rate
+     * @param shareCapitalRate Share capital interest rate
+     * @param effectiveDate Effective date
+     * @param createdDate Created date
+     * @param createdBy Created by user ID
+     */
+    public InterestSettings(int id, double regularSavingsRate, double timeDepositRate, 
+            double shareCapitalRate, Date effectiveDate, Date createdDate, int createdBy) {
+        this.id = id;
+        this.regularSavingsRate = regularSavingsRate;
+        this.timeDepositRate = timeDepositRate;
+        this.shareCapitalRate = shareCapitalRate;
+        this.effectiveDate = effectiveDate;
+        this.createdDate = createdDate;
+        this.createdBy = createdBy;
+    }
+
+    // Getters and Setters
+    
+    /**
+     * @return the id
      */
     public int getId() {
         return id;
     }
-    
+
     /**
-     * Sets the ID
-     * 
-     * @param id ID
+     * @param id the id to set
      */
     public void setId(int id) {
         this.id = id;
     }
-    
+
     /**
-     * Gets the interest rate
-     * 
-     * @return Interest rate
+     * @return the regularSavingsRate
      */
-    public double getInterestRate() {
-        return interestRate;
+    public double getRegularSavingsRate() {
+        return regularSavingsRate;
     }
-    
+
     /**
-     * Sets the interest rate
-     * 
-     * @param interestRate Interest rate
+     * @param regularSavingsRate the regularSavingsRate to set
      */
-    public void setInterestRate(double interestRate) {
-        this.interestRate = interestRate;
+    public void setRegularSavingsRate(double regularSavingsRate) {
+        this.regularSavingsRate = regularSavingsRate;
     }
-    
+
     /**
-     * Gets the minimum balance
-     * 
-     * @return Minimum balance
+     * @return the timeDepositRate
      */
-    public double getMinimumBalance() {
-        return minimumBalance;
+    public double getTimeDepositRate() {
+        return timeDepositRate;
     }
-    
+
     /**
-     * Sets the minimum balance
-     * 
-     * @param minimumBalance Minimum balance
+     * @param timeDepositRate the timeDepositRate to set
      */
-    public void setMinimumBalance(double minimumBalance) {
-        this.minimumBalance = minimumBalance;
+    public void setTimeDepositRate(double timeDepositRate) {
+        this.timeDepositRate = timeDepositRate;
     }
-    
+
     /**
-     * Gets the calculation method
-     * 
-     * @return Calculation method
+     * @return the shareCapitalRate
      */
-    public String getCalculationMethod() {
-        return calculationMethod;
+    public double getShareCapitalRate() {
+        return shareCapitalRate;
     }
-    
+
     /**
-     * Sets the calculation method
-     * 
-     * @param calculationMethod Calculation method
+     * @param shareCapitalRate the shareCapitalRate to set
      */
-    public void setCalculationMethod(String calculationMethod) {
-        this.calculationMethod = calculationMethod;
+    public void setShareCapitalRate(double shareCapitalRate) {
+        this.shareCapitalRate = shareCapitalRate;
     }
-    
+
     /**
-     * Gets the effective date
-     * 
-     * @return Effective date
+     * @return the effectiveDate
      */
     public Date getEffectiveDate() {
         return effectiveDate;
     }
-    
+
     /**
-     * Sets the effective date
-     * 
-     * @param effectiveDate Effective date
+     * @param effectiveDate the effectiveDate to set
      */
     public void setEffectiveDate(Date effectiveDate) {
         this.effectiveDate = effectiveDate;
     }
+
+    /**
+     * @return the createdDate
+     */
+    public Date getCreatedDate() {
+        return createdDate;
+    }
+
+    /**
+     * @param createdDate the createdDate to set
+     */
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    /**
+     * @return the createdBy
+     */
+    public int getCreatedBy() {
+        return createdBy;
+    }
+
+    /**
+     * @param createdBy the createdBy to set
+     */
+    public void setCreatedBy(int createdBy) {
+        this.createdBy = createdBy;
+    }
     
     /**
-     * Gets the change basis
-     * 
-     * @return Change basis
+     * @return the interestRate
+     */
+    public double getInterestRate() {
+        return interestRate;
+    }
+
+    /**
+     * @param interestRate the interestRate to set
+     */
+    public void setInterestRate(double interestRate) {
+        this.interestRate = interestRate;
+    }
+
+    /**
+     * @return the minimumBalance
+     */
+    public double getMinimumBalance() {
+        return minimumBalance;
+    }
+
+    /**
+     * @param minimumBalance the minimumBalance to set
+     */
+    public void setMinimumBalance(double minimumBalance) {
+        this.minimumBalance = minimumBalance;
+    }
+
+    /**
+     * @return the calculationMethod
+     */
+    public String getCalculationMethod() {
+        return calculationMethod;
+    }
+
+    /**
+     * @param calculationMethod the calculationMethod to set
+     */
+    public void setCalculationMethod(String calculationMethod) {
+        this.calculationMethod = calculationMethod;
+    }
+
+    /**
+     * @return the changeBasis
      */
     public String getChangeBasis() {
         return changeBasis;
     }
-    
+
     /**
-     * Sets the change basis
-     * 
-     * @param changeBasis Change basis
+     * @param changeBasis the changeBasis to set
      */
     public void setChangeBasis(String changeBasis) {
         this.changeBasis = changeBasis;
     }
-    
+
     /**
-     * Gets the status
-     * 
-     * @return Status
+     * @return the status
      */
     public String getStatus() {
         return status;
     }
-    
+
     /**
-     * Sets the status
-     * 
-     * @param status Status
+     * @param status the status to set
      */
     public void setStatus(String status) {
         this.status = status;
     }
     
     /**
-     * Gets the created at date
+     * Alias for setCreatedDate for compatibility
      * 
-     * @return Created at date
-     */
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    
-    /**
-     * Sets the created at date
-     * 
-     * @param createdAt Created at date
+     * @param createdAt the creation date to set
      */
     public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+        this.createdDate = createdAt;
     }
 }

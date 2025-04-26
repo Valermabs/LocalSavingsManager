@@ -40,9 +40,12 @@ public class Constants {
     // Shorthand transaction types for code use
     public static final String TRANSACTION_DEPOSIT = "Deposit";
     public static final String TRANSACTION_WITHDRAWAL = "Withdrawal";
+    public static final String TRANSACTION_TRANSFER = "Transfer";
     public static final String TRANSACTION_INTEREST_EARNING = "Interest";
+    public static final String TRANSACTION_INTEREST = "Interest";
     public static final String TRANSACTION_LOAN_RELEASE = "Loan Release";
     public static final String TRANSACTION_LOAN_PAYMENT = "Loan Payment";
+    public static final String TRANSACTION_FEE = "Fee";
     
     // Loan types
     public static final String LOAN_TYPE_PERSONAL = "Personal";
@@ -58,6 +61,14 @@ public class Constants {
     public static final String LOAN_STATUS_COMPLETED = "Completed";
     public static final String LOAN_STATUS_DEFAULTED = "Defaulted";
     public static final String LOAN_STATUS_RESTRUCTURED = "Restructured";
+    
+    // Shorthand loan status for code use
+    public static final String LOAN_ACTIVE = "Active";
+    public static final String LOAN_INACTIVE = "Inactive";
+    public static final String LOAN_PENDING = "Pending";
+    public static final String LOAN_APPROVED = "Approved";
+    public static final String LOAN_REJECTED = "Rejected";
+    public static final String LOAN_PAID = "Paid";
     
     // Payment frequencies
     public static final String PAYMENT_FREQUENCY_DAILY = "Daily";
@@ -90,4 +101,7 @@ public class Constants {
     public static final String SETTING_MEMBERSHIP_FEE = "membership_fee";
     public static final String SETTING_MINIMUM_BALANCE = "minimum_balance";
     public static final String SETTING_DORMANT_DAYS = "dormant_days";
+    
+    // UI constants
+    public static final int TEXT_FIELD_HEIGHT = 25;
 }

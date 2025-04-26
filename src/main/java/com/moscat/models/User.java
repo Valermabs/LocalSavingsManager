@@ -19,6 +19,7 @@ public class User {
     private String status;
     private Date lastLogin;
     private boolean active;
+    private Date createdAt;
     
     /**
      * Default constructor
@@ -268,5 +269,23 @@ public class User {
      */
     public boolean isSuperAdmin() {
         return Constants.ROLE_SUPER_ADMIN.equals(role);
+    }
+    
+    /**
+     * Gets the created at date
+     * 
+     * @return Created at date
+     */
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+    
+    /**
+     * Sets the created at date
+     * 
+     * @param createdAt Created at date
+     */
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -9,24 +9,34 @@ public class Member {
     
     private int id;
     private String memberId;
+    private String memberNumber;
     private String firstName;
+    private String middleName;
     private String lastName;
     private String gender;
     private Date birthDate;
+    private double loanEligibilityAmount;
     private String address;
+    private String presentAddress;
+    private String permanentAddress;
     private String city;
     private String state;
     private String postalCode;
     private String country;
     private String phone;
+    private String contactNumber;
     private String email;
     private String idType;
     private String idNumber;
     private String occupation;
     private String employer;
+    private String employmentStatus;
     private double monthlyIncome;
+    private double grossMonthlyIncome;
+    private double avgNetMonthlyIncome;
     private String status;
     private Date joinDate;
+    private Date lastActivityDate;
     private Date createdAt;
     private Date updatedAt;
     private String notes;
@@ -74,6 +84,24 @@ public class Member {
     }
     
     /**
+     * Gets the member number
+     * 
+     * @return Member number
+     */
+    public String getMemberNumber() {
+        return memberNumber;
+    }
+    
+    /**
+     * Sets the member number
+     * 
+     * @param memberNumber Member number
+     */
+    public void setMemberNumber(String memberNumber) {
+        this.memberNumber = memberNumber;
+    }
+    
+    /**
      * Gets the first name
      * 
      * @return First name
@@ -89,6 +117,24 @@ public class Member {
      */
     public void setFirstName(String firstName) {
         this.firstName = firstName;
+    }
+    
+    /**
+     * Gets the middle name
+     * 
+     * @return Middle name
+     */
+    public String getMiddleName() {
+        return middleName;
+    }
+    
+    /**
+     * Sets the middle name
+     * 
+     * @param middleName Middle name
+     */
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
     }
     
     /**
@@ -146,6 +192,51 @@ public class Member {
     }
     
     /**
+     * Calculates the member's age based on birth date
+     * 
+     * @return Age in years
+     */
+    public int getAge() {
+        if (birthDate == null) {
+            return 0;
+        }
+        
+        java.util.Calendar birthCal = java.util.Calendar.getInstance();
+        birthCal.setTime(birthDate);
+        
+        java.util.Calendar currentCal = java.util.Calendar.getInstance();
+        
+        int age = currentCal.get(java.util.Calendar.YEAR) - birthCal.get(java.util.Calendar.YEAR);
+        
+        // Adjust age if birthday hasn't occurred yet this year
+        if (birthCal.get(java.util.Calendar.MONTH) > currentCal.get(java.util.Calendar.MONTH) || 
+                (birthCal.get(java.util.Calendar.MONTH) == currentCal.get(java.util.Calendar.MONTH) && 
+                 birthCal.get(java.util.Calendar.DAY_OF_MONTH) > currentCal.get(java.util.Calendar.DAY_OF_MONTH))) {
+            age--;
+        }
+        
+        return age;
+    }
+    
+    /**
+     * Gets the loan eligibility amount
+     * 
+     * @return Loan eligibility amount
+     */
+    public double getLoanEligibilityAmount() {
+        return loanEligibilityAmount;
+    }
+    
+    /**
+     * Sets the loan eligibility amount
+     * 
+     * @param loanEligibilityAmount Loan eligibility amount
+     */
+    public void setLoanEligibilityAmount(double loanEligibilityAmount) {
+        this.loanEligibilityAmount = loanEligibilityAmount;
+    }
+    
+    /**
      * Gets the address
      * 
      * @return Address
@@ -161,6 +252,42 @@ public class Member {
      */
     public void setAddress(String address) {
         this.address = address;
+    }
+    
+    /**
+     * Gets the present address
+     * 
+     * @return Present address
+     */
+    public String getPresentAddress() {
+        return presentAddress;
+    }
+    
+    /**
+     * Sets the present address
+     * 
+     * @param presentAddress Present address
+     */
+    public void setPresentAddress(String presentAddress) {
+        this.presentAddress = presentAddress;
+    }
+    
+    /**
+     * Gets the permanent address
+     * 
+     * @return Permanent address
+     */
+    public String getPermanentAddress() {
+        return permanentAddress;
+    }
+    
+    /**
+     * Sets the permanent address
+     * 
+     * @param permanentAddress Permanent address
+     */
+    public void setPermanentAddress(String permanentAddress) {
+        this.permanentAddress = permanentAddress;
     }
     
     /**
@@ -254,6 +381,24 @@ public class Member {
     }
     
     /**
+     * Gets the contact number
+     * 
+     * @return Contact number
+     */
+    public String getContactNumber() {
+        return contactNumber;
+    }
+    
+    /**
+     * Sets the contact number
+     * 
+     * @param contactNumber Contact number
+     */
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+    
+    /**
      * Gets the email
      * 
      * @return Email
@@ -344,6 +489,24 @@ public class Member {
     }
     
     /**
+     * Gets the employment status
+     * 
+     * @return Employment status
+     */
+    public String getEmploymentStatus() {
+        return employmentStatus;
+    }
+    
+    /**
+     * Sets the employment status
+     * 
+     * @param employmentStatus Employment status
+     */
+    public void setEmploymentStatus(String employmentStatus) {
+        this.employmentStatus = employmentStatus;
+    }
+    
+    /**
      * Gets the monthly income
      * 
      * @return Monthly income
@@ -359,6 +522,42 @@ public class Member {
      */
     public void setMonthlyIncome(double monthlyIncome) {
         this.monthlyIncome = monthlyIncome;
+    }
+    
+    /**
+     * Gets the gross monthly income
+     * 
+     * @return Gross monthly income
+     */
+    public double getGrossMonthlyIncome() {
+        return grossMonthlyIncome;
+    }
+    
+    /**
+     * Sets the gross monthly income
+     * 
+     * @param grossMonthlyIncome Gross monthly income
+     */
+    public void setGrossMonthlyIncome(double grossMonthlyIncome) {
+        this.grossMonthlyIncome = grossMonthlyIncome;
+    }
+    
+    /**
+     * Gets the average net monthly income
+     * 
+     * @return Average net monthly income
+     */
+    public double getAvgNetMonthlyIncome() {
+        return avgNetMonthlyIncome;
+    }
+    
+    /**
+     * Sets the average net monthly income
+     * 
+     * @param avgNetMonthlyIncome Average net monthly income
+     */
+    public void setAvgNetMonthlyIncome(double avgNetMonthlyIncome) {
+        this.avgNetMonthlyIncome = avgNetMonthlyIncome;
     }
     
     /**
@@ -395,6 +594,24 @@ public class Member {
      */
     public void setJoinDate(Date joinDate) {
         this.joinDate = joinDate;
+    }
+    
+    /**
+     * Gets the last activity date
+     * 
+     * @return Last activity date
+     */
+    public Date getLastActivityDate() {
+        return lastActivityDate;
+    }
+    
+    /**
+     * Sets the last activity date
+     * 
+     * @param lastActivityDate Last activity date
+     */
+    public void setLastActivityDate(Date lastActivityDate) {
+        this.lastActivityDate = lastActivityDate;
     }
     
     /**
@@ -501,5 +718,32 @@ public class Member {
         }
         
         return sb.toString();
+    }
+    
+    /**
+     * Checks if the member is active
+     * 
+     * @return true if active, false otherwise
+     */
+    public boolean isActive() {
+        return "Active".equals(status);
+    }
+    
+    /**
+     * Checks if the member is inactive
+     * 
+     * @return true if inactive, false otherwise
+     */
+    public boolean isInactive() {
+        return "Inactive".equals(status);
+    }
+    
+    /**
+     * Checks if the member is pending
+     * 
+     * @return true if pending, false otherwise
+     */
+    public boolean isPending() {
+        return "Pending".equals(status);
     }
 }
