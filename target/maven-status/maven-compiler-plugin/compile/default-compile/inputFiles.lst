@@ -39,6 +39,7 @@
 /home/runner/workspace/src/main/java/com/moscat/models/LoanType.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/PermissionController.java
 /home/runner/workspace/src/main/java/com/moscat/views/UserManagementView.java
+/home/runner/workspace/src/main/java/com/moscat/utils/ColorScheme.java
 /home/runner/workspace/src/main/java/com/moscat/models/Permission.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/LoanController.java
 /home/runner/workspace/src/main/java/com/moscat/models/SavingsAccount.java

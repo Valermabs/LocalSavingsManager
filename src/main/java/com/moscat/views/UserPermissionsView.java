@@ -5,201 +5,178 @@ import com.moscat.controllers.PermissionController;
 import com.moscat.models.Permission;
 import com.moscat.models.User;
 import com.moscat.models.UserPermission;
-import com.moscat.views.components.CustomButton;
+import com.moscat.utils.ColorScheme;
+import com.moscat.utils.Constants;
+import com.moscat.utils.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * View for managing user permissions
  */
-public class UserPermissionsView extends JDialog {
+public class UserPermissionsView extends JPanel {
     
-    private JFrame parentFrame;
-    private User user;
-    private JTable permissionsTable;
-    private DefaultTableModel permissionsTableModel;
-    private JTable grantedPermissionsTable;
-    private DefaultTableModel grantedPermissionsTableModel;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private final JFrame parentFrame;
+    private User selectedUser;
+    private Map<String, List<Permission>> permissionsByModule;
+    private List<UserPermission> userPermissions;
+    
+    private JPanel contentPanel;
+    private JComboBox<User> userSelector;
+    private JPanel permissionsPanel;
+    private JTable assignedTable;
+    private DefaultTableModel assignedTableModel;
     
     /**
-     * Constructor for UserPermissionsView
+     * Constructor
      * 
-     * @param parentFrame Parent JFrame
-     * @param user User whose permissions are being managed
+     * @param parentFrame Parent frame
      */
-    public UserPermissionsView(JFrame parentFrame, User user) {
-        super(parentFrame, "User Permissions - " + user.getUsername(), true);
+    public UserPermissionsView(JFrame parentFrame) {
         this.parentFrame = parentFrame;
-        this.user = user;
         
-        // Basic dialog setup
-        setSize(800, 600);
-        setMinimumSize(new Dimension(800, 600));
-        setLocationRelativeTo(parentFrame);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        initializeUI();
-        loadData();
+        // Create components
+        initComponents();
+        
+        // Load data
+        loadUsers();
+        loadPermissions();
     }
     
     /**
-     * Initializes the UI components
+     * Initializes UI components
      */
-    private void initializeUI() {
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+    private void initComponents() {
+        // Header panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(0, 0, 20, 0));
         
-        // User info panel
-        JPanel userInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        userInfoPanel.setBorder(new TitledBorder("User Information"));
+        JLabel titleLabel = new JLabel("User Permissions Management");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
         
-        JLabel usernameLabel = new JLabel("Username: " + user.getUsername());
-        JLabel nameLabel = new JLabel("Name: " + user.getFullName());
-        JLabel roleLabel = new JLabel("Role: " + user.getRole());
+        // User selection panel
+        JPanel userSelectionPanel = new JPanel(new BorderLayout());
+        userSelectionPanel.setBorder(new TitledBorder("Select User"));
         
-        userInfoPanel.add(usernameLabel);
-        userInfoPanel.add(Box.createHorizontalStrut(20));
-        userInfoPanel.add(nameLabel);
-        userInfoPanel.add(Box.createHorizontalStrut(20));
-        userInfoPanel.add(roleLabel);
+        userSelector = new JComboBox<>();
+        userSelector.addActionListener(e -> handleUserSelection());
         
-        // Create permissions table
-        String[] permissionColumns = {"ID", "Name", "Module", "Description"};
-        permissionsTableModel = new DefaultTableModel(permissionColumns, 0) {
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> loadUsers());
+        
+        userSelectionPanel.add(new JLabel("User: "), BorderLayout.WEST);
+        userSelectionPanel.add(userSelector, BorderLayout.CENTER);
+        userSelectionPanel.add(refreshButton, BorderLayout.EAST);
+        
+        // Set up the assigned permissions table
+        String[] columns = {"Permission", "Module", "Granted Date", "Status", "Actions"};
+        assignedTableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
+            public boolean isCellEditable(int row, int col) {
+                return col == 4; // Only the actions column is editable
             }
         };
         
-        permissionsTable = new JTable(permissionsTableModel);
-        permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        permissionsTable.getColumnModel().getColumn(0).setMaxWidth(40);
+        assignedTable = new JTable(assignedTableModel);
+        assignedTable.getColumnModel().getColumn(4).setCellRenderer(new ButtonRenderer());
+        assignedTable.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new JCheckBox()));
         
-        JScrollPane permissionsScrollPane = new JScrollPane(permissionsTable);
-        permissionsScrollPane.setBorder(new TitledBorder("Available Permissions"));
+        JScrollPane assignedScrollPane = new JScrollPane(assignedTable);
+        assignedScrollPane.setPreferredSize(new Dimension(600, 200));
         
-        // Create granted permissions table
-        String[] grantedColumns = {"ID", "Name", "Module", "Granted Date", "Expiry Date", "Status"};
-        grantedPermissionsTableModel = new DefaultTableModel(grantedColumns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        JPanel assignedPanel = new JPanel(new BorderLayout());
+        assignedPanel.setBorder(new TitledBorder("Assigned Permissions"));
+        assignedPanel.add(assignedScrollPane, BorderLayout.CENTER);
         
-        grantedPermissionsTable = new JTable(grantedPermissionsTableModel);
-        grantedPermissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        grantedPermissionsTable.getColumnModel().getColumn(0).setMaxWidth(40);
+        // Create permissions panel (will be populated when a user is selected)
+        permissionsPanel = new JPanel();
+        permissionsPanel.setLayout(new BoxLayout(permissionsPanel, BoxLayout.Y_AXIS));
+        permissionsPanel.setBorder(new TitledBorder("Available Permissions"));
         
-        JScrollPane grantedPermissionsScrollPane = new JScrollPane(grantedPermissionsTable);
-        grantedPermissionsScrollPane.setBorder(new TitledBorder("Granted Permissions"));
+        JScrollPane permissionsScrollPane = new JScrollPane(permissionsPanel);
+        permissionsScrollPane.setPreferredSize(new Dimension(600, 300));
         
-        // Create buttons panels
-        JPanel permissionsButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton grantButton = new CustomButton("Grant Permission ▼");
-        permissionsButtonsPanel.add(grantButton);
-        
-        JPanel grantedButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton revokeButton = new CustomButton("Revoke Permission ▲");
-        grantedButtonsPanel.add(revokeButton);
-        
-        // Create tables panel
-        JPanel tablesPanel = new JPanel(new GridLayout(2, 1, 0, 10));
-        
-        JPanel permissionsPanel = new JPanel(new BorderLayout());
-        permissionsPanel.add(permissionsScrollPane, BorderLayout.CENTER);
-        permissionsPanel.add(permissionsButtonsPanel, BorderLayout.SOUTH);
-        
-        JPanel grantedPanel = new JPanel(new BorderLayout());
-        grantedPanel.add(grantedPermissionsScrollPane, BorderLayout.CENTER);
-        grantedPanel.add(grantedButtonsPanel, BorderLayout.SOUTH);
-        
-        tablesPanel.add(permissionsPanel);
-        tablesPanel.add(grantedPanel);
-        
-        // Create bottom panel
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton closeButton = new JButton("Close");
-        closeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-        bottomPanel.add(closeButton);
-        
-        // Add action listeners
-        grantButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                grantPermission();
-            }
-        });
-        
-        revokeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                revokePermission();
-            }
-        });
+        // Content panel
+        contentPanel = new JPanel(new BorderLayout());
+        contentPanel.add(userSelectionPanel, BorderLayout.NORTH);
+        contentPanel.add(assignedPanel, BorderLayout.CENTER);
+        contentPanel.add(permissionsScrollPane, BorderLayout.SOUTH);
         
         // Add components to main panel
-        mainPanel.add(userInfoPanel, BorderLayout.NORTH);
-        mainPanel.add(tablesPanel, BorderLayout.CENTER);
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        
-        // Add main panel to dialog
-        setContentPane(mainPanel);
+        add(headerPanel, BorderLayout.NORTH);
+        add(contentPanel, BorderLayout.CENTER);
     }
     
     /**
-     * Loads permission data
+     * Loads user list to the selector
      */
-    private void loadData() {
-        loadAvailablePermissions();
-        loadGrantedPermissions();
-    }
-    
-    /**
-     * Loads available permissions
-     */
-    private void loadAvailablePermissions() {
-        // Clear the table
-        permissionsTableModel.setRowCount(0);
-        
-        SwingWorker<List<Permission>, Void> worker = new SwingWorker<List<Permission>, Void>() {
+    private void loadUsers() {
+        SwingWorker<List<User>, Void> worker = new SwingWorker<List<User>, Void>() {
             @Override
-            protected List<Permission> doInBackground() throws Exception {
-                return PermissionController.getAllPermissions();
+            protected List<User> doInBackground() throws Exception {
+                return AuthController.getAllUsers();
             }
             
             @Override
             protected void done() {
                 try {
-                    List<Permission> permissions = get();
+                    List<User> users = get();
+                    userSelector.removeAllItems();
                     
-                    for (Permission permission : permissions) {
-                        Object[] row = {
-                            permission.getId(),
-                            permission.getName(),
-                            permission.getModule(),
-                            permission.getDescription()
-                        };
-                        
-                        permissionsTableModel.addRow(row);
+                    for (User user : users) {
+                        userSelector.addItem(user);
                     }
                     
+                    if (selectedUser != null) {
+                        // Try to reselect the previously selected user
+                        for (int i = 0; i < userSelector.getItemCount(); i++) {
+                            User user = userSelector.getItemAt(i);
+                            if (user.getId() == selectedUser.getId()) {
+                                userSelector.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(parentFrame, 
+                            "Error loading users: " + e.getMessage(), 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        
+        worker.execute();
+    }
+    
+    /**
+     * Loads permissions grouped by module
+     */
+    private void loadPermissions() {
+        SwingWorker<Map<String, List<Permission>>, Void> worker = new SwingWorker<Map<String, List<Permission>>, Void>() {
+            @Override
+            protected Map<String, List<Permission>> doInBackground() throws Exception {
+                return PermissionController.getPermissionsByModule();
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    permissionsByModule = get();
+                    if (selectedUser != null) {
+                        updatePermissionsPanel();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(parentFrame, 
@@ -214,45 +191,38 @@ public class UserPermissionsView extends JDialog {
     }
     
     /**
-     * Loads granted permissions
+     * Handles user selection from the dropdown
      */
-    private void loadGrantedPermissions() {
-        // Clear the table
-        grantedPermissionsTableModel.setRowCount(0);
+    private void handleUserSelection() {
+        User user = (User) userSelector.getSelectedItem();
+        if (user == null) {
+            return;
+        }
+        
+        selectedUser = user;
+        loadUserPermissions();
+    }
+    
+    /**
+     * Loads the selected user's permissions
+     */
+    private void loadUserPermissions() {
+        if (selectedUser == null) {
+            return;
+        }
         
         SwingWorker<List<UserPermission>, Void> worker = new SwingWorker<List<UserPermission>, Void>() {
             @Override
             protected List<UserPermission> doInBackground() throws Exception {
-                return PermissionController.getUserPermissionDetails(user.getId());
+                return PermissionController.getUserPermissions(selectedUser.getId(), false);
             }
             
             @Override
             protected void done() {
                 try {
-                    List<UserPermission> userPermissions = get();
-                    
-                    for (UserPermission userPermission : userPermissions) {
-                        Permission permission = userPermission.getPermission();
-                        
-                        String status = userPermission.isActive() ? "Active" : "Inactive";
-                        if (userPermission.isExpired()) {
-                            status = "Expired";
-                        }
-                        
-                        Object[] row = {
-                            permission.getId(),
-                            permission.getName(),
-                            permission.getModule(),
-                            userPermission.getGrantedDate() != null ? 
-                                dateFormat.format(userPermission.getGrantedDate()) : "",
-                            userPermission.getExpiryDate() != null ? 
-                                dateFormat.format(userPermission.getExpiryDate()) : "",
-                            status
-                        };
-                        
-                        grantedPermissionsTableModel.addRow(row);
-                    }
-                    
+                    userPermissions = get();
+                    updateAssignedPermissionsTable();
+                    updatePermissionsPanel();
                 } catch (Exception e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(parentFrame, 
@@ -267,154 +237,308 @@ public class UserPermissionsView extends JDialog {
     }
     
     /**
-     * Grants a permission to the user
+     * Updates the assigned permissions table
      */
-    private void grantPermission() {
-        int selectedRow = permissionsTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                    "Please select a permission to grant.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
+    private void updateAssignedPermissionsTable() {
+        // Clear the table
+        assignedTableModel.setRowCount(0);
+        
+        if (userPermissions == null) {
             return;
         }
         
-        int permissionId = (int) permissionsTableModel.getValueAt(selectedRow, 0);
-        String permissionName = (String) permissionsTableModel.getValueAt(selectedRow, 1);
-        
-        // Show grant dialog
-        JDialog dialog = new JDialog(this, "Grant Permission", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 250);
-        dialog.setLocationRelativeTo(this);
-        
-        JPanel formPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        // Form fields
-        JLabel permissionLabel = new JLabel("Permission:");
-        JLabel permissionValueLabel = new JLabel(permissionName);
-        
-        JLabel expiryLabel = new JLabel("Expiry Date (Optional):");
-        JTextField expiryField = new JTextField();
-        expiryField.setToolTipText("Format: YYYY-MM-DD");
-        
-        JLabel notesLabel = new JLabel("Notes (Optional):");
-        JTextField notesField = new JTextField();
-        
-        // Add components to form panel
-        formPanel.add(permissionLabel);
-        formPanel.add(permissionValueLabel);
-        formPanel.add(expiryLabel);
-        formPanel.add(expiryField);
-        formPanel.add(notesLabel);
-        formPanel.add(notesField);
-        
-        // Buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dialog.dispose();
+        for (UserPermission userPermission : userPermissions) {
+            Permission permission = userPermission.getPermission();
+            
+            if (permission != null) {
+                String formattedDate = userPermission.getGrantedDate() != null 
+                        ? userPermission.getGrantedDate().toString() 
+                        : "N/A";
+                
+                String status = userPermission.isActive() ? "Active" : "Inactive";
+                
+                Object[] row = {
+                    permission.getName(),
+                    permission.getModule(),
+                    formattedDate,
+                    status,
+                    userPermission.isActive() ? "Revoke" : "Activate"
+                };
+                
+                assignedTableModel.addRow(row);
             }
-        });
+        }
+    }
+    
+    /**
+     * Updates the available permissions panel
+     */
+    private void updatePermissionsPanel() {
+        permissionsPanel.removeAll();
         
-        JButton grantButton = new CustomButton("Grant Permission");
-        grantButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Parse expiry date if provided
-                Date expiryDate = null;
-                String expiryStr = expiryField.getText().trim();
+        if (permissionsByModule == null || selectedUser == null) {
+            permissionsPanel.revalidate();
+            permissionsPanel.repaint();
+            return;
+        }
+        
+        // Create a set of permission IDs that the user already has
+        java.util.Set<Integer> assignedPermissionIds = new java.util.HashSet<>();
+        if (userPermissions != null) {
+            for (UserPermission userPermission : userPermissions) {
+                assignedPermissionIds.add(userPermission.getPermissionId());
+            }
+        }
+        
+        for (Map.Entry<String, List<Permission>> entry : permissionsByModule.entrySet()) {
+            String module = entry.getKey();
+            List<Permission> permissions = entry.getValue();
+            
+            JPanel modulePanel = new JPanel(new BorderLayout());
+            modulePanel.setBorder(BorderFactory.createTitledBorder(module));
+            
+            JPanel permissionsGrid = new JPanel(new GridLayout(0, 3, 10, 5));
+            
+            for (Permission permission : permissions) {
+                JPanel permItem = new JPanel(new BorderLayout());
+                permItem.setBorder(BorderFactory.createEtchedBorder());
+                permItem.setBackground(ColorScheme.BACKGROUND_LIGHT);
                 
-                if (!expiryStr.isEmpty()) {
-                    try {
-                        expiryDate = dateFormat.parse(expiryStr);
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "Invalid expiry date format. Please use YYYY-MM-DD.", 
-                                "Input Error", 
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
+                JCheckBox checkBox = new JCheckBox(permission.getName());
+                checkBox.setToolTipText(permission.getDescription());
+                
+                // Check if this permission is already assigned to the user
+                boolean isAssigned = assignedPermissionIds.contains(permission.getId());
+                checkBox.setSelected(isAssigned);
+                
+                // Disable checkbox for assigned permissions to prevent duplicate assignments
+                checkBox.setEnabled(!isAssigned);
+                
+                checkBox.addActionListener(e -> {
+                    if (checkBox.isSelected()) {
+                        assignPermission(permission);
                     }
-                }
+                });
                 
-                String notes = notesField.getText().trim();
-                User currentUser = AuthController.getCurrentUser();
-                
-                boolean success = PermissionController.grantPermission(
-                        user.getId(), permissionId, currentUser.getId(), expiryDate, notes);
-                
-                if (success) {
-                    JOptionPane.showMessageDialog(dialog, 
-                            "Permission granted successfully!", 
-                            "Success", 
-                            JOptionPane.INFORMATION_MESSAGE);
-                    dialog.dispose();
-                    
-                    // Refresh permissions
-                    loadGrantedPermissions();
-                } else {
-                    JOptionPane.showMessageDialog(dialog, 
-                            "Failed to grant permission.", 
+                permItem.add(checkBox, BorderLayout.CENTER);
+                permissionsGrid.add(permItem);
+            }
+            
+            modulePanel.add(permissionsGrid, BorderLayout.CENTER);
+            permissionsPanel.add(modulePanel);
+        }
+        
+        permissionsPanel.revalidate();
+        permissionsPanel.repaint();
+    }
+    
+    /**
+     * Assigns a permission to the selected user
+     * 
+     * @param permission Permission to assign
+     */
+    private void assignPermission(Permission permission) {
+        if (selectedUser == null) {
+            return;
+        }
+        
+        // Get the current user (the one assigning the permission)
+        User currentUser = AuthController.getCurrentUser();
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(parentFrame, 
+                    "You must be logged in to assign permissions.", 
+                    "Authentication Required", 
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+            @Override
+            protected Boolean doInBackground() throws Exception {
+                return PermissionController.assignPermissionToUser(
+                        selectedUser.getId(), 
+                        permission.getId(), 
+                        currentUser.getId()
+                );
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    boolean success = get();
+                    if (success) {
+                        JOptionPane.showMessageDialog(parentFrame, 
+                                "Permission assigned successfully.", 
+                                "Success", 
+                                JOptionPane.INFORMATION_MESSAGE);
+                        
+                        // Refresh user permissions
+                        loadUserPermissions();
+                    } else {
+                        JOptionPane.showMessageDialog(parentFrame, 
+                                "Failed to assign permission.", 
+                                "Error", 
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(parentFrame, 
+                            "Error assigning permission: " + e.getMessage(), 
                             "Error", 
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
-        });
+        };
         
-        buttonsPanel.add(cancelButton);
-        buttonsPanel.add(grantButton);
-        
-        dialog.add(formPanel, BorderLayout.CENTER);
-        dialog.add(buttonsPanel, BorderLayout.SOUTH);
-        
-        dialog.setVisible(true);
+        worker.execute();
     }
     
     /**
-     * Revokes a permission from the user
+     * Revokes or activates a permission for the selected user
+     * 
+     * @param row Table row index
      */
-    private void revokePermission() {
-        int selectedRow = grantedPermissionsTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                    "Please select a permission to revoke.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
+    private void togglePermission(int row) {
+        if (selectedUser == null || userPermissions == null || row < 0 || row >= userPermissions.size()) {
             return;
         }
         
-        int permissionId = (int) grantedPermissionsTableModel.getValueAt(selectedRow, 0);
-        String permissionName = (String) grantedPermissionsTableModel.getValueAt(selectedRow, 1);
+        UserPermission userPermission = userPermissions.get(row);
+        boolean isActive = userPermission.isActive();
         
-        // Confirm revocation
-        int choice = JOptionPane.showConfirmDialog(this, 
-                "Are you sure you want to revoke the permission '" + permissionName + "'?", 
-                "Confirm Revocation", 
+        String action = isActive ? "revoke" : "activate";
+        String message = "Are you sure you want to " + action + " this permission?";
+        
+        int result = JOptionPane.showConfirmDialog(parentFrame, 
+                message, 
+                "Confirm " + (isActive ? "Revocation" : "Activation"), 
                 JOptionPane.YES_NO_OPTION);
         
-        if (choice != JOptionPane.YES_OPTION) {
-            return;
+        if (result == JOptionPane.YES_OPTION) {
+            SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+                @Override
+                protected Boolean doInBackground() throws Exception {
+                    if (isActive) {
+                        return PermissionController.revokePermissionFromUser(
+                                selectedUser.getId(), 
+                                userPermission.getPermissionId()
+                        );
+                    } else {
+                        // For activation, we use assign method which handles reactivation
+                        User currentUser = AuthController.getCurrentUser();
+                        return PermissionController.assignPermissionToUser(
+                                selectedUser.getId(), 
+                                userPermission.getPermissionId(), 
+                                currentUser.getId()
+                        );
+                    }
+                }
+                
+                @Override
+                protected void done() {
+                    try {
+                        boolean success = get();
+                        if (success) {
+                            JOptionPane.showMessageDialog(parentFrame, 
+                                    "Permission " + (isActive ? "revoked" : "activated") + " successfully.", 
+                                    "Success", 
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            
+                            // Refresh user permissions
+                            loadUserPermissions();
+                        } else {
+                            JOptionPane.showMessageDialog(parentFrame, 
+                                    "Failed to " + action + " permission.", 
+                                    "Error", 
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(parentFrame, 
+                                "Error " + action + "ing permission: " + e.getMessage(), 
+                                "Error", 
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            };
+            
+            worker.execute();
+        }
+    }
+    
+    /**
+     * Button renderer for the permissions table
+     */
+    private class ButtonRenderer extends JButton implements javax.swing.table.TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
         }
         
-        boolean success = PermissionController.revokePermission(user.getId(), permissionId);
-        
-        if (success) {
-            JOptionPane.showMessageDialog(this, 
-                    "Permission revoked successfully!", 
-                    "Success", 
-                    JOptionPane.INFORMATION_MESSAGE);
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText(value.toString());
             
-            // Refresh permissions
-            loadGrantedPermissions();
-        } else {
-            JOptionPane.showMessageDialog(this, 
-                    "Failed to revoke permission.", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
+            // Set different colors for revoke and activate buttons
+            if ("Revoke".equals(value.toString())) {
+                setBackground(ColorScheme.DANGER);
+                setForeground(Color.WHITE);
+            } else {
+                setBackground(ColorScheme.SUCCESS);
+                setForeground(Color.WHITE);
+            }
+            
+            return this;
+        }
+    }
+    
+    /**
+     * Button editor for the permissions table
+     */
+    private class ButtonEditor extends DefaultCellEditor {
+        private JButton button;
+        private String label;
+        private boolean isPushed;
+        private int row;
+        
+        public ButtonEditor(JCheckBox checkBox) {
+            super(checkBox);
+            button = new JButton();
+            button.setOpaque(true);
+            button.addActionListener(e -> fireEditingStopped());
+        }
+        
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            this.row = row;
+            label = value.toString();
+            button.setText(label);
+            
+            // Set different colors for revoke and activate buttons
+            if ("Revoke".equals(label)) {
+                button.setBackground(ColorScheme.DANGER);
+                button.setForeground(Color.WHITE);
+            } else {
+                button.setBackground(ColorScheme.SUCCESS);
+                button.setForeground(Color.WHITE);
+            }
+            
+            isPushed = true;
+            return button;
+        }
+        
+        @Override
+        public Object getCellEditorValue() {
+            if (isPushed) {
+                togglePermission(row);
+            }
+            isPushed = false;
+            return label;
+        }
+        
+        @Override
+        public boolean stopCellEditing() {
+            isPushed = false;
+            return super.stopCellEditing();
         }
     }
 }

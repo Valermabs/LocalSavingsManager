@@ -56,6 +56,9 @@ public class App {
             // Create tables
             createTables(conn);
             
+            // Initialize the database with permission tables and default permissions
+            DatabaseManager.initializeDatabase();
+            
             System.out.println("Database initialized successfully.");
         } catch (Exception e) {
             System.err.println("Error initializing database: " + e.getMessage());
