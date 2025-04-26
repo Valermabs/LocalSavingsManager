@@ -9,13 +9,13 @@ public class User {
     
     private int id;
     private String username;
-    private String role;
-    private String status;
-    private String fullName;
+    private String password;
+    private String firstName;
+    private String lastName;
     private String email;
-    private String contactNumber;
-    private Date createdAt;
+    private String role;
     private Date lastLogin;
+    private boolean active;
     
     /**
      * Default constructor
@@ -60,57 +60,57 @@ public class User {
     }
     
     /**
-     * Gets the role
+     * Gets the password hash
      * 
-     * @return Role
+     * @return Password hash
      */
-    public String getRole() {
-        return role;
+    public String getPassword() {
+        return password;
     }
     
     /**
-     * Sets the role
+     * Sets the password hash
      * 
-     * @param role Role
+     * @param password Password hash
      */
-    public void setRole(String role) {
-        this.role = role;
+    public void setPassword(String password) {
+        this.password = password;
     }
     
     /**
-     * Gets the status
+     * Gets the first name
      * 
-     * @return Status
+     * @return First name
      */
-    public String getStatus() {
-        return status;
+    public String getFirstName() {
+        return firstName;
     }
     
     /**
-     * Sets the status
+     * Sets the first name
      * 
-     * @param status Status
+     * @param firstName First name
      */
-    public void setStatus(String status) {
-        this.status = status;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
     
     /**
-     * Gets the full name
+     * Gets the last name
      * 
-     * @return Full name
+     * @return Last name
      */
-    public String getFullName() {
-        return fullName;
+    public String getLastName() {
+        return lastName;
     }
     
     /**
-     * Sets the full name
+     * Sets the last name
      * 
-     * @param fullName Full name
+     * @param lastName Last name
      */
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
     
     /**
@@ -132,39 +132,21 @@ public class User {
     }
     
     /**
-     * Gets the contact number
+     * Gets the role
      * 
-     * @return Contact number
+     * @return Role
      */
-    public String getContactNumber() {
-        return contactNumber;
+    public String getRole() {
+        return role;
     }
     
     /**
-     * Sets the contact number
+     * Sets the role
      * 
-     * @param contactNumber Contact number
+     * @param role Role
      */
-    public void setContactNumber(String contactNumber) {
-        this.contactNumber = contactNumber;
-    }
-    
-    /**
-     * Gets the creation date
-     * 
-     * @return Creation date
-     */
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    
-    /**
-     * Sets the creation date
-     * 
-     * @param createdAt Creation date
-     */
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setRole(String role) {
+        this.role = role;
     }
     
     /**
@@ -186,29 +168,29 @@ public class User {
     }
     
     /**
-     * Checks if the user is a super admin
+     * Checks if the user is active
      * 
-     * @return true if the user is a super admin, false otherwise
+     * @return true if active, false otherwise
      */
-    public boolean isSuperAdmin() {
-        return role != null && role.equals(com.moscat.utils.Constants.ROLE_SUPER_ADMIN);
+    public boolean isActive() {
+        return active;
     }
     
     /**
-     * Checks if the user is a treasurer
+     * Sets the active status
      * 
-     * @return true if the user is a treasurer, false otherwise
+     * @param active Active status
      */
-    public boolean isTreasurer() {
-        return role != null && role.equals(com.moscat.utils.Constants.ROLE_TREASURER);
+    public void setActive(boolean active) {
+        this.active = active;
     }
     
     /**
-     * Checks if the user is a bookkeeper
+     * Gets the full name
      * 
-     * @return true if the user is a bookkeeper, false otherwise
+     * @return Full name
      */
-    public boolean isBookkeeper() {
-        return role != null && role.equals(com.moscat.utils.Constants.ROLE_BOOKKEEPER);
+    public String getFullName() {
+        return firstName + " " + lastName;
     }
 }

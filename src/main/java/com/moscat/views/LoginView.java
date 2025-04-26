@@ -1,6 +1,5 @@
 package com.moscat.views;
 
-import com.moscat.App;
 import com.moscat.controllers.AuthController;
 import com.moscat.models.User;
 import com.moscat.utils.Constants;
@@ -23,13 +22,12 @@ public class LoginView extends JPanel {
     private JFrame parentFrame;
     private CustomTextField usernameField;
     private JPasswordField passwordField;
-    private JButton loginButton;
-    private JLabel statusLabel;
+    private JLabel errorLabel;
     
     /**
-     * Constructs a new LoginView
+     * Constructor
      * 
-     * @param parentFrame Parent JFrame
+     * @param parentFrame Parent frame
      */
     public LoginView(JFrame parentFrame) {
         this.parentFrame = parentFrame;
@@ -37,7 +35,7 @@ public class LoginView extends JPanel {
     }
     
     /**
-     * Initializes the UI components
+     * Initializes UI components
      */
     private void initializeUI() {
         setLayout(new BorderLayout());
@@ -47,9 +45,9 @@ public class LoginView extends JPanel {
         JPanel logoPanel = createLogoPanel();
         
         // Create login form panel
-        JPanel loginPanel = createLoginPanel();
+        JPanel loginPanel = createLoginFormPanel();
         
-        // Add panels to main panel
+        // Add panels to main view
         add(logoPanel, BorderLayout.NORTH);
         add(loginPanel, BorderLayout.CENTER);
     }
@@ -60,17 +58,27 @@ public class LoginView extends JPanel {
      * @return JPanel with logo
      */
     private JPanel createLogoPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(50, 0, 30, 0));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(0, 87, 146)); // Dark blue
+        panel.setPreferredSize(new Dimension(0, 150));
         
-        // Create logo label
-        JLabel logoLabel = new JLabel("MOSCAT Multipurpose Cooperative");
-        logoLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        logoLabel.setForeground(new Color(0, 87, 146)); // Dark blue color
+        JLabel titleLabel = new JLabel("MOSCAT Cooperative");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
-        panel.add(logoLabel);
+        JLabel subtitleLabel = new JLabel("Multipurpose Cooperative Savings and Loan System");
+        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        subtitleLabel.setForeground(Color.WHITE);
+        subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1));
+        titlePanel.setOpaque(false);
+        titlePanel.add(titleLabel);
+        titlePanel.add(subtitleLabel);
+        
+        panel.add(titlePanel, BorderLayout.CENTER);
+        
         return panel;
     }
     
@@ -79,156 +87,127 @@ public class LoginView extends JPanel {
      * 
      * @return JPanel with login form
      */
-    private JPanel createLoginPanel() {
+    private JPanel createLoginFormPanel() {
         JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(50, 100, 50, 100));
         
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        // Create form title
+        JLabel formTitleLabel = new JLabel("Login");
+        formTitleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        formTitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // Create login form panel
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new GridBagLayout());
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
-                new EmptyBorder(30, 30, 30, 30)));
+        // Create error label
+        errorLabel = new JLabel("");
+        errorLabel.setForeground(Color.RED);
+        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        errorLabel.setVisible(false);
         
-        GridBagConstraints formGbc = new GridBagConstraints();
-        formGbc.insets = new Insets(5, 5, 5, 5);
-        formGbc.fill = GridBagConstraints.HORIZONTAL;
-        
-        // Login form title
-        JLabel titleLabel = new JLabel("Login to your account");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setHorizontalAlignment(JLabel.CENTER);
-        formGbc.gridx = 0;
-        formGbc.gridy = 0;
-        formGbc.gridwidth = 2;
-        formPanel.add(titleLabel, formGbc);
-        
-        // Spacer
-        JLabel spacerLabel = new JLabel(" ");
-        formGbc.gridx = 0;
-        formGbc.gridy = 1;
-        formGbc.gridwidth = 2;
-        formPanel.add(spacerLabel, formGbc);
-        
-        // Username label
-        JLabel usernameLabel = new JLabel("Username:");
-        formGbc.gridx = 0;
-        formGbc.gridy = 2;
-        formGbc.gridwidth = 2;
-        formPanel.add(usernameLabel, formGbc);
-        
-        // Username field
+        // Create username field
         usernameField = new CustomTextField();
-        usernameField.setPreferredSize(new Dimension(250, Constants.TEXT_FIELD_HEIGHT));
-        formGbc.gridx = 0;
-        formGbc.gridy = 3;
-        formGbc.gridwidth = 2;
-        formPanel.add(usernameField, formGbc);
+        usernameField.setPlaceholder("Username");
+        usernameField.setPreferredSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
+        usernameField.setMaximumSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
         
-        // Password label
-        JLabel passwordLabel = new JLabel("Password:");
-        formGbc.gridx = 0;
-        formGbc.gridy = 4;
-        formGbc.gridwidth = 2;
-        formPanel.add(passwordLabel, formGbc);
-        
-        // Password field
+        // Create password field
         passwordField = new JPasswordField();
-        passwordField.setPreferredSize(new Dimension(250, Constants.TEXT_FIELD_HEIGHT));
-        formGbc.gridx = 0;
-        formGbc.gridy = 5;
-        formGbc.gridwidth = 2;
-        formPanel.add(passwordField, formGbc);
+        passwordField.setPreferredSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
+        passwordField.setMaximumSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
         
-        // Status label (for error messages)
-        statusLabel = new JLabel(" ");
-        statusLabel.setForeground(Color.RED);
-        statusLabel.setHorizontalAlignment(JLabel.CENTER);
-        formGbc.gridx = 0;
-        formGbc.gridy = 6;
-        formGbc.gridwidth = 2;
-        formPanel.add(statusLabel, formGbc);
+        // Add key listener to password field for enter key
+        passwordField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    login();
+                }
+            }
+        });
         
-        // Login button
-        loginButton = new CustomButton("Login");
-        loginButton.setPreferredSize(new Dimension(250, Constants.BUTTON_HEIGHT));
-        formGbc.gridx = 0;
-        formGbc.gridy = 7;
-        formGbc.gridwidth = 2;
-        formPanel.add(loginButton, formGbc);
+        // Create login button
+        CustomButton loginButton = new CustomButton("Login");
+        loginButton.setPreferredSize(new Dimension(300, 40));
+        loginButton.setMaximumSize(new Dimension(300, 40));
+        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                login();
+            }
+        });
         
-        // Add the form panel to the main panel
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(formPanel, gbc);
-        
-        // Set up event listeners
-        setupEventListeners();
+        // Add components to panel
+        panel.add(formTitleLabel);
+        panel.add(Box.createVerticalStrut(20));
+        panel.add(errorLabel);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(new JLabel("Username:"));
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(usernameField);
+        panel.add(Box.createVerticalStrut(15));
+        panel.add(new JLabel("Password:"));
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(passwordField);
+        panel.add(Box.createVerticalStrut(25));
+        panel.add(loginButton);
         
         return panel;
     }
     
     /**
-     * Sets up event listeners for interactive components
+     * Performs login
      */
-    private void setupEventListeners() {
-        // Login button action listener
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                performLogin();
-            }
-        });
+    private void login() {
+        // Clear error message
+        errorLabel.setVisible(false);
         
-        // Password field key listener for Enter key
-        passwordField.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    performLogin();
-                }
-            }
-        });
-    }
-    
-    /**
-     * Performs the login process
-     */
-    private void performLogin() {
-        String username = usernameField.getText().trim();
+        // Get username and password
+        String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
         
-        // Basic validation
+        // Validate inputs
         if (username.isEmpty() || password.isEmpty()) {
-            statusLabel.setText("Please enter both username and password.");
+            showError("Please enter both username and password.");
             return;
         }
         
-        // Attempt to login
-        boolean loginSuccess = AuthController.login(username, password);
+        // Attempt login
+        User user = AuthController.login(username, password);
         
-        if (loginSuccess) {
-            // Redirect to appropriate dashboard based on role
-            User currentUser = AuthController.getCurrentUser();
+        if (user != null) {
+            // Login successful, determine dashboard based on role
+            JPanel dashboard;
             
-            if (currentUser.isSuperAdmin()) {
-                App.changeView(new SuperAdminDashboard(parentFrame));
-            } else if (currentUser.isTreasurer()) {
-                App.changeView(new TreasurerDashboard(parentFrame));
-            } else if (currentUser.isBookkeeper()) {
-                App.changeView(new BookkeeperDashboard(parentFrame));
-            } else {
-                // Fallback to generic dashboard
-                App.changeView(new DashboardView(parentFrame));
+            switch (user.getRole()) {
+                case Constants.ROLE_SUPER_ADMIN:
+                    dashboard = new SuperAdminDashboard(parentFrame);
+                    break;
+                case Constants.ROLE_TREASURER:
+                    dashboard = new TreasurerDashboard(parentFrame);
+                    break;
+                case Constants.ROLE_BOOKKEEPER:
+                    dashboard = new BookkeeperDashboard(parentFrame);
+                    break;
+                default:
+                    dashboard = new DashboardView(parentFrame);
             }
+            
+            // Change view to dashboard
+            com.moscat.App.changeView(dashboard);
         } else {
-            statusLabel.setText("Invalid username or password.");
+            // Login failed
+            showError("Invalid username or password. Please try again.");
         }
+    }
+    
+    /**
+     * Shows an error message
+     * 
+     * @param message Error message
+     */
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
     }
 }

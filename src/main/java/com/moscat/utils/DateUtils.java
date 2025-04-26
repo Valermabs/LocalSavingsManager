@@ -235,4 +235,22 @@ public class DateUtils {
         calendar.add(Calendar.DAY_OF_YEAR, days);
         return calendar.getTime();
     }
+    
+    /**
+     * Gets the current date (today)
+     * 
+     * @return Current date
+     */
+    public static Date getCurrentDate() {
+        return new Date();
+    }
+    
+    /**
+     * Gets the current timestamp for database operations
+     * 
+     * @return Current timestamp as java.sql.Timestamp
+     */
+    public static java.sql.Timestamp getCurrentTimestamp() {
+        return new java.sql.Timestamp(System.currentTimeMillis());
+    }
 }

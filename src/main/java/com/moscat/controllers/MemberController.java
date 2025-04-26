@@ -340,6 +340,44 @@ public class MemberController {
     }
     
     /**
+     * Gets a member's primary savings account
+     * 
+     * @param memberId Member ID
+     * @return SavingsAccount or null if not found
+     */
+    public static SavingsAccount getMemberSavingsAccount(int memberId) {
+        List<SavingsAccount> accounts = getMemberSavingsAccounts(memberId);
+        if (!accounts.isEmpty()) {
+            return accounts.get(0); // Return the first (primary) account
+        }
+        return null;
+    }
+    
+    /**
+     * Updates a member's last activity date to current date
+     * 
+     * @param memberId Member ID
+     * @return true if update successful, false otherwise
+     */
+    public static boolean updateLastActivityDate(int memberId) {
+        String query = "UPDATE members SET last_activity_date = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setDate(1, DateUtils.toSqlDate(new Date()));
+            stmt.setInt(2, memberId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
      * Maps a ResultSet row to a Member object
      * 
      * @param rs ResultSet

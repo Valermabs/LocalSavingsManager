@@ -21,6 +21,9 @@ public class Constants {
     public static final String ACCOUNT_CLOSED = "CLOSED";
     
     // Loan status
+    public static final String LOAN_PENDING = "PENDING";
+    public static final String LOAN_APPROVED = "APPROVED";
+    public static final String LOAN_REJECTED = "REJECTED";
     public static final String LOAN_ACTIVE = "ACTIVE";
     public static final String LOAN_PAID = "PAID";
     public static final String LOAN_DEFAULTED = "DEFAULTED";
