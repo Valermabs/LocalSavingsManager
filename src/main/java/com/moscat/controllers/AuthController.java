@@ -271,7 +271,7 @@ public class AuthController {
         }
         
         // Check if username already exists
-        if (getUserByUsername(user.getUsername()) != null) {
+        if (getUserByUsernameInternal(user.getUsername()) != null) {
             return false;
         }
         
@@ -428,28 +428,7 @@ public class AuthController {
         }
     }
     
-    /**
-     * Updates a user's last login time
-     * 
-     * @param userId User ID
-     * @return true if update successful, false otherwise
-     */
-    private static boolean updateLastLogin(int userId) {
-        String query = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, userId);
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+    // The method was moved to line 437
     
     /**
      * Activates a user
@@ -531,7 +510,8 @@ public class AuthController {
      * @param username Username
      * @return User or null if not found
      */
-    private static User getUserByUsername(String username) {
+    // This method is used internally, but there's a public version with the same name
+    private static User getUserByUsernameInternal(String username) {
         String query = "SELECT * FROM users WHERE username = ?";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
@@ -589,9 +569,80 @@ public class AuthController {
     }
     
     /**
-     * Generates a random password
+     * Deletes a user
      * 
-     * @return Random password
+     * @param userId User ID
+     * @return true if deletion successful, false otherwise
+     */
+    public static boolean deleteUser(int userId) {
+        // Get user
+        User user = getUserById(userId);
+        
+        if (user == null) {
+            return false;
+        }
+        
+        // Don't allow deleting the last SuperAdmin
+        if (user.isSuperAdmin() && isLastActiveSuperAdmin(userId)) {
+            return false;
+        }
+        
+        // Delete user
+        String query = "DELETE FROM users WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, userId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Gets a user by username (public version)
+     * 
+     * @param username Username
+     * @return User object or null if not found
+     */
+    public static User getUserByUsername(String username) {
+        String query = "SELECT * FROM users WHERE username = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setUsername(rs.getString("username"));
+                user.setPassword(rs.getString("password"));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setEmail(rs.getString("email"));
+                user.setRole(rs.getString("role"));
+                user.setLastLogin(rs.getTimestamp("last_login"));
+                user.setActive(rs.getBoolean("active"));
+                user.setStatus(rs.getString("status"));
+                
+                return user;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Generates a random password
      */
     private static String generateRandomPassword() {
         // Define character sets

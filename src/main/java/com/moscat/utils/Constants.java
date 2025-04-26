@@ -14,21 +14,27 @@ public class Constants {
     public static final String ROLE_TREASURER = "Treasurer";
     public static final String ROLE_BOOKKEEPER = "Bookkeeper";
     
-    // User status
+    // User statuses
     public static final String STATUS_ACTIVE = "Active";
     public static final String STATUS_INACTIVE = "Inactive";
     public static final String STATUS_SUSPENDED = "Suspended";
     
-    // Member status
-    public static final String MEMBER_STATUS_ACTIVE = "Active";
-    public static final String MEMBER_STATUS_INACTIVE = "Inactive";
-    public static final String MEMBER_STATUS_SUSPENDED = "Suspended";
+    // Member status - aliases for user status
+    public static final String MEMBER_STATUS_ACTIVE = STATUS_ACTIVE;
+    public static final String MEMBER_STATUS_INACTIVE = STATUS_INACTIVE;
+    public static final String MEMBER_STATUS_SUSPENDED = STATUS_SUSPENDED;
     
-    // Account status
+    // Account statuses
     public static final String ACCOUNT_STATUS_ACTIVE = "Active";
     public static final String ACCOUNT_STATUS_DORMANT = "Dormant";
     public static final String ACCOUNT_STATUS_CLOSED = "Closed";
     public static final String ACCOUNT_STATUS_FROZEN = "Frozen";
+    
+    // Account status aliases for backward compatibility
+    public static final String ACCOUNT_ACTIVE = ACCOUNT_STATUS_ACTIVE;
+    public static final String ACCOUNT_DORMANT = ACCOUNT_STATUS_DORMANT;
+    public static final String ACCOUNT_CLOSED = ACCOUNT_STATUS_CLOSED;
+    public static final String ACCOUNT_FROZEN = ACCOUNT_STATUS_FROZEN;
     
     // Savings account status - aliases for account status
     public static final String SAVINGS_STATUS_ACTIVE = ACCOUNT_STATUS_ACTIVE;
@@ -53,6 +59,13 @@ public class Constants {
     // Transaction type aliases - for backward compatibility
     public static final String TRANSACTION_LOAN_RELEASE = TRANSACTION_TYPE_LOAN_RELEASE;
     public static final String TRANSACTION_LOAN_PAYMENT = TRANSACTION_TYPE_LOAN_PAYMENT;
+    public static final String TRANSACTION_DEPOSIT = TRANSACTION_TYPE_DEPOSIT;
+    public static final String TRANSACTION_WITHDRAWAL = TRANSACTION_TYPE_WITHDRAWAL;
+    public static final String TRANSACTION_INTEREST_EARNING = TRANSACTION_TYPE_INTEREST;
+    public static final String TRANSACTION_INTEREST = TRANSACTION_TYPE_INTEREST;
+    public static final String TRANSACTION_TRANSFER = TRANSACTION_TYPE_TRANSFER;
+    public static final String TRANSACTION_FEE = TRANSACTION_TYPE_FEE;
+    public static final String TRANSACTION_INTEREST_WITHDRAWAL = "Interest Withdrawal";
     
     // Loan types
     public static final String LOAN_TYPE_PERSONAL = "Personal";
@@ -123,4 +136,7 @@ public class Constants {
     public static final String SETTING_INTEREST_RATE = "interest_rate";
     public static final String SETTING_MINIMUM_BALANCE = "minimum_balance";
     public static final String SETTING_DORMANCY_PERIOD = "dormancy_period";
+    
+    // UI constants
+    public static final int TEXT_FIELD_HEIGHT = 25;
 }

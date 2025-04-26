@@ -10,15 +10,15 @@ import java.util.Base64;
  */
 public class PasswordHasher {
     
-    private static final int SALT_LENGTH = 16; // 16 bytes = 128 bits
     private static final String HASH_ALGORITHM = "SHA-256";
-    private static final String DELIMITER = ":";
+    private static final int SALT_LENGTH = 16; // bytes
+    private static final String SEPARATOR = ":";
     
     /**
-     * Hashes a password using SHA-256 with a random salt
+     * Hashes a password using a secure algorithm
      * 
-     * @param password Password to hash
-     * @return Hashed password with salt (format: salt:hash)
+     * @param password The password to hash
+     * @return The hashed password with salt
      */
     public static String hash(String password) {
         try {
@@ -32,57 +32,60 @@ public class PasswordHasher {
             md.update(salt);
             byte[] hashedPassword = md.digest(password.getBytes());
             
-            // Encode salt and hash to Base64
+            // Convert salt and hashed password to Base64 for storage
             String saltBase64 = Base64.getEncoder().encodeToString(salt);
-            String hashBase64 = Base64.getEncoder().encodeToString(hashedPassword);
+            String hashedPasswordBase64 = Base64.getEncoder().encodeToString(hashedPassword);
             
-            // Return salt and hash concatenated with a delimiter
-            return saltBase64 + DELIMITER + hashBase64;
+            // Return the combined salt and hashed password, separated by a delimiter
+            return saltBase64 + SEPARATOR + hashedPasswordBase64;
             
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
+            throw new RuntimeException("Failed to hash password", e);
         }
     }
     
     /**
      * Verifies a password against a stored hash
      * 
-     * @param password Password to verify
-     * @param storedHash Stored hash (format: salt:hash)
-     * @return true if password matches, false otherwise
+     * @param password The password to verify
+     * @param storedHash The stored hash to compare against
+     * @return true if the password matches the hash, false otherwise
      */
     public static boolean verify(String password, String storedHash) {
         try {
-            // Split stored hash into salt and hash
-            String[] parts = storedHash.split(DELIMITER);
+            // Split the stored hash to get the salt and hash parts
+            String[] parts = storedHash.split(SEPARATOR);
             if (parts.length != 2) {
-                return false;
+                return false; // Invalid format
             }
             
-            // Decode Base64 salt and hash
+            // Decode the salt and stored hash from Base64
             byte[] salt = Base64.getDecoder().decode(parts[0]);
-            byte[] hash = Base64.getDecoder().decode(parts[1]);
+            byte[] expectedHash = Base64.getDecoder().decode(parts[1]);
             
-            // Hash the provided password with the same salt
+            // Hash the password with the same salt
             MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
             md.update(salt);
-            byte[] passwordHash = md.digest(password.getBytes());
+            byte[] actualHash = md.digest(password.getBytes());
             
-            // Compare the hashes
-            if (hash.length != passwordHash.length) {
+            // Compare the expected hash with the actual hash
+            if (expectedHash.length != actualHash.length) {
                 return false;
             }
             
-            // Compare each byte
-            for (int i = 0; i < hash.length; i++) {
-                if (hash[i] != passwordHash[i]) {
+            // Compare each byte of the hash to ensure they match
+            for (int i = 0; i < expectedHash.length; i++) {
+                if (expectedHash[i] != actualHash[i]) {
                     return false;
                 }
             }
             
             return true;
             
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to verify password", e);
+        } catch (IllegalArgumentException e) {
+            // Handle Base64 decoding errors
             return false;
         }
     }

@@ -31,7 +31,7 @@ public class AdminController {
             return false;
         }
         
-        String hashedPassword = PasswordHasher.hashPassword(password);
+        String hashedPassword = PasswordHasher.hash(password);
         
         String query = "INSERT INTO users (username, password, role, status, full_name, " +
                 "email, contact_number, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -139,7 +139,7 @@ public class AdminController {
             return false;
         }
         
-        String hashedPassword = PasswordHasher.hashPassword(newPassword);
+        String hashedPassword = PasswordHasher.hash(newPassword);
         
         String query = "UPDATE users SET password = ? WHERE id = ?";
         

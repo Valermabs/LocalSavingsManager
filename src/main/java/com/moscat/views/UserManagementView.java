@@ -2,131 +2,111 @@ package com.moscat.views;
 
 import com.moscat.controllers.AdminController;
 import com.moscat.controllers.AuthController;
+import com.moscat.controllers.PermissionController;
 import com.moscat.models.User;
-import com.moscat.views.components.CustomButton;
-import com.moscat.views.components.CustomTextField;
+import com.moscat.utils.Constants;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
- * View for managing system users
+ * View for managing system users (Admins, Treasurers, Bookkeepers)
  */
 public class UserManagementView extends JPanel {
     
-    private JFrame parentFrame;
-    private JTable userTable;
+    private final Frame owner;
     private DefaultTableModel tableModel;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private JTable userTable;
+    private JButton addButton;
+    private JButton editButton;
+    private JButton deleteButton;
+    private JButton permissionsButton;
+    private JButton refreshButton;
     
     /**
      * Constructor for UserManagementView
      * 
-     * @param parentFrame Parent JFrame
+     * @param owner The owner frame
      */
-    public UserManagementView(JFrame parentFrame) {
-        this.parentFrame = parentFrame;
-        initializeUI();
+    public UserManagementView(Frame owner) {
+        this.owner = owner;
+        setLayout(new BorderLayout(10, 10));
+        setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        initComponents();
         loadUsers();
     }
     
     /**
      * Initializes the UI components
      */
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        // Create header panel
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        
+    private void initComponents() {
+        // Add title panel
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel titleLabel = new JLabel("User Management");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        titlePanel.add(titleLabel);
+        add(titlePanel, BorderLayout.NORTH);
         
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        
-        // Create users table
-        String[] columns = {"Username", "Name", "Role", "Email", "Contact", "Status", "Last Login"};
+        // Create table model with columns
+        String[] columns = {"ID", "Username", "Name", "Role", "Status", "Email", "Contact"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return false; // Make table read-only
             }
         };
         
+        // Create table
         userTable = new JTable(tableModel);
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        userTable.getTableHeader().setReorderingAllowed(false);
         
+        // Add table to scroll pane
         JScrollPane scrollPane = new JScrollPane(userTable);
-        scrollPane.setBorder(new TitledBorder("User Accounts"));
+        add(scrollPane, BorderLayout.CENTER);
         
-        // Create buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Add button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         
-        JButton createButton = new CustomButton("Create User");
-        JButton editButton = new CustomButton("Edit User");
-        JButton resetPasswordButton = new CustomButton("Reset Password");
-        JButton permissionsButton = new CustomButton("Manage Permissions");
-        JButton activateButton = new CustomButton("Activate");
-        JButton deactivateButton = new CustomButton("Deactivate");
-        JButton refreshButton = new CustomButton("Refresh");
-        
-        // Create user button action
-        createButton.addActionListener(new ActionListener() {
+        addButton = new JButton("Add User");
+        addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showCreateUserDialog();
+                showAddUserDialog();
             }
         });
         
-        // Edit user button action
+        editButton = new JButton("Edit User");
         editButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                editUser();
+                showEditUserDialog();
             }
         });
         
-        // Reset password button action
-        resetPasswordButton.addActionListener(new ActionListener() {
+        deleteButton = new JButton("Delete User");
+        deleteButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                resetPassword();
+                deleteUser();
             }
         });
         
-        // Permissions button action
+        permissionsButton = new JButton("Permissions");
         permissionsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                managePermissions();
+                showPermissionsDialog();
             }
         });
         
-        // Activate button action
-        activateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                changeUserStatus(true);
-            }
-        });
-        
-        // Deactivate button action
-        deactivateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                changeUserStatus(false);
-            }
-        });
-        
-        // Refresh button action
+        refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -134,305 +114,167 @@ public class UserManagementView extends JPanel {
             }
         });
         
-        buttonsPanel.add(createButton);
-        buttonsPanel.add(editButton);
-        buttonsPanel.add(resetPasswordButton);
-        buttonsPanel.add(permissionsButton);
-        buttonsPanel.add(activateButton);
-        buttonsPanel.add(deactivateButton);
-        buttonsPanel.add(refreshButton);
+        buttonPanel.add(addButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(permissionsButton);
+        buttonPanel.add(refreshButton);
         
-        // Add components to main panel
-        add(headerPanel, BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
-        add(buttonsPanel, BorderLayout.SOUTH);
+        add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Initially disable buttons that require selection
+        editButton.setEnabled(false);
+        deleteButton.setEnabled(false);
+        permissionsButton.setEnabled(false);
+        
+        // Add selection listener to enable/disable buttons
+        userTable.getSelectionModel().addListSelectionListener(e -> {
+            boolean hasSelection = userTable.getSelectedRow() != -1;
+            editButton.setEnabled(hasSelection);
+            deleteButton.setEnabled(hasSelection);
+            permissionsButton.setEnabled(hasSelection);
+        });
     }
     
     /**
      * Loads users into the table
      */
     private void loadUsers() {
-        // Clear the table
+        // Clear existing data
         tableModel.setRowCount(0);
         
-        SwingWorker<List<User>, Void> worker = new SwingWorker<List<User>, Void>() {
-            @Override
-            protected List<User> doInBackground() throws Exception {
-                return AdminController.getAllAdmins();
-            }
-            
-            @Override
-            protected void done() {
-                try {
-                    List<User> users = get();
-                    
-                    for (User user : users) {
-                        Object[] row = {
-                            user.getUsername(),
-                            user.getFullName(),
-                            user.getRole(),
-                            user.getEmail(),
-                            user.getContactNumber(),
-                            user.getStatus(),
-                            user.getLastLogin() != null ? dateFormat.format(user.getLastLogin()) : ""
-                        };
-                        
-                        tableModel.addRow(row);
-                    }
-                    
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "Error loading users: " + e.getMessage(), 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        };
+        // Get all users
+        List<User> users = AdminController.getAllAdmins();
         
-        worker.execute();
+        // Add users to table
+        for (User user : users) {
+            Object[] rowData = {
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getRole(),
+                user.getStatus(),
+                user.getEmail(),
+                user.getContactNumber()
+            };
+            tableModel.addRow(rowData);
+        }
     }
     
     /**
-     * Shows dialog to create a new user
+     * Shows the add user dialog
      */
-    private void showCreateUserDialog() {
-        JDialog dialog = new JDialog(parentFrame, "Create User", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 350);
-        dialog.setLocationRelativeTo(parentFrame);
+    private void showAddUserDialog() {
+        // Create dialog
+        JDialog dialog = new JDialog(owner, "Add User", true);
+        dialog.setSize(400, 400);
+        dialog.setLocationRelativeTo(owner);
         
-        JPanel formPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        // Create form panel
+        JPanel formPanel = new JPanel(new GridLayout(8, 2, 5, 5));
+        formPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         
-        // Form fields
-        JLabel usernameLabel = new JLabel("Username:*");
-        CustomTextField usernameField = new CustomTextField();
-        
-        JLabel passwordLabel = new JLabel("Password:*");
+        // Add form fields
+        JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
+        JTextField firstNameField = new JTextField();
+        JTextField lastNameField = new JTextField();
+        JTextField emailField = new JTextField();
+        JTextField contactField = new JTextField();
         
-        JLabel confirmPasswordLabel = new JLabel("Confirm Password:*");
-        JPasswordField confirmPasswordField = new JPasswordField();
-        
-        JLabel roleLabel = new JLabel("Role:*");
-        String[] roles = {"TREASURER", "BOOKKEEPER"};
-        JComboBox<String> roleComboBox = new JComboBox<>(roles);
-        
-        JLabel fullNameLabel = new JLabel("Full Name:*");
-        CustomTextField fullNameField = new CustomTextField();
-        
-        JLabel emailLabel = new JLabel("Email:");
-        CustomTextField emailField = new CustomTextField();
-        
-        JLabel contactLabel = new JLabel("Contact Number:");
-        CustomTextField contactField = new CustomTextField();
-        
-        // Add components to form panel
-        formPanel.add(usernameLabel);
-        formPanel.add(usernameField);
-        formPanel.add(passwordLabel);
-        formPanel.add(passwordField);
-        formPanel.add(confirmPasswordLabel);
-        formPanel.add(confirmPasswordField);
-        formPanel.add(roleLabel);
-        formPanel.add(roleComboBox);
-        formPanel.add(fullNameLabel);
-        formPanel.add(fullNameField);
-        formPanel.add(emailLabel);
-        formPanel.add(emailField);
-        formPanel.add(contactLabel);
-        formPanel.add(contactField);
-        
-        // Buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dialog.dispose();
-            }
+        // Role combo box
+        JComboBox<String> roleComboBox = new JComboBox<>(new String[]{
+            Constants.ROLE_TREASURER,
+            Constants.ROLE_BOOKKEEPER
         });
         
-        JButton createButton = new CustomButton("Create User");
-        createButton.addActionListener(new ActionListener() {
+        // Status combo box
+        JComboBox<String> statusComboBox = new JComboBox<>(new String[]{
+            Constants.STATUS_ACTIVE,
+            Constants.STATUS_INACTIVE
+        });
+        
+        // Add fields to form
+        formPanel.add(new JLabel("Username:"));
+        formPanel.add(usernameField);
+        
+        formPanel.add(new JLabel("Password:"));
+        formPanel.add(passwordField);
+        
+        formPanel.add(new JLabel("First Name:"));
+        formPanel.add(firstNameField);
+        
+        formPanel.add(new JLabel("Last Name:"));
+        formPanel.add(lastNameField);
+        
+        formPanel.add(new JLabel("Email:"));
+        formPanel.add(emailField);
+        
+        formPanel.add(new JLabel("Contact:"));
+        formPanel.add(contactField);
+        
+        formPanel.add(new JLabel("Role:"));
+        formPanel.add(roleComboBox);
+        
+        formPanel.add(new JLabel("Status:"));
+        formPanel.add(statusComboBox);
+        
+        // Add button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        JButton saveButton = new JButton("Save");
+        saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Validate input
-                String username = usernameField.getText().trim();
-                String password = new String(passwordField.getPassword());
-                String confirmPassword = new String(confirmPasswordField.getPassword());
-                String role = (String) roleComboBox.getSelectedItem();
-                String fullName = fullNameField.getText().trim();
-                String email = emailField.getText().trim();
-                String contact = contactField.getText().trim();
-                
-                if (username.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
+                if (usernameField.getText().isEmpty() || 
+                        passwordField.getPassword().length == 0 ||
+                        firstNameField.getText().isEmpty() ||
+                        lastNameField.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "Username, password, and full name are required fields.", 
-                            "Input Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                
-                if (!password.equals(confirmPassword)) {
-                    JOptionPane.showMessageDialog(dialog, 
-                            "Passwords do not match.", 
-                            "Input Error", 
+                            "Please fill in all required fields.", 
+                            "Validation Error", 
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
                 // Check if username is available
-                if (!AdminController.isUsernameAvailable(username)) {
+                if (!AdminController.isUsernameAvailable(usernameField.getText())) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "Username is already taken. Please choose another.", 
-                            "Username Unavailable", 
+                            "Username is already taken.", 
+                            "Validation Error", 
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
-                // Create the user
-                try {
-                    User newUser = new User();
-                    newUser.setUsername(username);
-                    newUser.setRole(role);
-                    newUser.setStatus("ACTIVE");
-                    newUser.setFullName(fullName);
-                    newUser.setEmail(email);
-                    newUser.setContactNumber(contact);
-                    
-                    boolean success = AdminController.createAdmin(newUser, password);
-                    
-                    if (success) {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "User created successfully!", 
-                                "Success", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                        dialog.dispose();
-                        
-                        // Refresh user list
-                        loadUsers();
-                    } else {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "Failed to create user.", 
-                                "Error", 
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                // Create user object
+                User user = new User();
+                user.setUsername(usernameField.getText());
+                user.setFirstName(firstNameField.getText());
+                user.setLastName(lastNameField.getText());
+                user.setEmail(emailField.getText());
+                user.setContactNumber(contactField.getText());
+                user.setRole((String) roleComboBox.getSelectedItem());
+                user.setStatus((String) statusComboBox.getSelectedItem());
+                
+                // Add user
+                boolean success = AdminController.createAdmin(user, new String(passwordField.getPassword()));
+                
+                if (success) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "Error creating user: " + ex.getMessage(), 
+                            "User added successfully.", 
+                            "Success", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    dialog.dispose();
+                    loadUsers();
+                } else {
+                    JOptionPane.showMessageDialog(dialog, 
+                            "Failed to add user.", 
                             "Error", 
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
-        
-        buttonsPanel.add(cancelButton);
-        buttonsPanel.add(createButton);
-        
-        dialog.add(formPanel, BorderLayout.CENTER);
-        dialog.add(buttonsPanel, BorderLayout.SOUTH);
-        
-        dialog.setVisible(true);
-    }
-    
-    /**
-     * Shows dialog to edit selected user
-     */
-    private void editUser() {
-        int selectedRow = userTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a user to edit.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-        String username = (String) tableModel.getValueAt(selectedRow, 0);
-        
-        // Find selected user
-        List<User> users = AdminController.getAllAdmins();
-        User tempUser = null;
-        
-        for (User user : users) {
-            if (user.getUsername().equals(username)) {
-                tempUser = user;
-                break;
-            }
-        }
-        
-        if (tempUser == null) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "User not found.", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // Cannot edit super admin
-        if (tempUser.isSuperAdmin()) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Cannot edit super admin account.", 
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        // Create a final reference to be used in inner classes
-        final User selectedUser = tempUser;
-        
-        // Show edit dialog
-        JDialog dialog = new JDialog(parentFrame, "Edit User", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(parentFrame);
-        
-        JPanel formPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        // Form fields
-        JLabel usernameLabel = new JLabel("Username:");
-        JLabel usernameValueLabel = new JLabel(selectedUser.getUsername());
-        
-        JLabel roleLabel = new JLabel("Role:*");
-        String[] roles = {"TREASURER", "BOOKKEEPER"};
-        JComboBox<String> roleComboBox = new JComboBox<>(roles);
-        
-        // Select current role
-        for (int i = 0; i < roleComboBox.getItemCount(); i++) {
-            if (roleComboBox.getItemAt(i).equals(selectedUser.getRole())) {
-                roleComboBox.setSelectedIndex(i);
-                break;
-            }
-        }
-        
-        JLabel fullNameLabel = new JLabel("Full Name:*");
-        CustomTextField fullNameField = new CustomTextField(selectedUser.getFullName());
-        
-        JLabel emailLabel = new JLabel("Email:");
-        CustomTextField emailField = new CustomTextField(selectedUser.getEmail());
-        
-        JLabel contactLabel = new JLabel("Contact Number:");
-        CustomTextField contactField = new CustomTextField(selectedUser.getContactNumber());
-        
-        // Add components to form panel
-        formPanel.add(usernameLabel);
-        formPanel.add(usernameValueLabel);
-        formPanel.add(roleLabel);
-        formPanel.add(roleComboBox);
-        formPanel.add(fullNameLabel);
-        formPanel.add(fullNameField);
-        formPanel.add(emailLabel);
-        formPanel.add(emailField);
-        formPanel.add(contactLabel);
-        formPanel.add(contactField);
-        
-        // Buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
@@ -442,147 +284,160 @@ public class UserManagementView extends JPanel {
             }
         });
         
-        JButton saveButton = new CustomButton("Save Changes");
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        // Add panels to dialog
+        dialog.setLayout(new BorderLayout());
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Show dialog
+        dialog.setVisible(true);
+    }
+    
+    /**
+     * Shows the edit user dialog
+     */
+    private void showEditUserDialog() {
+        int selectedRow = userTable.getSelectedRow();
+        if (selectedRow == -1) {
+            return;
+        }
+        
+        // Get selected user
+        int userId = (int) tableModel.getValueAt(selectedRow, 0);
+        User user = AuthController.getUserById(userId);
+        
+        if (user == null) {
+            JOptionPane.showMessageDialog(this, 
+                    "Failed to load user data.", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Create dialog
+        JDialog dialog = new JDialog(owner, "Edit User: " + user.getUsername(), true);
+        dialog.setSize(400, 400);
+        dialog.setLocationRelativeTo(owner);
+        
+        // Create form panel
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+        formPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        // Add form fields
+        JTextField usernameField = new JTextField(user.getUsername());
+        usernameField.setEditable(false); // Cannot change username
+        
+        JTextField firstNameField = new JTextField(user.getFirstName());
+        JTextField lastNameField = new JTextField(user.getLastName());
+        JTextField emailField = new JTextField(user.getEmail());
+        JTextField contactField = new JTextField(user.getContactNumber());
+        
+        // Role combo box
+        JComboBox<String> roleComboBox = new JComboBox<>(new String[]{
+            Constants.ROLE_TREASURER,
+            Constants.ROLE_BOOKKEEPER
+        });
+        roleComboBox.setSelectedItem(user.getRole());
+        
+        // Status combo box
+        JComboBox<String> statusComboBox = new JComboBox<>(new String[]{
+            Constants.STATUS_ACTIVE,
+            Constants.STATUS_INACTIVE,
+            Constants.STATUS_DORMANT
+        });
+        statusComboBox.setSelectedItem(user.getStatus());
+        
+        // Password reset button
+        JButton resetPasswordButton = new JButton("Reset Password");
+        resetPasswordButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showResetPasswordDialog(user);
+            }
+        });
+        
+        // Add fields to form
+        formPanel.add(new JLabel("Username:"));
+        formPanel.add(usernameField);
+        
+        formPanel.add(new JLabel("First Name:"));
+        formPanel.add(firstNameField);
+        
+        formPanel.add(new JLabel("Last Name:"));
+        formPanel.add(lastNameField);
+        
+        formPanel.add(new JLabel("Email:"));
+        formPanel.add(emailField);
+        
+        formPanel.add(new JLabel("Contact:"));
+        formPanel.add(contactField);
+        
+        formPanel.add(new JLabel("Role:"));
+        formPanel.add(roleComboBox);
+        
+        formPanel.add(new JLabel("Status:"));
+        formPanel.add(statusComboBox);
+        
+        // Add button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        // SuperAdmin cannot be edited
+        if (user.isSuperAdmin()) {
+            roleComboBox.setEnabled(false);
+            statusComboBox.setEnabled(false);
+        }
+        
+        buttonPanel.add(resetPasswordButton);
+        
+        JButton saveButton = new JButton("Save");
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Validate input
-                final String role = (String) roleComboBox.getSelectedItem();
-                final String fullName = fullNameField.getText().trim();
-                final String email = emailField.getText().trim();
-                final String contact = contactField.getText().trim();
-                
-                if (fullName.isEmpty()) {
+                if (firstNameField.getText().isEmpty() || lastNameField.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "Full name is required.", 
-                            "Input Error", 
+                            "Please fill in all required fields.", 
+                            "Validation Error", 
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
-                // Create a final reference to selectedUser for use in the inner class
-                final User finalSelectedUser = selectedUser;
+                // Update user object
+                user.setFirstName(firstNameField.getText());
+                user.setLastName(lastNameField.getText());
+                user.setEmail(emailField.getText());
+                user.setContactNumber(contactField.getText());
                 
-                // Update the user
-                try {
-                    // Update user object with final variables
-                    finalSelectedUser.setRole(role);
-                    finalSelectedUser.setFullName(fullName);
-                    finalSelectedUser.setEmail(email);
-                    finalSelectedUser.setContactNumber(contact);
-                    
-                    final boolean roleSuccess = AdminController.updateAdminRole(finalSelectedUser.getId(), role);
-                    final boolean infoSuccess = AdminController.updateAdmin(finalSelectedUser);
-                    
-                    if (roleSuccess && infoSuccess) {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "User updated successfully!", 
-                                "Success", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                        dialog.dispose();
-                        
-                        // Refresh user list
-                        loadUsers();
-                    } else {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "Failed to update user.", 
-                                "Error", 
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                // Only update role and status if not SuperAdmin
+                if (!user.isSuperAdmin()) {
+                    user.setRole((String) roleComboBox.getSelectedItem());
+                    user.setStatus((String) statusComboBox.getSelectedItem());
+                }
+                
+                // Update user
+                boolean success = AdminController.updateAdmin(user);
+                if (success && !user.isSuperAdmin()) {
+                    success = AdminController.updateAdminRole(user.getId(), user.getRole());
+                }
+                
+                if (success) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "Error updating user: " + ex.getMessage(), 
+                            "User updated successfully.", 
+                            "Success", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    dialog.dispose();
+                    loadUsers();
+                } else {
+                    JOptionPane.showMessageDialog(dialog, 
+                            "Failed to update user.", 
                             "Error", 
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
-        
-        buttonsPanel.add(cancelButton);
-        buttonsPanel.add(saveButton);
-        
-        dialog.add(formPanel, BorderLayout.CENTER);
-        dialog.add(buttonsPanel, BorderLayout.SOUTH);
-        
-        dialog.setVisible(true);
-    }
-    
-    /**
-     * Resets password for the selected user
-     */
-    private void resetPassword() {
-        int selectedRow = userTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a user to reset password.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-        String username = (String) tableModel.getValueAt(selectedRow, 0);
-        
-        // Find selected user
-        List<User> users = AdminController.getAllAdmins();
-        User tempUser = null;
-        
-        for (User user : users) {
-            if (user.getUsername().equals(username)) {
-                tempUser = user;
-                break;
-            }
-        }
-        
-        if (tempUser == null) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "User not found.", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // Cannot reset super admin password (for security)
-        if (tempUser.isSuperAdmin()) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Cannot reset super admin password.", 
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        // Create a final reference to be used in inner classes
-        final User selectedUser = tempUser;
-        
-        // Show reset password dialog
-        JDialog dialog = new JDialog(parentFrame, "Reset Password", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 200);
-        dialog.setLocationRelativeTo(parentFrame);
-        
-        JPanel formPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        // Form fields
-        JLabel usernameLabel = new JLabel("Username:");
-        JLabel usernameValueLabel = new JLabel(selectedUser.getUsername());
-        
-        JLabel newPasswordLabel = new JLabel("New Password:*");
-        JPasswordField newPasswordField = new JPasswordField();
-        
-        JLabel confirmPasswordLabel = new JLabel("Confirm Password:*");
-        JPasswordField confirmPasswordField = new JPasswordField();
-        
-        // Add components to form panel
-        formPanel.add(usernameLabel);
-        formPanel.add(usernameValueLabel);
-        formPanel.add(newPasswordLabel);
-        formPanel.add(newPasswordField);
-        formPanel.add(confirmPasswordLabel);
-        formPanel.add(confirmPasswordField);
-        
-        // Buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
@@ -592,168 +447,150 @@ public class UserManagementView extends JPanel {
             }
         });
         
-        JButton resetButton = new CustomButton("Reset Password");
-        resetButton.addActionListener(new ActionListener() {
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        // Add panels to dialog
+        dialog.setLayout(new BorderLayout());
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Show dialog
+        dialog.setVisible(true);
+    }
+    
+    /**
+     * Shows the reset password dialog
+     * 
+     * @param user The user to reset password for
+     */
+    private void showResetPasswordDialog(User user) {
+        // Create dialog
+        JDialog dialog = new JDialog(owner, "Reset Password: " + user.getUsername(), true);
+        dialog.setSize(300, 150);
+        dialog.setLocationRelativeTo(owner);
+        
+        // Create form panel
+        JPanel formPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        formPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        // Add form fields
+        JPasswordField passwordField = new JPasswordField();
+        JPasswordField confirmPasswordField = new JPasswordField();
+        
+        // Add fields to form
+        formPanel.add(new JLabel("New Password:"));
+        formPanel.add(passwordField);
+        
+        formPanel.add(new JLabel("Confirm Password:"));
+        formPanel.add(confirmPasswordField);
+        
+        // Add button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        JButton saveButton = new JButton("Reset");
+        saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Validate input
-                final String newPassword = new String(newPasswordField.getPassword());
-                final String confirmPassword = new String(confirmPasswordField.getPassword());
-                
-                if (newPassword.isEmpty()) {
+                if (passwordField.getPassword().length == 0) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "New password is required.", 
-                            "Input Error", 
+                            "Please enter a password.", 
+                            "Validation Error", 
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
-                if (!newPassword.equals(confirmPassword)) {
+                // Check if passwords match
+                if (!new String(passwordField.getPassword()).equals(
+                        new String(confirmPasswordField.getPassword()))) {
                     JOptionPane.showMessageDialog(dialog, 
                             "Passwords do not match.", 
-                            "Input Error", 
+                            "Validation Error", 
                             JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
-                // Create a final reference to selectedUser for the inner class
-                final User finalSelectedUser = selectedUser;
+                // Reset password
+                boolean success = AdminController.resetAdminPassword(user.getId(), 
+                        new String(passwordField.getPassword()));
                 
-                // Reset the password
-                try {
-                    final boolean success = AdminController.resetAdminPassword(finalSelectedUser.getId(), newPassword);
-                    
-                    if (success) {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "Password reset successfully!", 
-                                "Success", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                        dialog.dispose();
-                    } else {
-                        JOptionPane.showMessageDialog(dialog, 
-                                "Failed to reset password.", 
-                                "Error", 
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                if (success) {
                     JOptionPane.showMessageDialog(dialog, 
-                            "Error resetting password: " + ex.getMessage(), 
+                            "Password reset successfully.", 
+                            "Success", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    dialog.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(dialog, 
+                            "Failed to reset password.", 
                             "Error", 
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
         
-        buttonsPanel.add(cancelButton);
-        buttonsPanel.add(resetButton);
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        });
         
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        // Add panels to dialog
+        dialog.setLayout(new BorderLayout());
         dialog.add(formPanel, BorderLayout.CENTER);
-        dialog.add(buttonsPanel, BorderLayout.SOUTH);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
         
+        // Show dialog
         dialog.setVisible(true);
     }
     
     /**
-     * Changes the status of the selected user
-     * 
-     * @param activate true to activate, false to deactivate
+     * Deletes a user
      */
-    private void changeUserStatus(boolean activate) {
+    private void deleteUser() {
         int selectedRow = userTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a user to " + (activate ? "activate" : "deactivate") + ".", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
+        if (selectedRow == -1) {
             return;
         }
         
-        String username = (String) tableModel.getValueAt(selectedRow, 0);
-        String currentStatus = (String) tableModel.getValueAt(selectedRow, 5);
+        // Get selected user
+        int userId = (int) tableModel.getValueAt(selectedRow, 0);
+        String username = (String) tableModel.getValueAt(selectedRow, 1);
+        String role = (String) tableModel.getValueAt(selectedRow, 3);
         
-        // Check if status already matches desired state
-        if ((activate && currentStatus.equals("ACTIVE")) || 
-                (!activate && currentStatus.equals("INACTIVE"))) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "User is already " + (activate ? "active" : "inactive") + ".", 
-                    "Status Info", 
-                    JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-        // Find selected user
-        List<User> users = AdminController.getAllAdmins();
-        User tempUser = null;
-        
-        for (User user : users) {
-            if (user.getUsername().equals(username)) {
-                tempUser = user;
-                break;
-            }
-        }
-        
-        if (tempUser == null) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "User not found.", 
+        // Cannot delete SuperAdmin
+        if (role.equals(Constants.ROLE_SUPER_ADMIN)) {
+            JOptionPane.showMessageDialog(this, 
+                    "SuperAdmin account cannot be deleted.", 
                     "Error", 
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        // Cannot deactivate super admin
-        if (!activate && tempUser.isSuperAdmin()) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Cannot deactivate super admin account.", 
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        // Cannot deactivate current user
-        if (!activate && AuthController.getCurrentUser().getUsername().equals(username)) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Cannot deactivate your own account.", 
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        // Create a final reference for inner classes
-        final User selectedUser = tempUser;
-        
-        int confirmResult = JOptionPane.showConfirmDialog(parentFrame, 
-                "Are you sure you want to " + (activate ? "activate" : "deactivate") + " this user?", 
-                "Confirm Status Change", 
+        // Confirm deletion
+        int confirm = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to delete user '" + username + "'?", 
+                "Confirm Deletion", 
                 JOptionPane.YES_NO_OPTION);
         
-        if (confirmResult == JOptionPane.YES_OPTION) {
-            boolean success = false;
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = AdminController.deactivateAdmin(userId);
             
-            try {
-                if (activate) {
-                    success = AdminController.activateAdmin(selectedUser.getId());
-                } else {
-                    success = AdminController.deactivateAdmin(selectedUser.getId());
-                }
-                
-                if (success) {
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "User " + (activate ? "activated" : "deactivated") + " successfully.", 
-                            "Status Updated", 
-                            JOptionPane.INFORMATION_MESSAGE);
-                    
-                    loadUsers();
-                } else {
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "Failed to " + (activate ? "activate" : "deactivate") + " user.", 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(parentFrame, 
-                        "Error: " + e.getMessage(), 
+            if (success) {
+                JOptionPane.showMessageDialog(this, 
+                        "User deactivated successfully.", 
+                        "Success", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                loadUsers();
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                        "Failed to deactivate user.", 
                         "Error", 
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -761,41 +598,28 @@ public class UserManagementView extends JPanel {
     }
     
     /**
-     * Manages permissions for the selected user
+     * Shows the permissions dialog for a user
      */
-    private void managePermissions() {
+    private void showPermissionsDialog() {
         int selectedRow = userTable.getSelectedRow();
-        if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a user to manage permissions.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
+        if (selectedRow == -1) {
             return;
         }
         
-        String username = (String) tableModel.getValueAt(selectedRow, 0);
+        // Get selected user
+        int userId = (int) tableModel.getValueAt(selectedRow, 0);
+        User user = AuthController.getUserById(userId);
         
-        // Find selected user
-        List<User> users = AdminController.getAllAdmins();
-        User selectedUser = null;
-        
-        for (User user : users) {
-            if (user.getUsername().equals(username)) {
-                selectedUser = user;
-                break;
-            }
-        }
-        
-        if (selectedUser == null) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "User not found.", 
+        if (user == null) {
+            JOptionPane.showMessageDialog(this, 
+                    "Failed to load user data.", 
                     "Error", 
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        // Show permissions management view
-        UserPermissionsView permissionsView = new UserPermissionsView(parentFrame, selectedUser);
+        // Show permissions dialog
+        UserPermissionsView permissionsView = new UserPermissionsView(owner, user);
         permissionsView.setVisible(true);
     }
 }

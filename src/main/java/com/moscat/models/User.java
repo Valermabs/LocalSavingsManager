@@ -16,8 +16,10 @@ public class User {
     private String email;
     private String contactNumber;
     private String role;
+    private String status;
     private boolean active;
     private Date lastLogin;
+    private Date createdAt;
     
     /**
      * Default constructor
@@ -200,6 +202,24 @@ public class User {
     }
     
     /**
+     * Gets the status
+     * 
+     * @return Status
+     */
+    public String getStatus() {
+        return status;
+    }
+    
+    /**
+     * Sets the status
+     * 
+     * @param status Status
+     */
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    /**
      * Checks if user is active
      * 
      * @return true if active, false otherwise
@@ -233,6 +253,24 @@ public class User {
      */
     public void setLastLogin(Date lastLogin) {
         this.lastLogin = lastLogin;
+    }
+    
+    /**
+     * Gets the creation date
+     * 
+     * @return Creation date
+     */
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+    
+    /**
+     * Sets the creation date
+     * 
+     * @param createdAt Creation date
+     */
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
     
     /**

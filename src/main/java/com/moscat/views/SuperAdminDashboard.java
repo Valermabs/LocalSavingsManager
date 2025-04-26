@@ -213,17 +213,11 @@ public class SuperAdminDashboard extends DashboardView {
         JTabbedPane tabbedPane = new JTabbedPane();
         
         // Add user management tab (placeholder for now)
-        JPanel userManagementPanel = new JPanel(new BorderLayout());
-        JLabel userManagementLabel = new JLabel("User management functionality will be implemented in future updates.");
-        userManagementLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        userManagementPanel.add(userManagementLabel, BorderLayout.CENTER);
-        
-        // Add user permissions tab
-        UserPermissionsView userPermissionsView = new UserPermissionsView(getOwner() instanceof JFrame ? (JFrame) getOwner() : null);
+        // Create and add user management panel
+        UserManagementView userManagementView = new UserManagementView(getOwner() instanceof JFrame ? (JFrame) getOwner() : null);
         
         // Add tabs to tabbed pane
-        tabbedPane.addTab("User Management", userManagementPanel);
-        tabbedPane.addTab("User Permissions", userPermissionsView);
+        tabbedPane.addTab("User Management", userManagementView);
         
         contentPanel.add(tabbedPane, BorderLayout.CENTER);
         contentPanel.revalidate();
