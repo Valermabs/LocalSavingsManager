@@ -2,33 +2,37 @@ package com.moscat.views;
 
 import com.moscat.controllers.MemberController;
 import com.moscat.models.Member;
+import com.moscat.utils.Constants;
+import com.moscat.utils.DateUtils;
 import com.moscat.views.components.CustomButton;
+import com.moscat.views.components.CustomTextField;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.DecimalFormat;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 /**
- * View for displaying and managing members
+ * View for member listing and management
  */
 public class MemberListView extends JPanel {
     
     private JFrame parentFrame;
     private JTable memberTable;
     private DefaultTableModel tableModel;
-    private JTextField searchField;
-    private DecimalFormat currencyFormatter = new DecimalFormat("#,##0.00");
+    private CustomTextField searchField;
+    private JComboBox<String> statusFilter;
+    private List<Member> currentMembers;
     
     /**
-     * Constructor for MemberListView
+     * Constructor
      * 
-     * @param parentFrame Parent JFrame
+     * @param parentFrame Parent frame
      */
     public MemberListView(JFrame parentFrame) {
         this.parentFrame = parentFrame;
@@ -37,330 +41,424 @@ public class MemberListView extends JPanel {
     }
     
     /**
-     * Initializes the UI components
+     * Initializes UI components
      */
     private void initializeUI() {
         setLayout(new BorderLayout());
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        // Create header with title and search
+        // Create header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBorder(new EmptyBorder(0, 0, 10, 0));
+        headerPanel.setBorder(new EmptyBorder(0, 0, 20, 0));
         
         JLabel titleLabel = new JLabel("Member Management");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         
-        // Search panel
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchField = new JTextField(20);
-        JButton searchButton = new CustomButton("Search");
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        CustomButton addButton = new CustomButton("Add New Member");
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAddMemberDialog();
+            }
+        });
+        buttonPanel.add(addButton);
         
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(buttonPanel, BorderLayout.EAST);
+        
+        // Create search and filter panel
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.setBorder(new EmptyBorder(0, 0, 20, 0));
+        
+        JPanel searchInputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchField = new CustomTextField();
+        searchField.setPreferredSize(new Dimension(250, Constants.TEXT_FIELD_HEIGHT));
+        searchField.setPlaceholder("Search members...");
+        
+        JButton searchButton = new JButton("Search");
         searchButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                searchMembers(searchField.getText().trim());
+                searchMembers();
             }
         });
         
-        searchPanel.add(new JLabel("Search:"));
-        searchPanel.add(searchField);
-        searchPanel.add(searchButton);
+        searchInputPanel.add(searchField);
+        searchInputPanel.add(searchButton);
         
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(searchPanel, BorderLayout.EAST);
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        filterPanel.add(new JLabel("Status:"));
         
-        // Create member table
-        String[] columns = {"Member #", "Name", "Contact Number", "Email", "Status", "Join Date"};
-        tableModel = new DefaultTableModel(columns, 0) {
+        statusFilter = new JComboBox<>(new String[]{"All", "Active", "Inactive", "Pending"});
+        statusFilter.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterMembers();
+            }
+        });
+        filterPanel.add(statusFilter);
+        
+        searchPanel.add(searchInputPanel, BorderLayout.WEST);
+        searchPanel.add(filterPanel, BorderLayout.EAST);
+        
+        // Create table
+        createMemberTable();
+        JScrollPane tableScrollPane = new JScrollPane(memberTable);
+        
+        // Add components to main panel
+        add(headerPanel, BorderLayout.NORTH);
+        add(searchPanel, BorderLayout.CENTER);
+        add(tableScrollPane, BorderLayout.SOUTH);
+    }
+    
+    /**
+     * Creates member table
+     */
+    private void createMemberTable() {
+        String[] columnNames = {
+            "Member ID", "Name", "Contact Number", "Email", "Join Date", "Status", "Actions"
+        };
+        
+        tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 6; // Only allow editing action column
             }
         };
         
         memberTable = new JTable(tableModel);
         memberTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        memberTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        memberTable.setRowHeight(35);
+        memberTable.getTableHeader().setReorderingAllowed(false);
         
-        JScrollPane scrollPane = new JScrollPane(memberTable);
-        scrollPane.setBorder(new TitledBorder("Member List"));
+        // Set column widths
+        memberTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+        memberTable.getColumnModel().getColumn(1).setPreferredWidth(200);
+        memberTable.getColumnModel().getColumn(2).setPreferredWidth(120);
+        memberTable.getColumnModel().getColumn(3).setPreferredWidth(180);
+        memberTable.getColumnModel().getColumn(4).setPreferredWidth(100);
+        memberTable.getColumnModel().getColumn(5).setPreferredWidth(80);
+        memberTable.getColumnModel().getColumn(6).setPreferredWidth(120);
         
-        // Create buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Add cell renderer for action column
+        memberTable.getColumnModel().getColumn(6).setCellRenderer(new ButtonRenderer());
         
-        JButton viewButton = new CustomButton("View Details");
-        JButton editButton = new CustomButton("Edit Member");
-        JButton activateButton = new CustomButton("Activate");
-        JButton deactivateButton = new CustomButton("Deactivate");
-        JButton refreshButton = new CustomButton("Refresh");
+        // Add cell editor for action column
+        memberTable.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new JCheckBox()));
         
-        // View button action
-        viewButton.addActionListener(new ActionListener() {
+        // Add row click listener
+        memberTable.addMouseListener(new MouseAdapter() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                viewMemberDetails();
-            }
-        });
-        
-        // Edit button action
-        editButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                editMember();
-            }
-        });
-        
-        // Activate button action
-        activateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                changeMemberStatus(true);
-            }
-        });
-        
-        // Deactivate button action
-        deactivateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                changeMemberStatus(false);
-            }
-        });
-        
-        // Refresh button action
-        refreshButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadMembers();
-            }
-        });
-        
-        buttonsPanel.add(viewButton);
-        buttonsPanel.add(editButton);
-        buttonsPanel.add(activateButton);
-        buttonsPanel.add(deactivateButton);
-        buttonsPanel.add(refreshButton);
-        
-        // Add components to main panel
-        add(headerPanel, BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
-        add(buttonsPanel, BorderLayout.SOUTH);
-    }
-    
-    /**
-     * Loads all members into the table
-     */
-    private void loadMembers() {
-        // Clear the table
-        tableModel.setRowCount(0);
-        
-        SwingWorker<List<Member>, Void> worker = new SwingWorker<List<Member>, Void>() {
-            @Override
-            protected List<Member> doInBackground() throws Exception {
-                return MemberController.getAllMembers();
-            }
-            
-            @Override
-            protected void done() {
-                try {
-                    List<Member> members = get();
-                    
-                    for (Member member : members) {
-                        Object[] row = {
-                            member.getMemberNumber(),
-                            member.getFullName(),
-                            member.getContactNumber(),
-                            member.getEmail(),
-                            member.getStatus(),
-                            member.getJoinDate() != null ? member.getJoinDate().toString() : ""
-                        };
-                        
-                        tableModel.addRow(row);
-                    }
-                    
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "Error loading members: " + e.getMessage(), 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
+            public void mouseClicked(MouseEvent e) {
+                int row = memberTable.rowAtPoint(e.getPoint());
+                int col = memberTable.columnAtPoint(e.getPoint());
+                
+                if (row >= 0 && col == 6) {
+                    // Action column clicked, handled by cell editor
+                } else if (row >= 0 && e.getClickCount() == 2) {
+                    // Double-click on row, show member details
+                    showMemberDetails(row);
                 }
             }
-        };
-        
-        worker.execute();
+        });
     }
     
     /**
-     * Searches for members matching the search term
-     * 
-     * @param searchTerm Text to search for
+     * Loads members into table
      */
-    private void searchMembers(String searchTerm) {
+    private void loadMembers() {
+        // Clear table
+        tableModel.setRowCount(0);
+        
+        // Get members
+        currentMembers = MemberController.getAllMembers();
+        
+        // Add members to table
+        for (Member member : currentMembers) {
+            addMemberToTable(member);
+        }
+    }
+    
+    /**
+     * Adds a member to the table
+     * 
+     * @param member Member to add
+     */
+    private void addMemberToTable(Member member) {
+        Object[] rowData = {
+            member.getMemberNumber(),
+            member.getFullName(),
+            member.getContactNumber(),
+            member.getEmail(),
+            DateUtils.formatDateForDisplay(member.getJoinDate()),
+            member.getStatus(),
+            "Actions"
+        };
+        tableModel.addRow(rowData);
+    }
+    
+    /**
+     * Shows member details
+     * 
+     * @param row Table row
+     */
+    private void showMemberDetails(int row) {
+        if (row >= 0 && row < currentMembers.size()) {
+            Member member = currentMembers.get(row);
+            // For now just show a message dialog
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Member Details:\n" +
+                    "ID: " + member.getMemberNumber() + "\n" +
+                    "Name: " + member.getFullName() + "\n" +
+                    "Contact: " + member.getContactNumber() + "\n" +
+                    "Email: " + member.getEmail() + "\n" +
+                    "Status: " + member.getStatus(),
+                    "Member Details",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+    
+    /**
+     * Shows add member dialog
+     */
+    private void showAddMemberDialog() {
+        // For now just show a placeholder dialog
+        JOptionPane.showMessageDialog(parentFrame,
+                "Add Member functionality will be implemented in a future update.",
+                "Add Member",
+                JOptionPane.INFORMATION_MESSAGE);
+        
+        // In a real implementation, we would show a MemberRegistrationView
+        // MemberRegistrationView registrationView = new MemberRegistrationView(parentFrame);
+        // registrationView.setVisible(true);
+    }
+    
+    /**
+     * Searches members based on search field
+     */
+    private void searchMembers() {
+        String searchTerm = searchField.getText().trim();
+        
         if (searchTerm.isEmpty()) {
             loadMembers();
             return;
         }
         
-        // Clear the table
+        // Clear table
         tableModel.setRowCount(0);
         
-        SwingWorker<List<Member>, Void> worker = new SwingWorker<List<Member>, Void>() {
-            @Override
-            protected List<Member> doInBackground() throws Exception {
-                return MemberController.searchMembers(searchTerm);
-            }
-            
-            @Override
-            protected void done() {
-                try {
-                    List<Member> members = get();
-                    
-                    for (Member member : members) {
-                        Object[] row = {
-                            member.getMemberNumber(),
-                            member.getFullName(),
-                            member.getContactNumber(),
-                            member.getEmail(),
-                            member.getStatus(),
-                            member.getJoinDate() != null ? member.getJoinDate().toString() : ""
-                        };
-                        
-                        tableModel.addRow(row);
-                    }
-                    
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "Error searching members: " + e.getMessage(), 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        };
+        // Search members
+        currentMembers = MemberController.searchMembers(searchTerm);
         
-        worker.execute();
+        // Apply filter
+        filterMembers(currentMembers);
     }
     
     /**
-     * Views details of the selected member
+     * Filters members based on status filter
      */
-    private void viewMemberDetails() {
-        int selectedRow = memberTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String memberNumber = (String) tableModel.getValueAt(selectedRow, 0);
-            Member member = MemberController.getMemberByNumber(memberNumber);
-            
-            if (member != null) {
-                // Create and display member details dialog
-                JDialog dialog = new JDialog(parentFrame, "Member Details - " + member.getFullName(), true);
-                dialog.setLayout(new BorderLayout());
-                dialog.setSize(800, 600);
-                dialog.setLocationRelativeTo(parentFrame);
-                
-                // Get member details panel from report controller
-                JPanel detailsPanel = com.moscat.controllers.ReportController.generateMemberReport(member);
-                JScrollPane scrollPane = new JScrollPane(detailsPanel);
-                
-                dialog.add(scrollPane, BorderLayout.CENTER);
-                
-                // Add close button
-                JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-                JButton closeButton = new JButton("Close");
-                closeButton.addActionListener(e -> dialog.dispose());
-                buttonPanel.add(closeButton);
-                dialog.add(buttonPanel, BorderLayout.SOUTH);
-                
-                dialog.setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(parentFrame, 
-                        "Error loading member details.", 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a member to view details.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
+    private void filterMembers() {
+        // Get all members first
+        List<Member> allMembers = MemberController.getAllMembers();
+        
+        // Apply filter
+        filterMembers(allMembers);
     }
     
     /**
-     * Opens dialog to edit selected member
-     */
-    private void editMember() {
-        int selectedRow = memberTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String memberNumber = (String) tableModel.getValueAt(selectedRow, 0);
-            Member member = MemberController.getMemberByNumber(memberNumber);
-            
-            if (member != null) {
-                // Create edit member dialog
-                // Simplified for this implementation
-                JOptionPane.showMessageDialog(parentFrame, 
-                        "Edit Member functionality would open a form to edit " + member.getFullName(), 
-                        "Edit Member", 
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a member to edit.", 
-                    "Selection Required", 
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-    
-    /**
-     * Changes the status of the selected member
+     * Filters a list of members based on status filter
      * 
-     * @param activate true to activate, false to deactivate
+     * @param members List of members to filter
      */
-    private void changeMemberStatus(boolean activate) {
-        int selectedRow = memberTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String memberNumber = (String) tableModel.getValueAt(selectedRow, 0);
+    private void filterMembers(List<Member> members) {
+        String selectedFilter = (String) statusFilter.getSelectedItem();
+        
+        // Clear table
+        tableModel.setRowCount(0);
+        
+        // Reset current members
+        currentMembers.clear();
+        
+        // Apply filter
+        for (Member member : members) {
+            boolean addMember = false;
             
-            int confirmResult = JOptionPane.showConfirmDialog(parentFrame, 
-                    "Are you sure you want to " + (activate ? "activate" : "deactivate") + " this member?", 
-                    "Confirm Status Change", 
-                    JOptionPane.YES_NO_OPTION);
-            
-            if (confirmResult == JOptionPane.YES_OPTION) {
-                boolean success = false;
-                
-                try {
-                    if (activate) {
-                        success = MemberController.activateMember(memberNumber);
-                    } else {
-                        success = MemberController.deactivateMember(memberNumber);
-                    }
-                    
-                    if (success) {
-                        JOptionPane.showMessageDialog(parentFrame, 
-                                "Member " + (activate ? "activated" : "deactivated") + " successfully.", 
-                                "Status Updated", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                        
-                        loadMembers();
-                    } else {
-                        JOptionPane.showMessageDialog(parentFrame, 
-                                "Failed to " + (activate ? "activate" : "deactivate") + " member.", 
-                                "Error", 
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "Error: " + e.getMessage(), 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                }
+            if (selectedFilter.equals("All")) {
+                addMember = true;
+            } else if (selectedFilter.equals("Active") && member.isActive()) {
+                addMember = true;
+            } else if (selectedFilter.equals("Inactive") && member.isInactive()) {
+                addMember = true;
+            } else if (selectedFilter.equals("Pending") && member.isPending()) {
+                addMember = true;
             }
-        } else {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Please select a member to " + (activate ? "activate" : "deactivate") + ".", 
-                    "Selection Required", 
+            
+            if (addMember) {
+                currentMembers.add(member);
+                addMemberToTable(member);
+            }
+        }
+    }
+    
+    /**
+     * Activates a member
+     * 
+     * @param memberNumber Member number
+     */
+    private void activateMember(String memberNumber) {
+        boolean success = MemberController.activateMember(memberNumber);
+        
+        if (success) {
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Member activated successfully.",
+                    "Success",
                     JOptionPane.INFORMATION_MESSAGE);
+            loadMembers();
+        } else {
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Failed to activate member.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Deactivates a member
+     * 
+     * @param memberNumber Member number
+     */
+    private void deactivateMember(String memberNumber) {
+        boolean success = MemberController.deactivateMember(memberNumber);
+        
+        if (success) {
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Member deactivated successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+            loadMembers();
+        } else {
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Failed to deactivate member.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Custom renderer for buttons in table
+     */
+    private class ButtonRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
+        private JButton viewButton;
+        private JButton actionButton;
+        
+        public ButtonRenderer() {
+            setLayout(new GridLayout(1, 2, 5, 0));
+            
+            viewButton = new JButton("View");
+            viewButton.setFocusPainted(false);
+            
+            actionButton = new JButton("Action");
+            actionButton.setFocusPainted(false);
+            
+            add(viewButton);
+            add(actionButton);
+        }
+        
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            // Get member status
+            String status = (String) table.getValueAt(row, 5);
+            
+            if (Constants.STATUS_ACTIVE.equals(status)) {
+                actionButton.setText("Deactivate");
+            } else if (Constants.STATUS_INACTIVE.equals(status)) {
+                actionButton.setText("Activate");
+            } else {
+                actionButton.setText("Action");
+            }
+            
+            return this;
+        }
+    }
+    
+    /**
+     * Custom editor for buttons in table
+     */
+    private class ButtonEditor extends DefaultCellEditor {
+        private JButton viewButton;
+        private JButton actionButton;
+        private JPanel panel;
+        private String memberNumber;
+        private String memberStatus;
+        
+        public ButtonEditor(JCheckBox checkBox) {
+            super(checkBox);
+            
+            panel = new JPanel(new GridLayout(1, 2, 5, 0));
+            
+            viewButton = new JButton("View");
+            viewButton.setFocusPainted(false);
+            viewButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    int row = memberTable.getSelectedRow();
+                    showMemberDetails(row);
+                    fireEditingStopped();
+                }
+            });
+            
+            actionButton = new JButton("Action");
+            actionButton.setFocusPainted(false);
+            actionButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (Constants.STATUS_ACTIVE.equals(memberStatus)) {
+                        int result = JOptionPane.showConfirmDialog(parentFrame,
+                                "Are you sure you want to deactivate this member?",
+                                "Confirm Deactivation",
+                                JOptionPane.YES_NO_OPTION);
+                        
+                        if (result == JOptionPane.YES_OPTION) {
+                            deactivateMember(memberNumber);
+                        }
+                    } else if (Constants.STATUS_INACTIVE.equals(memberStatus)) {
+                        int result = JOptionPane.showConfirmDialog(parentFrame,
+                                "Are you sure you want to activate this member?",
+                                "Confirm Activation",
+                                JOptionPane.YES_NO_OPTION);
+                        
+                        if (result == JOptionPane.YES_OPTION) {
+                            activateMember(memberNumber);
+                        }
+                    }
+                    fireEditingStopped();
+                }
+            });
+            
+            panel.add(viewButton);
+            panel.add(actionButton);
+        }
+        
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            memberNumber = (String) table.getValueAt(row, 0);
+            memberStatus = (String) table.getValueAt(row, 5);
+            
+            if (Constants.STATUS_ACTIVE.equals(memberStatus)) {
+                actionButton.setText("Deactivate");
+            } else if (Constants.STATUS_INACTIVE.equals(memberStatus)) {
+                actionButton.setText("Activate");
+            } else {
+                actionButton.setText("Action");
+            }
+            
+            return panel;
+        }
+        
+        @Override
+        public Object getCellEditorValue() {
+            return "Actions";
         }
     }
 }

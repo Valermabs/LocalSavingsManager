@@ -2,6 +2,7 @@
 /home/runner/workspace/src/main/java/com/moscat/views/components/CustomButton.java
 /home/runner/workspace/src/main/java/com/moscat/models/User.java
 /home/runner/workspace/src/main/java/com/moscat/models/Member.java
+/home/runner/workspace/src/main/java/com/moscat/views/SavingsView.java
 /home/runner/workspace/src/main/java/com/moscat/views/ReportView.java
 /home/runner/workspace/src/main/java/com/moscat/views/TreasurerDashboard.java
 /home/runner/workspace/src/main/java/com/moscat/utils/ValidationUtils.java
@@ -17,6 +18,7 @@
 /home/runner/workspace/src/main/java/com/moscat/controllers/MemberController.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/ReportController.java
 /home/runner/workspace/src/main/java/com/moscat/views/SavingsSettingsView.java
+/home/runner/workspace/src/main/java/com/moscat/views/UserAccountView.java
 /home/runner/workspace/src/main/java/com/moscat/models/Transaction.java
 /home/runner/workspace/src/main/java/com/moscat/views/TransactionView.java
 /home/runner/workspace/src/main/java/com/moscat/views/components/CustomTextField.java
@@ -26,6 +28,7 @@
 /home/runner/workspace/src/main/java/com/moscat/models/LoanDeduction.java
 /home/runner/workspace/src/main/java/com/moscat/views/MemberListView.java
 /home/runner/workspace/src/main/java/com/moscat/views/MemberRegistrationView.java
+/home/runner/workspace/src/main/java/com/moscat/views/TransactionHistoryView.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/TransactionController.java
 /home/runner/workspace/src/main/java/com/moscat/models/InterestSettings.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/SavingsController.java

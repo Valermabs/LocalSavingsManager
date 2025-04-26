@@ -1,19 +1,15 @@
 package com.moscat.views;
 
-import com.moscat.App;
-import com.moscat.controllers.AdminController;
 import com.moscat.controllers.AuthController;
-import com.moscat.controllers.MemberController;
-import com.moscat.views.components.CustomButton;
+import com.moscat.utils.Constants;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base dashboard view with common functionality for all user roles
@@ -21,99 +17,115 @@ import java.util.Date;
 public class DashboardView extends JPanel {
     
     protected JFrame parentFrame;
+    protected String title;
+    protected JPanel menuPanel;
     protected JPanel contentPanel;
-    protected JPanel sidebarPanel;
-    protected JPanel statsPanel;
-    protected final DecimalFormat currencyFormatter = new DecimalFormat("#,##0.00");
-    protected final SimpleDateFormat dateFormatter = new SimpleDateFormat("MMMM dd, yyyy");
+    protected Map<String, JPanel> menuItems;
+    protected JPanel selectedMenuItem;
     
     /**
-     * Constructor for DashboardView
+     * Constructs a new DashboardView
      * 
      * @param parentFrame Parent JFrame
      */
     public DashboardView(JFrame parentFrame) {
         this.parentFrame = parentFrame;
+        this.title = "Dashboard";
+        this.menuItems = new HashMap<>();
         initializeUI();
-        loadData();
+    }
+    
+    /**
+     * Sets the dashboard title
+     * 
+     * @param title Dashboard title
+     */
+    public void setTitle(String title) {
+        this.title = title;
     }
     
     /**
      * Initializes the UI components
      */
-    protected void initializeUI() {
+    private void initializeUI() {
         setLayout(new BorderLayout());
         
         // Create header panel
         JPanel headerPanel = createHeaderPanel();
-        add(headerPanel, BorderLayout.NORTH);
         
-        // Create sidebar
-        sidebarPanel = createSidebarPanel();
-        JScrollPane sidebarScrollPane = new JScrollPane(sidebarPanel);
-        sidebarScrollPane.setBorder(null);
-        sidebarScrollPane.setPreferredSize(new Dimension(200, 0));
+        // Create main content area with menu and content
+        JPanel mainPanel = new JPanel(new BorderLayout());
         
-        // Create main content area
+        // Create menu panel
+        menuPanel = createMenuPanel();
+        
+        // Create content panel
         contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        contentPanel.setBackground(Color.WHITE);
         
-        // Create dashboard home content
-        JPanel dashboardHome = createDashboardHome();
-        contentPanel.add(dashboardHome, BorderLayout.CENTER);
+        // Add panels to main panel
+        mainPanel.add(menuPanel, BorderLayout.WEST);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
         
-        // Add sidebar and content to main panel
-        add(sidebarScrollPane, BorderLayout.WEST);
-        add(contentPanel, BorderLayout.CENTER);
+        // Add components to main view
+        add(headerPanel, BorderLayout.NORTH);
+        add(mainPanel, BorderLayout.CENTER);
         
-        // Create footer
-        JPanel footerPanel = createFooterPanel();
-        add(footerPanel, BorderLayout.SOUTH);
+        // Show dashboard by default
+        showDashboard();
     }
     
     /**
-     * Creates the header panel with application title and user info
+     * Creates the header panel
      * 
-     * @return Header panel
+     * @return JPanel with header
      */
-    protected JPanel createHeaderPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(60, 63, 65));
-        panel.setPreferredSize(new Dimension(0, 50));
-        panel.setBorder(new EmptyBorder(0, 10, 0, 10));
+    private JPanel createHeaderPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setBackground(new Color(0, 87, 146)); // Dark blue color
+        panel.setPreferredSize(new Dimension(0, 60));
+        panel.setBorder(new EmptyBorder(10, 20, 10, 20));
         
-        // Application title
-        JLabel titleLabel = new JLabel("MOSCAT Multipurpose Cooperative");
+        // Create logo/title
+        JLabel titleLabel = new JLabel("MOSCAT Cooperative");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         
-        // User info and logout
+        // Create user info and logout button
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         userPanel.setOpaque(false);
         
-        String username = "Guest";
-        String role = "";
-        
-        if (AuthController.getCurrentUser() != null) {
-            username = AuthController.getCurrentUser().getUsername();
-            role = AuthController.getCurrentUser().getRole();
-        }
-        
-        JLabel userLabel = new JLabel(username + " (" + role + ")");
+        JLabel userLabel = new JLabel("Welcome, " + getUserDisplayName());
+        userLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         userLabel.setForeground(Color.WHITE);
         
-        JButton logoutButton = new JButton("Logout");
-        logoutButton.setFocusPainted(false);
-        logoutButton.addActionListener(new ActionListener() {
+        JLabel logoutLabel = new JLabel("Logout");
+        logoutLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        logoutLabel.setForeground(Color.WHITE);
+        logoutLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutLabel.addMouseListener(new MouseAdapter() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void mouseClicked(MouseEvent e) {
                 logout();
+            }
+            
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                logoutLabel.setText("<html><u>Logout</u></html>");
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                logoutLabel.setText("Logout");
             }
         });
         
         userPanel.add(userLabel);
-        userPanel.add(logoutButton);
+        userPanel.add(new JLabel(" | "));
+        userPanel.add(logoutLabel);
         
+        // Add components to panel
         panel.add(titleLabel, BorderLayout.WEST);
         panel.add(userPanel, BorderLayout.EAST);
         
@@ -121,346 +133,284 @@ public class DashboardView extends JPanel {
     }
     
     /**
-     * Creates the sidebar panel with navigation options
+     * Creates the menu panel
      * 
-     * @return Sidebar panel
+     * @return JPanel with menu
      */
-    protected JPanel createSidebarPanel() {
+    private JPanel createMenuPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(new Color(245, 245, 245));
-        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panel.setPreferredSize(new Dimension(200, 0));
+        panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.LIGHT_GRAY));
         
-        // Common menu items for all users
-        addMenuButton(panel, "Dashboard", e -> showDashboardHome());
+        // Add title
+        JLabel menuTitleLabel = new JLabel(title);
+        menuTitleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        menuTitleLabel.setBorder(new EmptyBorder(20, 15, 20, 15));
+        menuTitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(menuTitleLabel);
         
-        // Add role-specific options
-        if (AuthController.isSuperAdmin() || AuthController.isTreasurer()) {
-            addMenuButton(panel, "Members", e -> showMemberList());
-            addMenuButton(panel, "Register Member", e -> showMemberRegistration());
-            addMenuButton(panel, "Transactions", e -> showTransactions());
-            addMenuButton(panel, "Loans", e -> showLoans());
+        // Add menu items
+        String[] items = getMenuItems();
+        for (String item : items) {
+            JPanel menuItem = createMenuItem(item);
+            menuItems.put(item, menuItem);
+            panel.add(menuItem);
         }
         
-        if (AuthController.isBookkeeper()) {
-            addMenuButton(panel, "Members", e -> showMemberList());
-            addMenuButton(panel, "Transactions", e -> showTransactions());
-            addMenuButton(panel, "Loans", e -> showLoans());
-        }
-        
-        // Admin-specific options
-        if (AuthController.isSuperAdmin()) {
-            addMenuButton(panel, "User Management", e -> showUserManagement());
-            addMenuButton(panel, "Savings Settings", e -> showSavingsSettings());
-        }
-        
-        // Reports available to all
-        addMenuButton(panel, "Reports", e -> showReports());
-        
-        // Add a glue component to push everything to the top
+        // Add filler to push menu items to the top
         panel.add(Box.createVerticalGlue());
         
         return panel;
     }
     
     /**
-     * Creates and adds a sidebar menu button
+     * Creates a menu item
      * 
-     * @param panel Panel to add button to
-     * @param text Button text
-     * @param listener Action listener for button
+     * @param text Menu item text
+     * @return JPanel with menu item
      */
-    protected void addMenuButton(JPanel panel, String text, ActionListener listener) {
-        JButton button = new JButton(text);
-        button.setAlignmentX(Component.LEFT_ALIGNMENT);
-        button.setMaximumSize(new Dimension(180, 35));
-        button.setFocusPainted(false);
-        button.addActionListener(listener);
-        
-        panel.add(button);
-        panel.add(Box.createVerticalStrut(5));
-    }
-    
-    /**
-     * Creates the dashboard home content with statistics
-     * 
-     * @return Dashboard home panel
-     */
-    protected JPanel createDashboardHome() {
+    private JPanel createMenuItem(String text) {
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(new EmptyBorder(10, 15, 10, 15));
+        panel.setMaximumSize(new Dimension(200, 40));
         
-        // Welcome message
-        JPanel welcomePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        String fullName = "";
-        if (AuthController.getCurrentUser() != null && AuthController.getCurrentUser().getFullName() != null) {
-            fullName = AuthController.getCurrentUser().getFullName();
-        }
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Arial", Font.PLAIN, 14));
         
-        JLabel welcomeLabel = new JLabel("Welcome, " + 
-                (fullName.isEmpty() ? AuthController.getCurrentUser().getUsername() : fullName));
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        welcomePanel.add(welcomeLabel);
+        panel.add(label, BorderLayout.CENTER);
         
-        // Date label
-        JLabel dateLabel = new JLabel("Today is " + dateFormatter.format(new Date()));
-        dateLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        welcomePanel.add(dateLabel);
-        
-        // Stats panel
-        statsPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        statsPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
-        
-        // Content scrollpane
-        JScrollPane scrollPane = new JScrollPane(statsPanel);
-        scrollPane.setBorder(null);
-        
-        panel.add(welcomePanel, BorderLayout.NORTH);
-        panel.add(scrollPane, BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    /**
-     * Creates the footer panel
-     * 
-     * @return Footer panel
-     */
-    protected JPanel createFooterPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setPreferredSize(new Dimension(0, 30));
-        panel.setBorder(new EmptyBorder(5, 10, 5, 10));
-        panel.setBackground(new Color(240, 240, 240));
-        
-        JLabel copyrightLabel = new JLabel("© 2025 MOSCAT Multipurpose Cooperative");
-        copyrightLabel.setFont(new Font("Arial", Font.PLAIN, 10));
-        
-        panel.add(copyrightLabel, BorderLayout.WEST);
-        
-        return panel;
-    }
-    
-    /**
-     * Creates a statistic card with title and value
-     * 
-     * @param title Statistic title
-     * @param value Statistic value
-     * @param color Card color
-     * @return JPanel containing statistic card
-     */
-    protected JPanel createStatisticCard(String title, String value, Color color) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(color);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(color.darker(), 1),
-                new EmptyBorder(15, 15, 15, 15)));
-        
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        
-        JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        
-        panel.add(titleLabel, BorderLayout.NORTH);
-        panel.add(valueLabel, BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    /**
-     * Loads dashboard data
-     */
-    protected void loadData() {
-        statsPanel.removeAll();
-        
-        SwingWorker<AdminController.SystemStatistics, Void> worker = new SwingWorker<AdminController.SystemStatistics, Void>() {
+        // Add hover effect and click handler
+        panel.addMouseListener(new MouseAdapter() {
             @Override
-            protected AdminController.SystemStatistics doInBackground() throws Exception {
-                return AdminController.getSystemStatistics();
+            public void mouseClicked(MouseEvent e) {
+                selectMenuItem(panel, text);
             }
             
             @Override
-            protected void done() {
-                try {
-                    AdminController.SystemStatistics stats = get();
-                    
-                    // Add statistic cards based on role
-                    if (AuthController.isSuperAdmin() || AuthController.isTreasurer()) {
-                        statsPanel.add(createStatisticCard("Total Members", String.valueOf(stats.totalMembers), new Color(220, 220, 255)));
-                        statsPanel.add(createStatisticCard("Active Members", String.valueOf(stats.activeMembers), new Color(220, 255, 220)));
-                        statsPanel.add(createStatisticCard("Dormant Members", String.valueOf(stats.dormantMembers), new Color(255, 220, 220)));
-                        statsPanel.add(createStatisticCard("Total Savings", "₱ " + currencyFormatter.format(stats.totalSavingsBalance), new Color(255, 255, 220)));
-                        statsPanel.add(createStatisticCard("Interest Earned", "₱ " + currencyFormatter.format(stats.totalInterestEarned), new Color(220, 255, 255)));
-                        statsPanel.add(createStatisticCard("Active Loans", String.valueOf(stats.activeLoans), new Color(255, 220, 255)));
-                        statsPanel.add(createStatisticCard("Loan Portfolio", "₱ " + currencyFormatter.format(stats.totalLoanPortfolio), new Color(220, 240, 240)));
-                        statsPanel.add(createStatisticCard("Pending Applications", String.valueOf(stats.pendingLoanApplications), new Color(255, 240, 220)));
-                    }
-                    
-                    // Bookkeeper sees less financial data
-                    if (AuthController.isBookkeeper()) {
-                        statsPanel.add(createStatisticCard("Total Members", String.valueOf(stats.totalMembers), new Color(220, 220, 255)));
-                        statsPanel.add(createStatisticCard("Active Members", String.valueOf(stats.activeMembers), new Color(220, 255, 220)));
-                        statsPanel.add(createStatisticCard("Dormant Members", String.valueOf(stats.dormantMembers), new Color(255, 220, 220)));
-                    }
-                    
-                    // Today's transaction data (all roles)
-                    statsPanel.add(createStatisticCard("Today's Transactions", String.valueOf(stats.transactionsToday), new Color(235, 235, 235)));
-                    statsPanel.add(createStatisticCard("Today's Deposits", "₱ " + currencyFormatter.format(stats.depositsToday), new Color(220, 255, 220)));
-                    statsPanel.add(createStatisticCard("Today's Withdrawals", "₱ " + currencyFormatter.format(stats.withdrawalsToday), new Color(255, 220, 220)));
-                    
-                    // Check dormant accounts
-                    int dormantUpdated = MemberController.checkAndUpdateDormantAccounts();
-                    if (dormantUpdated > 0) {
-                        JOptionPane.showMessageDialog(parentFrame, 
-                                dormantUpdated + " accounts have been marked as dormant due to inactivity.",
-                                "Dormant Accounts Updated", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                    }
-                    
-                    // Refresh UI
-                    statsPanel.revalidate();
-                    statsPanel.repaint();
-                    
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                            "Error loading statistics: " + e.getMessage(),
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
+            public void mouseEntered(MouseEvent e) {
+                if (panel != selectedMenuItem) {
+                    panel.setBackground(new Color(230, 230, 230));
                 }
             }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != selectedMenuItem) {
+                    panel.setBackground(new Color(245, 245, 245));
+                }
+            }
+        });
+        
+        return panel;
+    }
+    
+    /**
+     * Selects a menu item
+     * 
+     * @param panel Menu item panel
+     * @param text Menu item text
+     */
+    private void selectMenuItem(JPanel panel, String text) {
+        // Deselect current selection
+        if (selectedMenuItem != null) {
+            selectedMenuItem.setBackground(new Color(245, 245, 245));
+            selectedMenuItem.setBorder(new EmptyBorder(10, 15, 10, 15));
+        }
+        
+        // Select new item
+        panel.setBackground(new Color(220, 220, 220));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 5, 0, 0, new Color(0, 87, 146)),
+                new EmptyBorder(10, 10, 10, 15)));
+        selectedMenuItem = panel;
+        
+        // Handle menu item selection
+        handleMenuItemSelection(text);
+    }
+    
+    /**
+     * Gets available menu items based on role
+     * 
+     * @return Array of menu items
+     */
+    protected String[] getMenuItems() {
+        return new String[] {
+            "Dashboard",
+            "Member Management",
+            "Savings Management",
+            "Loan Management",
+            "Transaction History",
+            "Reports",
+            "Settings",
+            "My Account"
         };
-        
-        worker.execute();
     }
     
     /**
-     * Shows the dashboard home view
+     * Handles menu item selection
+     * 
+     * @param selectedItem Selected menu item
      */
-    protected void showDashboardHome() {
-        contentPanel.removeAll();
-        
-        JPanel dashboardHome = createDashboardHome();
-        contentPanel.add(dashboardHome, BorderLayout.CENTER);
-        
-        loadData();
-        
-        contentPanel.revalidate();
-        contentPanel.repaint();
-    }
-    
-    /**
-     * Shows the member list view
-     */
-    protected void showMemberList() {
-        contentPanel.removeAll();
-        
-        MemberListView memberListView = new MemberListView(parentFrame);
-        contentPanel.add(memberListView, BorderLayout.CENTER);
-        
-        contentPanel.revalidate();
-        contentPanel.repaint();
-    }
-    
-    /**
-     * Shows the member registration view
-     */
-    protected void showMemberRegistration() {
-        if (!AuthController.isSuperAdmin() && !AuthController.isTreasurer()) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "You don't have permission to register members.",
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
+    protected void handleMenuItemSelection(String selectedItem) {
+        switch (selectedItem) {
+            case "Dashboard":
+                showDashboard();
+                break;
+            case "Member Management":
+                showMemberManagement();
+                break;
+            case "Savings Management":
+                showSavingsManagement();
+                break;
+            case "Loan Management":
+                showLoanManagement();
+                break;
+            case "Transaction History":
+                showTransactionHistory();
+                break;
+            case "Reports":
+                showReports();
+                break;
+            case "Settings":
+                showSettings();
+                break;
+            case "My Account":
+                showMyAccount();
+                break;
+            default:
+                showDashboard();
         }
-        
-        contentPanel.removeAll();
-        
-        MemberRegistrationView registrationView = new MemberRegistrationView(parentFrame);
-        contentPanel.add(registrationView, BorderLayout.CENTER);
-        
-        contentPanel.revalidate();
-        contentPanel.repaint();
     }
     
     /**
-     * Shows the transactions view
+     * Shows the dashboard screen
      */
-    protected void showTransactions() {
+    protected void showDashboard() {
         contentPanel.removeAll();
         
-        TransactionView transactionView = new TransactionView(parentFrame);
-        contentPanel.add(transactionView, BorderLayout.CENTER);
+        JLabel placeholderLabel = new JLabel("Dashboard content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
         
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
     /**
-     * Shows the loans view
+     * Shows the member management screen
      */
-    protected void showLoans() {
+    protected void showMemberManagement() {
         contentPanel.removeAll();
         
-        LoanApplicationView loanView = new LoanApplicationView(parentFrame);
-        contentPanel.add(loanView, BorderLayout.CENTER);
+        JLabel placeholderLabel = new JLabel("Member management content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
         
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
     /**
-     * Shows the user management view
+     * Shows the savings management screen
      */
-    protected void showUserManagement() {
-        if (!AuthController.isSuperAdmin()) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Only super administrators can manage users.",
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
+    protected void showSavingsManagement() {
         contentPanel.removeAll();
         
-        UserManagementView userManagementView = new UserManagementView(parentFrame);
-        contentPanel.add(userManagementView, BorderLayout.CENTER);
+        JLabel placeholderLabel = new JLabel("Savings management content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
         
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
     /**
-     * Shows the savings settings view
+     * Shows the loan management screen
      */
-    protected void showSavingsSettings() {
-        if (!AuthController.isSuperAdmin()) {
-            JOptionPane.showMessageDialog(parentFrame, 
-                    "Only super administrators can change savings settings.",
-                    "Access Denied", 
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
+    protected void showLoanManagement() {
         contentPanel.removeAll();
         
-        SavingsSettingsView savingsSettingsView = new SavingsSettingsView(parentFrame);
-        contentPanel.add(savingsSettingsView, BorderLayout.CENTER);
+        JLabel placeholderLabel = new JLabel("Loan management content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
         
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
     /**
-     * Shows the reports view
+     * Shows the transaction history screen
+     */
+    protected void showTransactionHistory() {
+        contentPanel.removeAll();
+        
+        JLabel placeholderLabel = new JLabel("Transaction history content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
+        
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+    
+    /**
+     * Shows the reports screen
      */
     protected void showReports() {
         contentPanel.removeAll();
         
-        ReportView reportView = new ReportView(parentFrame);
-        contentPanel.add(reportView, BorderLayout.CENTER);
+        JLabel placeholderLabel = new JLabel("Reports content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
         
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+    
+    /**
+     * Shows the settings screen
+     */
+    protected void showSettings() {
+        contentPanel.removeAll();
+        
+        JLabel placeholderLabel = new JLabel("Settings content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
+        
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+    
+    /**
+     * Shows the user account screen
+     */
+    protected void showMyAccount() {
+        contentPanel.removeAll();
+        
+        JLabel placeholderLabel = new JLabel("User account content will be displayed here.");
+        placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
+        contentPanel.add(placeholderLabel, BorderLayout.CENTER);
+        
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+    
+    /**
+     * Gets the current user's display name
+     * 
+     * @return User display name
+     */
+    protected String getUserDisplayName() {
+        if (AuthController.getCurrentUser() != null) {
+            String fullName = AuthController.getCurrentUser().getFullName();
+            if (fullName != null && !fullName.isEmpty()) {
+                return fullName;
+            }
+            return AuthController.getCurrentUser().getUsername();
+        }
+        return "User";
     }
     
     /**
@@ -471,17 +421,17 @@ public class DashboardView extends JPanel {
      */
     protected String getTransactionTypeDisplay(String transactionType) {
         switch (transactionType) {
-            case "DEPOSIT":
+            case Constants.TRANSACTION_DEPOSIT:
                 return "Deposit";
-            case "WITHDRAWAL":
+            case Constants.TRANSACTION_WITHDRAWAL:
                 return "Withdrawal";
-            case "INTEREST_EARNING":
+            case Constants.TRANSACTION_INTEREST_EARNING:
                 return "Interest Earning";
-            case "LOAN_RELEASE":
+            case Constants.TRANSACTION_LOAN_RELEASE:
                 return "Loan Release";
-            case "LOAN_PAYMENT":
+            case Constants.TRANSACTION_LOAN_PAYMENT:
                 return "Loan Payment";
-            case "FEE":
+            case Constants.TRANSACTION_FEE:
                 return "Fee";
             default:
                 return transactionType;
@@ -500,7 +450,7 @@ public class DashboardView extends JPanel {
         
         if (option == JOptionPane.YES_OPTION) {
             AuthController.logout();
-            App.changeView(new LoginView(parentFrame));
+            com.moscat.App.changeView(new LoginView(parentFrame));
         }
     }
 }

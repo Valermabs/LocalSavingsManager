@@ -1,110 +1,149 @@
 package com.moscat.utils;
 
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
- * Utility class for date operations
+ * Utility methods for working with dates
  */
 public class DateUtils {
     
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // Date format patterns
+    private static final String DISPLAY_DATE_FORMAT = "MMM dd, yyyy";
+    private static final String SQL_DATE_FORMAT = "yyyy-MM-dd";
+    private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     
     /**
-     * Gets the current SQL date
-     * 
-     * @return Current date as java.sql.Date
-     */
-    public static Date getCurrentDate() {
-        return new Date(System.currentTimeMillis());
-    }
-    
-    /**
-     * Gets the current SQL timestamp
-     * 
-     * @return Current timestamp as java.sql.Timestamp
-     */
-    public static Timestamp getCurrentTimestamp() {
-        return new Timestamp(System.currentTimeMillis());
-    }
-    
-    /**
-     * Formats a date for display
+     * Formats a date for display in UI
      * 
      * @param date Date to format
-     * @return Formatted date string
+     * @return Formatted date string or empty string if date is null
      */
-    public static String formatDateForDisplay(java.util.Date date) {
+    public static String formatDateForDisplay(Date date) {
         if (date == null) {
             return "";
         }
-        return DATE_FORMAT.format(date);
+        SimpleDateFormat sdf = new SimpleDateFormat(DISPLAY_DATE_FORMAT);
+        return sdf.format(date);
     }
     
     /**
-     * Formats a date time for display
+     * Formats a date for SQL operations
      * 
      * @param date Date to format
-     * @return Formatted date time string
+     * @return Formatted date string or empty string if date is null
      */
-    public static String formatDateTimeForDisplay(java.util.Date date) {
+    public static String formatDateForSQL(Date date) {
         if (date == null) {
             return "";
         }
-        return DATE_TIME_FORMAT.format(date);
+        SimpleDateFormat sdf = new SimpleDateFormat(SQL_DATE_FORMAT);
+        return sdf.format(date);
     }
     
     /**
-     * Formats a SQL date as string
+     * Formats a date and time for SQL operations
      * 
-     * @param date SQL date to format
-     * @return Formatted date string
+     * @param date Date to format
+     * @return Formatted datetime string or empty string if date is null
      */
-    public static String formatDate(Date date) {
+    public static String formatDateTimeForSQL(Date date) {
         if (date == null) {
             return "";
         }
-        return DATE_FORMAT.format(date);
+        SimpleDateFormat sdf = new SimpleDateFormat(DATETIME_FORMAT);
+        return sdf.format(date);
     }
     
     /**
-     * Parses a date string to java.sql.Date
+     * Parses a date string in display format
      * 
-     * @param dateStr Date string in yyyy-MM-dd format
-     * @return SQL date
-     * @throws ParseException If date format is invalid
+     * @param dateStr Date string in display format
+     * @return Parsed date or null if parsing fails
      */
-    public static Date parseDate(String dateStr) throws ParseException {
+    public static Date parseDisplayDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) {
             return null;
         }
-        java.util.Date parsed = DATE_FORMAT.parse(dateStr);
-        return new Date(parsed.getTime());
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(DISPLAY_DATE_FORMAT);
+            return sdf.parse(dateStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
     
     /**
-     * Calculates age from birth date
+     * Parses a date string in SQL format
+     * 
+     * @param dateStr Date string in SQL format
+     * @return Parsed date or null if parsing fails
+     */
+    public static Date parseSQLDate(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) {
+            return null;
+        }
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(SQL_DATE_FORMAT);
+            return sdf.parse(dateStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Converts a java.util.Date to java.sql.Date
+     * 
+     * @param date Java date
+     * @return SQL date or null if the input is null
+     */
+    public static java.sql.Date toSqlDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return new java.sql.Date(date.getTime());
+    }
+    
+    /**
+     * Gets the current date with time set to 00:00:00
+     * 
+     * @return Current date at start of day
+     */
+    public static Date getCurrentDateNoTime() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+    
+    /**
+     * Calculates age based on birth date
      * 
      * @param birthDate Birth date
      * @return Age in years
      */
-    public static int calculateAge(java.util.Date birthDate) {
+    public static int calculateAge(Date birthDate) {
         if (birthDate == null) {
             return 0;
         }
         
-        java.util.Calendar birthCal = java.util.Calendar.getInstance();
+        Calendar birthCal = Calendar.getInstance();
         birthCal.setTime(birthDate);
         
-        java.util.Calendar currentCal = java.util.Calendar.getInstance();
+        Calendar nowCal = Calendar.getInstance();
         
-        int age = currentCal.get(java.util.Calendar.YEAR) - birthCal.get(java.util.Calendar.YEAR);
+        int age = nowCal.get(Calendar.YEAR) - birthCal.get(Calendar.YEAR);
         
-        // Adjust age if birthday hasn't occurred yet this year
-        if (currentCal.get(java.util.Calendar.DAY_OF_YEAR) < birthCal.get(java.util.Calendar.DAY_OF_YEAR)) {
+        // Check if birthday has occurred this year
+        if (nowCal.get(Calendar.MONTH) < birthCal.get(Calendar.MONTH) || 
+                (nowCal.get(Calendar.MONTH) == birthCal.get(Calendar.MONTH) && 
+                nowCal.get(Calendar.DAY_OF_MONTH) < birthCal.get(Calendar.DAY_OF_MONTH))) {
             age--;
         }
         
@@ -112,77 +151,88 @@ public class DateUtils {
     }
     
     /**
-     * Calculates months between two dates
+     * Gets the first day of the current month
      * 
-     * @param startDate Start date
-     * @param endDate End date
-     * @return Number of months between dates
+     * @return First day of current month
      */
-    public static int getMonthsBetween(java.util.Date startDate, java.util.Date endDate) {
-        if (startDate == null || endDate == null) {
-            return 0;
-        }
-        
-        java.util.Calendar startCal = java.util.Calendar.getInstance();
-        startCal.setTime(startDate);
-        
-        java.util.Calendar endCal = java.util.Calendar.getInstance();
-        endCal.setTime(endDate);
-        
-        int yearDiff = endCal.get(java.util.Calendar.YEAR) - startCal.get(java.util.Calendar.YEAR);
-        int monthDiff = endCal.get(java.util.Calendar.MONTH) - startCal.get(java.util.Calendar.MONTH);
-        
-        return yearDiff * 12 + monthDiff;
+    public static Date getFirstDayOfCurrentMonth() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
     }
     
     /**
-     * Adds days to a date
+     * Gets the last day of the current month
+     * 
+     * @return Last day of current month
+     */
+    public static Date getLastDayOfCurrentMonth() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        return calendar.getTime();
+    }
+    
+    /**
+     * Gets the first day of the given month and year
+     * 
+     * @param year Year
+     * @param month Month (1-12)
+     * @return First day of specified month
+     */
+    public static Date getFirstDayOfMonth(int year, int month) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1); // Calendar months are 0-based
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+    
+    /**
+     * Gets the last day of the given month and year
+     * 
+     * @param year Year
+     * @param month Month (1-12)
+     * @return Last day of specified month
+     */
+    public static Date getLastDayOfMonth(int year, int month) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1); // Calendar months are 0-based
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        return calendar.getTime();
+    }
+    
+    /**
+     * Adds a number of days to a date
      * 
      * @param date Base date
-     * @param days Number of days to add
-     * @return New date with days added
+     * @param days Number of days to add (can be negative)
+     * @return New date
      */
-    public static java.util.Date addDays(java.util.Date date, int days) {
+    public static Date addDays(Date date, int days) {
         if (date == null) {
             return null;
         }
         
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.setTime(date);
-        cal.add(java.util.Calendar.DAY_OF_MONTH, days);
-        
-        return cal.getTime();
-    }
-    
-    /**
-     * Adds months to a date
-     * 
-     * @param date Base date
-     * @param months Number of months to add
-     * @return New date with months added
-     */
-    public static java.util.Date addMonths(java.util.Date date, int months) {
-        if (date == null) {
-            return null;
-        }
-        
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.setTime(date);
-        cal.add(java.util.Calendar.MONTH, months);
-        
-        return cal.getTime();
-    }
-    
-    /**
-     * Converts a java.util.Date to java.sql.Date
-     * 
-     * @param date Java util date
-     * @return SQL date
-     */
-    public static Date toSqlDate(java.util.Date date) {
-        if (date == null) {
-            return null;
-        }
-        return new Date(date.getTime());
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DAY_OF_YEAR, days);
+        return calendar.getTime();
     }
 }
