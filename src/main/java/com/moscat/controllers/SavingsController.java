@@ -148,7 +148,9 @@ public class SavingsController {
             }
         }
         
-        return false;
+        // This is never reached due to returns in try-catch blocks
+        // but we need it for method signature compliance
+        // return false;
     }
     
     /**
