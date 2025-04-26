@@ -124,10 +124,14 @@ public class App {
                     + "member_id INTEGER NOT NULL,"
                     + "account_type VARCHAR(20) NOT NULL,"
                     + "balance DECIMAL(12,2) NOT NULL DEFAULT 0.0,"
+                    + "interest_accrued DECIMAL(12,2) NOT NULL DEFAULT 0.0,"
                     + "interest_rate DECIMAL(5,3) NOT NULL,"
+                    + "minimum_balance DECIMAL(12,2) DEFAULT 0.0,"
                     + "status VARCHAR(20) NOT NULL DEFAULT 'Active',"
                     + "opened_date DATE NOT NULL,"
                     + "last_transaction_date TIMESTAMP,"
+                    + "last_interest_date TIMESTAMP,"
+                    + "dormant_since TIMESTAMP,"
                     + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
                     + "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
                     + "FOREIGN KEY (member_id) REFERENCES members(id)"
@@ -208,6 +212,26 @@ public class App {
                     + "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
                     + ")";
             stmt.execute(settingsTable);
+            
+            // Create interest_settings table
+            String interestSettingsTable = "CREATE TABLE IF NOT EXISTS interest_settings ("
+                    + "id INTEGER PRIMARY KEY AUTO_INCREMENT,"
+                    + "interest_rate DECIMAL(5,3) NOT NULL,"
+                    + "regular_savings_rate DECIMAL(5,3),"
+                    + "time_deposit_rate DECIMAL(5,3),"
+                    + "share_capital_rate DECIMAL(5,3),"
+                    + "minimum_balance DECIMAL(12,2) NOT NULL,"
+                    + "calculation_method VARCHAR(20) NOT NULL,"
+                    + "effective_date DATE NOT NULL,"
+                    + "change_basis VARCHAR(255),"
+                    + "board_resolution_number VARCHAR(50),"
+                    + "approval_date DATE,"
+                    + "status VARCHAR(20) NOT NULL DEFAULT 'Active',"
+                    + "created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                    + "created_by INTEGER,"
+                    + "FOREIGN KEY (created_by) REFERENCES users(id)"
+                    + ")";
+            stmt.execute(interestSettingsTable);
         }
     }
     

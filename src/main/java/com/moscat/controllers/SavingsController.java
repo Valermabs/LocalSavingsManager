@@ -11,6 +11,7 @@ import com.moscat.utils.DateUtils;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -611,17 +612,47 @@ public class SavingsController {
                 return false;
             }
             
-            // Calculate interest amount (simplified annual interest)
-            double interestAmount = account.getBalance() * account.getInterestRate() / 12; // Monthly interest
-            double newBalance = account.getBalance() + interestAmount;
+            // Get current interest settings
+            InterestSettings settings = getCurrentInterestSettings();
+            if (settings == null) {
+                // Use default settings if none found
+                settings = new InterestSettings();
+                settings.setInterestRate(Constants.DEFAULT_SAVINGS_INTEREST_RATE);
+                settings.setMinimumBalance(500.0); // Default minimum
+                settings.setCalculationMethod(InterestSettings.CALCULATION_MONTHLY);
+            }
             
-            // Update account balance
-            String updateQuery = "UPDATE savings_accounts SET balance = ?, last_transaction_date = ? WHERE id = ?";
+            // Check if account meets minimum balance requirement
+            if (account.getBalance() < settings.getMinimumBalance()) {
+                // No interest earned if balance is below minimum
+                return false;
+            }
+            
+            double interestAmount = 0.0;
+            // Calculate interest based on calculation method
+            if (InterestSettings.CALCULATION_DAILY.equals(settings.getCalculationMethod())) {
+                // Daily interest calculation (annual rate / 365)
+                interestAmount = account.getBalance() * (settings.getInterestRate() / 365.0);
+            } else {
+                // Monthly interest calculation (annual rate / 12)
+                interestAmount = account.getBalance() * (settings.getInterestRate() / 12.0);
+            }
+            
+            // Round to 2 decimal places
+            interestAmount = Math.round(interestAmount * 100.0) / 100.0;
+            
+            // We don't add interest to the principal, just record it separately
+            // as per requirement: "the interest earning should not be added to the principal"
+            
+            // Record interest accrual in a separate field
+            String updateQuery = "UPDATE savings_accounts SET interest_accrued = interest_accrued + ?, " +
+                    "last_interest_date = ?, last_transaction_date = ? WHERE id = ?";
             
             updateStmt = conn.prepareStatement(updateQuery);
-            updateStmt.setDouble(1, newBalance);
+            updateStmt.setDouble(1, interestAmount);
             updateStmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
-            updateStmt.setInt(3, accountId);
+            updateStmt.setTimestamp(3, DateUtils.getCurrentTimestamp());
+            updateStmt.setInt(4, accountId);
             
             int rowsAffected = updateStmt.executeUpdate();
             
@@ -639,8 +670,8 @@ public class SavingsController {
                 transactionStmt.setString(3, Constants.TRANSACTION_INTEREST_EARNING);
                 transactionStmt.setDouble(4, interestAmount);
                 transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
-                transactionStmt.setString(6, "Interest earning");
-                transactionStmt.setDouble(7, newBalance);
+                transactionStmt.setString(6, "Interest accrual - not added to principal");
+                transactionStmt.setDouble(7, account.getBalance()); // Balance remains the same
                 transactionStmt.setInt(8, performedById);
                 
                 transactionStmt.executeUpdate();
@@ -855,10 +886,39 @@ public class SavingsController {
         account.setMemberId(rs.getInt("member_id"));
         account.setAccountType(rs.getString("account_type"));
         account.setBalance(rs.getDouble("balance"));
+        
+        // Handle new fields, checking if they exist in the result set
+        try {
+            account.setInterestAccrued(rs.getDouble("interest_accrued"));
+        } catch (SQLException e) {
+            // If column doesn't exist, set default value
+            account.setInterestAccrued(0.0);
+        }
+        
         account.setInterestRate(rs.getDouble("interest_rate"));
+        
+        try {
+            account.setMinimumBalance(rs.getDouble("minimum_balance"));
+        } catch (SQLException e) {
+            account.setMinimumBalance(0.0);
+        }
+        
         account.setStatus(rs.getString("status"));
         account.setOpenedDate(rs.getDate("opened_date"));
         account.setLastTransactionDate(rs.getTimestamp("last_transaction_date"));
+        
+        try {
+            account.setLastInterestDate(rs.getTimestamp("last_interest_date"));
+        } catch (SQLException e) {
+            // If column doesn't exist, leave as null
+        }
+        
+        try {
+            account.setDormantSince(rs.getTimestamp("dormant_since"));
+        } catch (SQLException e) {
+            // If column doesn't exist, leave as null
+        }
+        
         account.setCreatedAt(rs.getTimestamp("created_at"));
         account.setUpdatedAt(rs.getTimestamp("updated_at"));
         return account;
@@ -922,6 +982,133 @@ public class SavingsController {
     }
     
     /**
+     * Withdraws accrued interest from a savings account
+     * 
+     * @param accountId Account ID
+     * @param amount Amount to withdraw (if 0, withdraws all accrued interest)
+     * @param description Transaction description
+     * @param performedById User ID who performed the operation
+     * @return true if withdrawal successful, false otherwise
+     */
+    public static boolean withdrawInterest(int accountId, double amount, String description, int performedById) {
+        // Validate input
+        if (accountId <= 0) {
+            return false;
+        }
+        
+        Connection conn = null;
+        PreparedStatement updateStmt = null;
+        PreparedStatement transactionStmt = null;
+        
+        try {
+            // Get connection
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            // Start transaction
+            conn.setAutoCommit(false);
+            
+            // Get current account details
+            SavingsAccount account = getSavingsAccountById(accountId);
+            
+            if (account == null || !Constants.STATUS_ACTIVE.equals(account.getStatus())) {
+                return false;
+            }
+            
+            // If amount is 0, withdraw all accrued interest
+            double withdrawAmount = amount;
+            if (withdrawAmount <= 0 || withdrawAmount > account.getInterestAccrued()) {
+                withdrawAmount = account.getInterestAccrued();
+            }
+            
+            // Make sure there's interest to withdraw
+            if (withdrawAmount <= 0) {
+                return false;
+            }
+            
+            // Update interest accrued in account
+            String updateQuery = "UPDATE savings_accounts SET interest_accrued = interest_accrued - ?, " +
+                    "last_transaction_date = ? WHERE id = ?";
+            
+            updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setDouble(1, withdrawAmount);
+            updateStmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            updateStmt.setInt(3, accountId);
+            
+            int rowsAffected = updateStmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Add withdrawal transaction record
+                String transactionId = generateTransactionId();
+                
+                String transactionQuery = "INSERT INTO transactions (transaction_id, account_id, " +
+                        "transaction_type, amount, transaction_date, description, balance_after, performed_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                transactionStmt = conn.prepareStatement(transactionQuery);
+                transactionStmt.setString(1, transactionId);
+                transactionStmt.setInt(2, accountId);
+                transactionStmt.setString(3, Constants.TRANSACTION_INTEREST_WITHDRAWAL);
+                transactionStmt.setDouble(4, withdrawAmount);
+                transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+                transactionStmt.setString(6, description != null && !description.isEmpty() ? 
+                        description : "Interest withdrawal");
+                transactionStmt.setDouble(7, account.getBalance());
+                transactionStmt.setInt(8, performedById);
+                
+                transactionStmt.executeUpdate();
+                
+                // Commit transaction
+                conn.commit();
+                return true;
+            }
+            
+            // Rollback on failure
+            conn.rollback();
+            return false;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            
+            // Rollback on exception
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            return false;
+        } finally {
+            // Close resources
+            if (transactionStmt != null) {
+                try {
+                    transactionStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (updateStmt != null) {
+                try {
+                    updateStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
+    /**
      * Gets the current interest settings
      * 
      * @return The current interest settings
@@ -974,19 +1161,46 @@ public class SavingsController {
      * @return true if creation successful, false otherwise
      */
     public static boolean createInterestSettings(InterestSettings settings) {
-        String query = "INSERT INTO interest_settings (regular_savings_rate, time_deposit_rate, " +
-                "share_capital_rate, effective_date, created_date, created_by) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO interest_settings (interest_rate, regular_savings_rate, time_deposit_rate, " +
+                "share_capital_rate, minimum_balance, calculation_method, effective_date, " +
+                "change_basis, board_resolution_number, approval_date, status, " +
+                "created_date, created_by) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setDouble(1, settings.getRegularSavingsRate());
-            stmt.setDouble(2, settings.getTimeDepositRate());
-            stmt.setDouble(3, settings.getShareCapitalRate());
-            stmt.setDate(4, DateUtils.toSqlDate(settings.getEffectiveDate()));
-            stmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
-            stmt.setInt(6, settings.getCreatedBy());
+            // Interest rates and balance settings
+            stmt.setDouble(1, settings.getInterestRate());
+            stmt.setDouble(2, settings.getRegularSavingsRate());
+            stmt.setDouble(3, settings.getTimeDepositRate());
+            stmt.setDouble(4, settings.getShareCapitalRate());
+            stmt.setDouble(5, settings.getMinimumBalance());
+            
+            // Method and dates
+            stmt.setString(6, settings.getCalculationMethod());
+            stmt.setDate(7, DateUtils.toSqlDate(settings.getEffectiveDate()));
+            
+            // Change information
+            stmt.setString(8, settings.getChangeBasis());
+            stmt.setString(9, settings.getBoardResolutionNumber());
+            
+            // If approval date is null, use effective date
+            Date approvalDate = settings.getApprovalDate();
+            if (approvalDate == null) {
+                approvalDate = settings.getEffectiveDate();
+            }
+            stmt.setDate(10, DateUtils.toSqlDate(approvalDate));
+            
+            // Status and audit info
+            String status = settings.getStatus();
+            if (status == null || status.isEmpty()) {
+                status = "Active";
+            }
+            stmt.setString(11, status);
+            
+            stmt.setTimestamp(12, DateUtils.getCurrentTimestamp());
+            stmt.setInt(13, settings.getCreatedBy());
             
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
@@ -994,6 +1208,81 @@ public class SavingsController {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    /**
+     * Checks for dormant savings accounts and updates their status
+     * An account is considered dormant if it has no transactions for at least 12 months
+     * 
+     * @return List of accounts that were marked as dormant
+     */
+    public static List<SavingsAccount> checkForDormantAccounts() {
+        List<SavingsAccount> dormantAccounts = new ArrayList<>();
+        
+        // Get active accounts that have not had a transaction in the last 12 months
+        String query = "SELECT * FROM savings_accounts WHERE status = ? " +
+                "AND (last_transaction_date IS NULL OR last_transaction_date < ?)";
+        
+        // Get date 12 months ago
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -12);
+        Date dormancyThreshold = cal.getTime();
+        
+        Connection conn = null;
+        PreparedStatement selectStmt = null;
+        PreparedStatement updateStmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            conn.setAutoCommit(false);
+            
+            // Find accounts that might be dormant
+            selectStmt = conn.prepareStatement(query);
+            selectStmt.setString(1, Constants.SAVINGS_STATUS_ACTIVE);
+            selectStmt.setTimestamp(2, new Timestamp(dormancyThreshold.getTime()));
+            
+            rs = selectStmt.executeQuery();
+            
+            // Prepare update statement
+            String updateQuery = "UPDATE savings_accounts SET status = ?, dormant_since = ? WHERE id = ?";
+            updateStmt = conn.prepareStatement(updateQuery);
+            
+            Timestamp now = DateUtils.getCurrentTimestamp();
+            
+            while (rs.next()) {
+                SavingsAccount account = mapResultSetToSavingsAccount(rs);
+                
+                // Mark account as dormant
+                updateStmt.setString(1, Constants.SAVINGS_STATUS_DORMANT);
+                updateStmt.setTimestamp(2, now);
+                updateStmt.setInt(3, account.getId());
+                
+                updateStmt.executeUpdate();
+                
+                // Set dormant status in object
+                account.setStatus(Constants.SAVINGS_STATUS_DORMANT);
+                account.setDormantSince(new Date());
+                
+                dormantAccounts.add(account);
+            }
+            
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        } finally {
+            DatabaseManager.closeResources(rs, selectStmt, null);
+            DatabaseManager.closeResources(null, updateStmt, conn);
+        }
+        
+        return dormantAccounts;
     }
     
     /**
@@ -1006,12 +1295,66 @@ public class SavingsController {
     private static InterestSettings mapResultSetToInterestSettings(ResultSet rs) throws SQLException {
         InterestSettings settings = new InterestSettings();
         settings.setId(rs.getInt("id"));
+        
+        // Try to get interest_rate, may not exist in older records
+        try {
+            settings.setInterestRate(rs.getDouble("interest_rate"));
+        } catch (SQLException e) {
+            // Use regular savings rate as fallback
+            settings.setInterestRate(rs.getDouble("regular_savings_rate"));
+        }
+        
         settings.setRegularSavingsRate(rs.getDouble("regular_savings_rate"));
         settings.setTimeDepositRate(rs.getDouble("time_deposit_rate"));
         settings.setShareCapitalRate(rs.getDouble("share_capital_rate"));
+        
+        // Try to get minimum_balance, may not exist in older records
+        try {
+            settings.setMinimumBalance(rs.getDouble("minimum_balance"));
+        } catch (SQLException e) {
+            // Default to 500 if not found
+            settings.setMinimumBalance(500.0);
+        }
+        
+        // Try to get calculation_method, may not exist in older records
+        try {
+            settings.setCalculationMethod(rs.getString("calculation_method"));
+        } catch (SQLException e) {
+            // Default to monthly if not found
+            settings.setCalculationMethod(InterestSettings.CALCULATION_MONTHLY);
+        }
+        
         settings.setEffectiveDate(rs.getDate("effective_date"));
+        
+        // Try to get change_basis, board_resolution_number, and approval_date
+        try {
+            settings.setChangeBasis(rs.getString("change_basis"));
+        } catch (SQLException e) {
+            // Leave as null if not found
+        }
+        
+        try {
+            settings.setBoardResolutionNumber(rs.getString("board_resolution_number"));
+        } catch (SQLException e) {
+            // Leave as null if not found
+        }
+        
+        try {
+            settings.setApprovalDate(rs.getDate("approval_date"));
+        } catch (SQLException e) {
+            // Leave as null if not found
+        }
+        
+        try {
+            settings.setStatus(rs.getString("status"));
+        } catch (SQLException e) {
+            // Default to Active if not found
+            settings.setStatus("Active");
+        }
+        
         settings.setCreatedDate(rs.getTimestamp("created_date"));
         settings.setCreatedBy(rs.getInt("created_by"));
+        
         return settings;
     }
 }

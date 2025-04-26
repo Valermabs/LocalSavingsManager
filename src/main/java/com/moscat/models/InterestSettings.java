@@ -4,8 +4,13 @@ import java.util.Date;
 
 /**
  * Model class for interest rate settings for savings accounts
+ * Supports configurable interest rates with calculation methods and minimum balance requirements
  */
 public class InterestSettings {
+    
+    // Calculation method constants
+    public static final String CALCULATION_MONTHLY = "Monthly";
+    public static final String CALCULATION_DAILY = "Daily";
     
     private int id;
     private double interestRate;
@@ -19,12 +24,17 @@ public class InterestSettings {
     private String status;
     private Date createdDate;
     private int createdBy;
+    private String boardResolutionNumber;
+    private Date approvalDate;
     
     /**
      * Default constructor
      */
     public InterestSettings() {
-        // Default constructor
+        // Initialize with default values
+        this.calculationMethod = CALCULATION_MONTHLY;
+        this.minimumBalance = 500.0; // Default minimum balance
+        this.status = "Active";
     }
     
     /**
@@ -47,6 +57,9 @@ public class InterestSettings {
         this.effectiveDate = effectiveDate;
         this.createdDate = createdDate;
         this.createdBy = createdBy;
+        this.calculationMethod = CALCULATION_MONTHLY;
+        this.minimumBalance = 500.0; // Default minimum balance
+        this.status = "Active";
     }
 
     // Getters and Setters
@@ -226,5 +239,56 @@ public class InterestSettings {
      */
     public void setCreatedAt(Date createdAt) {
         this.createdDate = createdAt;
+    }
+    
+    /**
+     * @return the boardResolutionNumber
+     */
+    public String getBoardResolutionNumber() {
+        return boardResolutionNumber;
+    }
+
+    /**
+     * @param boardResolutionNumber the board resolution number to set
+     */
+    public void setBoardResolutionNumber(String boardResolutionNumber) {
+        this.boardResolutionNumber = boardResolutionNumber;
+    }
+
+    /**
+     * @return the approvalDate
+     */
+    public Date getApprovalDate() {
+        return approvalDate;
+    }
+
+    /**
+     * @param approvalDate the approval date to set
+     */
+    public void setApprovalDate(Date approvalDate) {
+        this.approvalDate = approvalDate;
+    }
+    
+    /**
+     * Calculates daily interest rate if the calculation method is daily
+     * 
+     * @return Daily interest rate 
+     */
+    public double getDailyInterestRate() {
+        if (CALCULATION_DAILY.equals(calculationMethod)) {
+            // Divide by 365 days
+            return interestRate / 365.0;
+        }
+        return interestRate;
+    }
+    
+    /**
+     * Checks if a savings account meets the minimum balance requirement
+     * 
+     * @param balance Account balance to check
+     * @return true if the balance is sufficient to earn interest, false otherwise
+     */
+    public boolean meetsMinimumBalance(double balance) {
+        return balance >= minimumBalance;
     }
 }

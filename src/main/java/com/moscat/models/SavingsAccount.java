@@ -13,13 +13,17 @@ public class SavingsAccount {
     private int memberId;
     private String accountType;
     private double balance;
+    private double interestAccrued; // Accrued interest that doesn't add to principal
     private double interestRate;
     private double interestEarned;
+    private double minimumBalance;
     private String status;
     private Date openedDate;
     private Date openDate;
     private Date lastTransactionDate;
+    private Date lastInterestDate;
     private Date lastActivityDate;
+    private Date dormantSince;
     private Date createdAt;
     private Date updatedAt;
     
@@ -307,5 +311,109 @@ public class SavingsAccount {
      */
     public double getTotalBalance() {
         return balance;
+    }
+    
+    /**
+     * Gets the interest accrued
+     * 
+     * @return Interest accrued
+     */
+    public double getInterestAccrued() {
+        return interestAccrued;
+    }
+    
+    /**
+     * Sets the interest accrued
+     * 
+     * @param interestAccrued Interest accrued
+     */
+    public void setInterestAccrued(double interestAccrued) {
+        this.interestAccrued = interestAccrued;
+    }
+    
+    /**
+     * Gets the minimum balance
+     * 
+     * @return Minimum balance
+     */
+    public double getMinimumBalance() {
+        return minimumBalance;
+    }
+    
+    /**
+     * Sets the minimum balance
+     * 
+     * @param minimumBalance Minimum balance
+     */
+    public void setMinimumBalance(double minimumBalance) {
+        this.minimumBalance = minimumBalance;
+    }
+    
+    /**
+     * Gets the last interest calculation date
+     * 
+     * @return Last interest calculation date
+     */
+    public Date getLastInterestDate() {
+        return lastInterestDate;
+    }
+    
+    /**
+     * Sets the last interest calculation date
+     * 
+     * @param lastInterestDate Last interest calculation date
+     */
+    public void setLastInterestDate(Date lastInterestDate) {
+        this.lastInterestDate = lastInterestDate;
+    }
+    
+    /**
+     * Gets the dormant since date
+     * 
+     * @return Dormant since date
+     */
+    public Date getDormantSince() {
+        return dormantSince;
+    }
+    
+    /**
+     * Sets the dormant since date
+     * 
+     * @param dormantSince Dormant since date
+     */
+    public void setDormantSince(Date dormantSince) {
+        this.dormantSince = dormantSince;
+    }
+    
+    /**
+     * Gets the total available balance (principal + accrued interest)
+     * 
+     * @return Total available balance
+     */
+    public double getAvailableBalance() {
+        return balance + interestAccrued;
+    }
+    
+    /**
+     * Checks if account is dormant for X months
+     * 
+     * @param monthsInactive Number of months to check for dormancy
+     * @return true if account is dormant for specified months
+     */
+    public boolean isDormantFor(int monthsInactive) {
+        if (lastActivityDate == null && lastTransactionDate == null) {
+            return false;
+        }
+        
+        Date lastActivity = getLastActivityDate();
+        if (lastActivity == null) {
+            return false;
+        }
+        
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.MONTH, -monthsInactive);
+        Date dormancyThreshold = cal.getTime();
+        
+        return lastActivity.before(dormancyThreshold);
     }
 }

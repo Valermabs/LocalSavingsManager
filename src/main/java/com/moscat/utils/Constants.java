@@ -44,6 +44,8 @@ public class Constants {
     public static final String TRANSACTION_TRANSFER = "Transfer";
     public static final String TRANSACTION_INTEREST_EARNING = "Interest";
     public static final String TRANSACTION_INTEREST = "Interest";
+    public static final String TRANSACTION_INTEREST_ACCRUAL = "Interest Accrual";
+    public static final String TRANSACTION_INTEREST_WITHDRAWAL = "Interest Withdrawal";
     public static final String TRANSACTION_LOAN_RELEASE = "Loan Release";
     public static final String TRANSACTION_LOAN_PAYMENT = "Loan Payment";
     public static final String TRANSACTION_FEE = "Fee";
@@ -95,6 +97,11 @@ public class Constants {
     // Default interest rates
     public static final double DEFAULT_SAVINGS_INTEREST_RATE = 0.025; // 2.5%
     public static final double DEFAULT_LOAN_INTEREST_RATE = 0.12; // 12%
+    
+    // Interest calculation methods
+    public static final String INTEREST_CALCULATION_DAILY = "Daily";
+    public static final String INTEREST_CALCULATION_MONTHLY = "Monthly";
+    public static final double DEFAULT_MINIMUM_BALANCE = 500.0; // Default minimum balance for interest
     
     // System settings
     public static final String SETTING_SAVINGS_INTEREST_RATE = "savings_interest_rate";
