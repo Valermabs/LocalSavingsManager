@@ -46,7 +46,7 @@ public class AdminController {
             stmt.setString(5, user.getFullName());
             stmt.setString(6, user.getEmail());
             stmt.setString(7, user.getContactNumber());
-            stmt.setDate(8, DateUtils.getCurrentSqlDate());
+            stmt.setDate(8, DateUtils.toSqlDate(DateUtils.getCurrentDate()));
             
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
@@ -401,7 +401,7 @@ public class AdminController {
             }
             
             // Get transactions today
-            String today = DateUtils.formatDate(DateUtils.getCurrentDate());
+            String today = DateUtils.formatDateForDisplay(DateUtils.getCurrentDate());
             try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM transactions WHERE DATE(transaction_date) = ?")) {
                 stmt.setString(1, today);
                 ResultSet rs = stmt.executeQuery();

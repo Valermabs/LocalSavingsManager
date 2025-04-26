@@ -16,12 +16,14 @@
 /home/runner/workspace/src/main/java/com/moscat/models/Loan.java
 /home/runner/workspace/src/main/java/com/moscat/views/LoginView.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/MemberController.java
+/home/runner/workspace/src/main/java/com/moscat/models/UserPermission.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/ReportController.java
 /home/runner/workspace/src/main/java/com/moscat/views/SavingsSettingsView.java
 /home/runner/workspace/src/main/java/com/moscat/views/UserAccountView.java
 /home/runner/workspace/src/main/java/com/moscat/models/Transaction.java
 /home/runner/workspace/src/main/java/com/moscat/views/TransactionView.java
 /home/runner/workspace/src/main/java/com/moscat/views/components/CustomTextField.java
+/home/runner/workspace/src/main/java/com/moscat/views/UserPermissionsView.java
 /home/runner/workspace/src/main/java/com/moscat/utils/DatabaseManager.java
 /home/runner/workspace/src/main/java/com/moscat/views/BookkeeperDashboard.java
 /home/runner/workspace/src/main/java/com/moscat/utils/DateUtils.java
@@ -33,8 +35,11 @@
 /home/runner/workspace/src/main/java/com/moscat/models/InterestSettings.java
 /home/runner/workspace/src/main/java/com/moscat/models/AmortizationEntry.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/SavingsController.java
+/home/runner/workspace/src/main/java/com/moscat/views/DormantAccountsView.java
 /home/runner/workspace/src/main/java/com/moscat/models/LoanType.java
+/home/runner/workspace/src/main/java/com/moscat/controllers/PermissionController.java
 /home/runner/workspace/src/main/java/com/moscat/views/UserManagementView.java
+/home/runner/workspace/src/main/java/com/moscat/models/Permission.java
 /home/runner/workspace/src/main/java/com/moscat/controllers/LoanController.java
 /home/runner/workspace/src/main/java/com/moscat/models/SavingsAccount.java
 /home/runner/workspace/src/main/java/com/moscat/views/SuperAdminDashboard.java

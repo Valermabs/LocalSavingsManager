@@ -873,6 +873,61 @@ public class SavingsController {
     }
     
     /**
+     * Gets all savings accounts
+     * 
+     * @return List of all savings accounts
+     */
+    public static List<SavingsAccount> getAllSavingsAccounts() {
+        List<SavingsAccount> accounts = new ArrayList<>();
+        String query = "SELECT * FROM savings_accounts ORDER BY id";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                SavingsAccount account = mapResultSetToSavingsAccount(rs);
+                accounts.add(account);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return accounts;
+    }
+    
+    /**
+     * Updates the status of a savings account
+     * 
+     * @param accountId Account ID
+     * @param newStatus New status
+     * @return true if update successful, false otherwise
+     */
+    public static boolean updateAccountStatus(int accountId, String newStatus) {
+        if (accountId <= 0 || newStatus == null || newStatus.isEmpty()) {
+            return false;
+        }
+        
+        String query = "UPDATE savings_accounts SET status = ?, updated_at = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, newStatus);
+            stmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            stmt.setInt(3, accountId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
      * Maps a result set to a SavingsAccount object
      * 
      * @param rs Result set
@@ -979,6 +1034,90 @@ public class SavingsController {
      */
     public static SavingsAccount getAccountByNumber(String accountNumber) {
         return getSavingsAccountByNumber(accountNumber);
+    }
+    
+    /**
+     * Gets all dormant savings accounts
+     * 
+     * @return List of dormant savings accounts
+     */
+    public static List<SavingsAccount> getDormantAccounts() {
+        List<SavingsAccount> accounts = new ArrayList<>();
+        String query = "SELECT * FROM savings_accounts WHERE status = ? ORDER BY last_transaction_date ASC";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, Constants.SAVINGS_STATUS_DORMANT);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                SavingsAccount account = mapResultSetToSavingsAccount(rs);
+                accounts.add(account);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return accounts;
+    }
+    
+    /**
+     * Reactivates a dormant account
+     * 
+     * @param accountNumber Account number to reactivate
+     * @return true if reactivation successful, false otherwise
+     */
+    public static boolean reactivateAccount(String accountNumber) {
+        if (accountNumber == null || accountNumber.isEmpty()) {
+            return false;
+        }
+        
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        
+        try {
+            // Get connection
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            // Get account
+            SavingsAccount account = getSavingsAccountByNumber(accountNumber);
+            if (account == null || !Constants.SAVINGS_STATUS_DORMANT.equals(account.getStatus())) {
+                return false;
+            }
+            
+            // Update account status
+            String query = "UPDATE savings_accounts SET status = ?, last_transaction_date = ?, dormant_since = NULL WHERE account_number = ?";
+            
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, Constants.SAVINGS_STATUS_ACTIVE);
+            stmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            stmt.setString(3, accountNumber);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Close resources
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
     
     /**

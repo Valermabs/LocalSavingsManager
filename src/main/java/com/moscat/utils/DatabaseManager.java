@@ -1,5 +1,6 @@
 package com.moscat.utils;
 
+import com.moscat.controllers.PermissionController;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -85,6 +86,25 @@ public class DatabaseManager {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Initializes the database schema
+     */
+    public static void initializeDatabase() {
+        try {
+            // Create tables for permissions management
+            PermissionController.createPermissionsTableIfNotExists();
+            PermissionController.createUserPermissionsTableIfNotExists();
+            
+            // Initialize default permissions
+            PermissionController.initializeDefaultPermissions();
+            
+            System.out.println("Database initialized successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error initializing database: " + e.getMessage());
         }
     }
 }

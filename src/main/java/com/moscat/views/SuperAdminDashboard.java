@@ -33,6 +33,7 @@ public class SuperAdminDashboard extends DashboardView {
             "Savings Management",
             "Loan Management",
             "Transaction History",
+            "Dormant Accounts",
             "Reports",
             "Users",
             "Settings",
@@ -62,6 +63,9 @@ public class SuperAdminDashboard extends DashboardView {
                 break;
             case "Transaction History":
                 showTransactionHistory();
+                break;
+            case "Dormant Accounts":
+                showDormantAccounts();
                 break;
             case "Reports":
                 showReports();
@@ -261,6 +265,19 @@ public class SuperAdminDashboard extends DashboardView {
         JLabel placeholderLabel = new JLabel("Savings account settings will be implemented in future updates.");
         placeholderLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPanel.add(placeholderLabel, BorderLayout.CENTER);
+        
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+    
+    /**
+     * Shows the dormant accounts management screen
+     */
+    protected void showDormantAccounts() {
+        contentPanel.removeAll();
+        
+        DormantAccountsView dormantAccountsView = new DormantAccountsView(getOwner() instanceof JFrame ? (JFrame) getOwner() : null);
+        contentPanel.add(dormantAccountsView, BorderLayout.CENTER);
         
         contentPanel.revalidate();
         contentPanel.repaint();

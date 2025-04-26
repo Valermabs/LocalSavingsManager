@@ -73,6 +73,7 @@ public class UserManagementView extends JPanel {
         JButton createButton = new CustomButton("Create User");
         JButton editButton = new CustomButton("Edit User");
         JButton resetPasswordButton = new CustomButton("Reset Password");
+        JButton permissionsButton = new CustomButton("Manage Permissions");
         JButton activateButton = new CustomButton("Activate");
         JButton deactivateButton = new CustomButton("Deactivate");
         JButton refreshButton = new CustomButton("Refresh");
@@ -98,6 +99,14 @@ public class UserManagementView extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 resetPassword();
+            }
+        });
+        
+        // Permissions button action
+        permissionsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                managePermissions();
             }
         });
         
@@ -128,6 +137,7 @@ public class UserManagementView extends JPanel {
         buttonsPanel.add(createButton);
         buttonsPanel.add(editButton);
         buttonsPanel.add(resetPasswordButton);
+        buttonsPanel.add(permissionsButton);
         buttonsPanel.add(activateButton);
         buttonsPanel.add(deactivateButton);
         buttonsPanel.add(refreshButton);
@@ -748,5 +758,44 @@ public class UserManagementView extends JPanel {
                         JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+    
+    /**
+     * Manages permissions for the selected user
+     */
+    private void managePermissions() {
+        int selectedRow = userTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(parentFrame, 
+                    "Please select a user to manage permissions.", 
+                    "Selection Required", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        String username = (String) tableModel.getValueAt(selectedRow, 0);
+        
+        // Find selected user
+        List<User> users = AdminController.getAllAdmins();
+        User selectedUser = null;
+        
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                selectedUser = user;
+                break;
+            }
+        }
+        
+        if (selectedUser == null) {
+            JOptionPane.showMessageDialog(parentFrame, 
+                    "User not found.", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Show permissions management view
+        UserPermissionsView permissionsView = new UserPermissionsView(parentFrame, selectedUser);
+        permissionsView.setVisible(true);
     }
 }

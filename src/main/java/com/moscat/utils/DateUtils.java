@@ -1,115 +1,46 @@
 package com.moscat.utils;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Utility class for date operations
+ * Utility methods for date operations
  */
 public class DateUtils {
-    
-    private static final SimpleDateFormat DISPLAY_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
-    private static final SimpleDateFormat DB_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-    
+
     /**
-     * Formats a date for display
+     * Get current timestamp
      * 
-     * @param date Date to format
-     * @return Formatted date string
+     * @return Current timestamp
      */
-    public static String formatDateForDisplay(Date date) {
-        if (date == null) {
-            return "";
-        }
-        return DISPLAY_FORMAT.format(date);
+    public static Timestamp getCurrentTimestamp() {
+        return new Timestamp(System.currentTimeMillis());
     }
     
     /**
-     * Alias for formatDateForDisplay for compatibility
+     * Get current date
      * 
-     * @param date Date to format
-     * @return Formatted date string
+     * @return Current date
      */
-    public static String formatDate(Date date) {
-        return formatDateForDisplay(date);
+    public static Date getCurrentDate() {
+        return new Date();
     }
     
     /**
-     * Formats a date for database storage
+     * Get current SQL date
      * 
-     * @param date Date to format
-     * @return Formatted date string
+     * @return Current SQL date
      */
-    public static String formatDateForDatabase(Date date) {
-        if (date == null) {
-            return null;
-        }
-        return DB_FORMAT.format(date);
+    public static java.sql.Date getCurrentSqlDate() {
+        return new java.sql.Date(System.currentTimeMillis());
     }
     
     /**
-     * Formats a timestamp for display
-     * 
-     * @param timestamp Timestamp to format
-     * @return Formatted timestamp string
-     */
-    public static String formatTimestampForDisplay(Date timestamp) {
-        if (timestamp == null) {
-            return "";
-        }
-        return TIMESTAMP_FORMAT.format(timestamp);
-    }
-    
-    /**
-     * Parses a date string from the display format
-     * 
-     * @param dateStr Date string in display format
-     * @return Parsed date
-     * @throws ParseException if the date string cannot be parsed
-     */
-    public static Date parseDisplayDate(String dateStr) throws ParseException {
-        if (dateStr == null || dateStr.isEmpty()) {
-            return null;
-        }
-        return DISPLAY_FORMAT.parse(dateStr);
-    }
-    
-    /**
-     * Parses a date string from the database format
-     * 
-     * @param dateStr Date string in database format
-     * @return Parsed date
-     * @throws ParseException if the date string cannot be parsed
-     */
-    public static Date parseDatabaseDate(String dateStr) throws ParseException {
-        if (dateStr == null || dateStr.isEmpty()) {
-            return null;
-        }
-        return DB_FORMAT.parse(dateStr);
-    }
-    
-    /**
-     * Checks if a string is a valid date in display format
-     * 
-     * @param dateStr Date string to check
-     * @return true if valid, false otherwise
-     */
-    public static boolean isValidDisplayDate(String dateStr) {
-        try {
-            if (dateStr == null || dateStr.isEmpty()) {
-                return false;
-            }
-            parseDisplayDate(dateStr);
-            return true;
-        } catch (ParseException e) {
-            return false;
-        }
-    }
-    
-    /**
-     * Converts a java.util.Date to java.sql.Date
+     * Convert java.util.Date to java.sql.Date
      * 
      * @param date Date to convert
      * @return SQL date
@@ -122,37 +53,130 @@ public class DateUtils {
     }
     
     /**
-     * Gets the current date at midnight
+     * Format date for display (yyyy-MM-dd)
      * 
-     * @return Current date at midnight
+     * @param date Date to format
+     * @return Formatted date string
      */
-    public static Date getCurrentDate() {
-        try {
-            // Get current date
-            Date now = new Date();
-            // Format and parse to remove time component
-            String dateStr = DISPLAY_FORMAT.format(now);
-            return DISPLAY_FORMAT.parse(dateStr);
-        } catch (ParseException e) {
-            return new Date(); // Fallback
+    public static String formatDateForDisplay(Date date) {
+        return formatDate(date, "yyyy-MM-dd");
+    }
+    
+    /**
+     * Parse date string to Date
+     * 
+     * @param dateString Date string
+     * @param format Date format
+     * @return Date
+     * @throws ParseException If date format is invalid
+     */
+    public static Date parseDate(String dateString, String format) throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        return sdf.parse(dateString);
+    }
+    
+    /**
+     * Format Date to string
+     * 
+     * @param date Date
+     * @param format Date format
+     * @return Formatted date string
+     */
+    public static String formatDate(Date date, String format) {
+        if (date == null) {
+            return "";
         }
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        return sdf.format(date);
     }
     
     /**
-     * Gets the current date as a SQL date
+     * Get difference between two dates in days
      * 
-     * @return Current SQL date
+     * @param date1 First date
+     * @param date2 Second date
+     * @return Difference in days
      */
-    public static java.sql.Date getCurrentSqlDate() {
-        return toSqlDate(getCurrentDate());
+    public static long getDaysDifference(Date date1, Date date2) {
+        if (date1 == null || date2 == null) {
+            return 0;
+        }
+        long diffInMillies = Math.abs(date2.getTime() - date1.getTime());
+        return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
     }
     
     /**
-     * Gets the current timestamp
+     * Get difference between two dates in months (approximate)
      * 
-     * @return Current timestamp
+     * @param date1 First date
+     * @param date2 Second date
+     * @return Difference in months
      */
-    public static java.sql.Timestamp getCurrentTimestamp() {
-        return new java.sql.Timestamp(System.currentTimeMillis());
+    public static long getMonthsDifference(Date date1, Date date2) {
+        if (date1 == null || date2 == null) {
+            return 0;
+        }
+        // Get difference in days and approximate months (assuming 30 days per month)
+        long diffInDays = getDaysDifference(date1, date2);
+        return diffInDays / 30;
+    }
+    
+    /**
+     * Check if a date is after another date
+     * 
+     * @param date1 First date
+     * @param date2 Second date
+     * @return true if date1 is after date2, false otherwise
+     */
+    public static boolean isAfter(Date date1, Date date2) {
+        if (date1 == null || date2 == null) {
+            return false;
+        }
+        return date1.after(date2);
+    }
+    
+    /**
+     * Check if a date is before another date
+     * 
+     * @param date1 First date
+     * @param date2 Second date
+     * @return true if date1 is before date2, false otherwise
+     */
+    public static boolean isBefore(Date date1, Date date2) {
+        if (date1 == null || date2 == null) {
+            return false;
+        }
+        return date1.before(date2);
+    }
+    
+    /**
+     * Add days to a date
+     * 
+     * @param date Date
+     * @param days Days to add
+     * @return New date
+     */
+    public static Date addDays(Date date, int days) {
+        if (date == null) {
+            return null;
+        }
+        return new Date(date.getTime() + TimeUnit.DAYS.toMillis(days));
+    }
+    
+    /**
+     * Add months to a date (accurate)
+     * 
+     * @param date Date
+     * @param months Months to add
+     * @return New date
+     */
+    public static Date addMonths(Date date, int months) {
+        if (date == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.MONTH, months);
+        return calendar.getTime();
     }
 }

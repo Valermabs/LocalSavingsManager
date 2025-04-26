@@ -580,7 +580,7 @@ public class LoanApplicationView extends JPanel {
                     loan.setTermYears(termYears);
                     loan.setInterestRate(loanType.getInterestRate());
                     loan.setPurpose(purpose);
-                    loan.setApplicationDate(DateUtils.getCurrentSqlDate());
+                    loan.setApplicationDate(DateUtils.toSqlDate(DateUtils.getCurrentDate()));
                     loan.setStatus("PENDING");
                     
                     boolean success = LoanController.applyForLoan(loan);
