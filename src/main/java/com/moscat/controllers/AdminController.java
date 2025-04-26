@@ -46,7 +46,7 @@ public class AdminController {
             stmt.setString(5, user.getFullName());
             stmt.setString(6, user.getEmail());
             stmt.setString(7, user.getContactNumber());
-            stmt.setDate(8, DateUtils.getCurrentDate());
+            stmt.setDate(8, DateUtils.getCurrentSqlDate());
             
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;

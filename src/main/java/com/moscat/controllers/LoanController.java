@@ -6,6 +6,7 @@ import com.moscat.models.LoanDeduction;
 import com.moscat.models.LoanType;
 import com.moscat.models.Member;
 import com.moscat.models.SavingsAccount;
+import com.moscat.models.AmortizationEntry;
 import com.moscat.utils.Constants;
 import com.moscat.utils.DatabaseManager;
 import com.moscat.utils.DateUtils;
@@ -904,34 +905,7 @@ public class LoanController {
      * @param loanId Loan ID
      * @return Loan object, or null if not found
      */
-    public static Loan getLoanById(int loanId) {
-        String query = "SELECT * FROM loans WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, loanId);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                Loan loan = mapResultSetToLoan(rs);
-                
-                // Load deductions
-                loadLoanDeductions(loan);
-                
-                // Load amortization schedule
-                loadAmortizationSchedule(loan);
-                
-                return loan;
-            }
-            
-            return null;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+
     
     /**
      * Gets a loan by loan number
@@ -939,34 +913,7 @@ public class LoanController {
      * @param loanNumber Loan number
      * @return Loan object, or null if not found
      */
-    public static Loan getLoanByNumber(String loanNumber) {
-        String query = "SELECT * FROM loans WHERE loan_number = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, loanNumber);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                Loan loan = mapResultSetToLoan(rs);
-                
-                // Load deductions
-                loadLoanDeductions(loan);
-                
-                // Load amortization schedule
-                loadAmortizationSchedule(loan);
-                
-                return loan;
-            }
-            
-            return null;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+
     
     /**
      * Gets all loans for a specific member

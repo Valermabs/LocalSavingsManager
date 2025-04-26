@@ -5,6 +5,7 @@ import com.moscat.controllers.MemberController;
 import com.moscat.models.Loan;
 import com.moscat.models.LoanType;
 import com.moscat.models.Member;
+import com.moscat.models.AmortizationEntry;
 import com.moscat.utils.DateUtils;
 import com.moscat.views.components.CustomButton;
 import com.moscat.views.components.CustomTextField;
@@ -579,7 +580,7 @@ public class LoanApplicationView extends JPanel {
                     loan.setTermYears(termYears);
                     loan.setInterestRate(loanType.getInterestRate());
                     loan.setPurpose(purpose);
-                    loan.setApplicationDate(DateUtils.getCurrentDate());
+                    loan.setApplicationDate(DateUtils.getCurrentSqlDate());
                     loan.setStatus("PENDING");
                     
                     boolean success = LoanController.applyForLoan(loan);
@@ -818,9 +819,9 @@ public class LoanApplicationView extends JPanel {
         String[] columns = {"Year", "Month", "Principal", "Interest", "Monthly Payment", "Balance"};
         DefaultTableModel scheduleModel = new DefaultTableModel(columns, 0);
         
-        List<LoanController.AmortizationEntry> schedule = LoanController.getAmortizationSchedule(loan);
+        List<AmortizationEntry> schedule = LoanController.getAmortizationSchedule(loan);
         if (schedule != null) {
-            for (LoanController.AmortizationEntry entry : schedule) {
+            for (AmortizationEntry entry : schedule) {
                 Object[] row = {
                     entry.getYear(),
                     entry.getMonth(),

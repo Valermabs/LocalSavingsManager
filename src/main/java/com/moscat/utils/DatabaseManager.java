@@ -54,4 +54,37 @@ public class DatabaseManager {
             throw new SQLException("H2 JDBC driver not found", e);
         }
     }
+    
+    /**
+     * Safely closes database resources
+     * 
+     * @param rs ResultSet to close
+     * @param stmt Statement or PreparedStatement to close
+     * @param conn Connection to close
+     */
+    public static void closeResources(java.sql.ResultSet rs, java.sql.Statement stmt, java.sql.Connection conn) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        try {
+            if (stmt != null) {
+                stmt.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        try {
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

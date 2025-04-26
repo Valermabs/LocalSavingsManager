@@ -1,65 +1,45 @@
 package com.moscat.models;
 
 import java.util.Date;
+import java.util.Calendar;
 
 /**
- * Model class for loan amortization schedule entries
+ * Represents an entry in a loan amortization schedule
  */
 public class AmortizationEntry {
+    
     private int paymentNumber;
     private Date paymentDate;
     private double beginningBalance;
     private double payment;
-    private double interestPayment;
     private double principalPayment;
+    private double interestPayment;
     private double endingBalance;
-    
+
     /**
      * Default constructor
      */
     public AmortizationEntry() {
     }
-    
+
     /**
-     * Parameterized constructor
-     * 
-     * @param paymentNumber Payment number
-     * @param paymentDate Payment date
-     * @param beginningBalance Beginning balance
-     * @param payment Total payment amount
-     * @param interestPayment Interest portion of payment
-     * @param principalPayment Principal portion of payment
-     * @param endingBalance Ending balance
-     */
-    public AmortizationEntry(int paymentNumber, Date paymentDate, double beginningBalance,
-            double payment, double interestPayment, double principalPayment, double endingBalance) {
-        this.paymentNumber = paymentNumber;
-        this.paymentDate = paymentDate;
-        this.beginningBalance = beginningBalance;
-        this.payment = payment;
-        this.interestPayment = interestPayment;
-        this.principalPayment = principalPayment;
-        this.endingBalance = endingBalance;
-    }
-    
-    /**
-     * Gets the payment number
+     * Gets the payment number in the sequence
      * 
      * @return Payment number
      */
     public int getPaymentNumber() {
         return paymentNumber;
     }
-    
+
     /**
-     * Sets the payment number
+     * Sets the payment number in the sequence
      * 
      * @param paymentNumber Payment number
      */
     public void setPaymentNumber(int paymentNumber) {
         this.paymentNumber = paymentNumber;
     }
-    
+
     /**
      * Gets the payment date
      * 
@@ -68,7 +48,7 @@ public class AmortizationEntry {
     public Date getPaymentDate() {
         return paymentDate;
     }
-    
+
     /**
      * Sets the payment date
      * 
@@ -77,7 +57,7 @@ public class AmortizationEntry {
     public void setPaymentDate(Date paymentDate) {
         this.paymentDate = paymentDate;
     }
-    
+
     /**
      * Gets the beginning balance
      * 
@@ -86,7 +66,7 @@ public class AmortizationEntry {
     public double getBeginningBalance() {
         return beginningBalance;
     }
-    
+
     /**
      * Sets the beginning balance
      * 
@@ -95,61 +75,61 @@ public class AmortizationEntry {
     public void setBeginningBalance(double beginningBalance) {
         this.beginningBalance = beginningBalance;
     }
-    
+
     /**
-     * Gets the payment amount
+     * Gets the total payment amount
      * 
      * @return Payment amount
      */
     public double getPayment() {
         return payment;
     }
-    
+
     /**
-     * Sets the payment amount
+     * Sets the total payment amount
      * 
      * @param payment Payment amount
      */
     public void setPayment(double payment) {
         this.payment = payment;
     }
-    
+
     /**
-     * Gets the interest portion of payment
+     * Gets the principal payment amount
      * 
-     * @return Interest payment amount
-     */
-    public double getInterestPayment() {
-        return interestPayment;
-    }
-    
-    /**
-     * Sets the interest portion of payment
-     * 
-     * @param interestPayment Interest payment amount
-     */
-    public void setInterestPayment(double interestPayment) {
-        this.interestPayment = interestPayment;
-    }
-    
-    /**
-     * Gets the principal portion of payment
-     * 
-     * @return Principal payment amount
+     * @return Principal payment
      */
     public double getPrincipalPayment() {
         return principalPayment;
     }
-    
+
     /**
-     * Sets the principal portion of payment
+     * Sets the principal payment amount
      * 
-     * @param principalPayment Principal payment amount
+     * @param principalPayment Principal payment
      */
     public void setPrincipalPayment(double principalPayment) {
         this.principalPayment = principalPayment;
     }
-    
+
+    /**
+     * Gets the interest payment amount
+     * 
+     * @return Interest payment
+     */
+    public double getInterestPayment() {
+        return interestPayment;
+    }
+
+    /**
+     * Sets the interest payment amount
+     * 
+     * @param interestPayment Interest payment
+     */
+    public void setInterestPayment(double interestPayment) {
+        this.interestPayment = interestPayment;
+    }
+
     /**
      * Gets the ending balance
      * 
@@ -158,7 +138,7 @@ public class AmortizationEntry {
     public double getEndingBalance() {
         return endingBalance;
     }
-    
+
     /**
      * Sets the ending balance
      * 
@@ -166,5 +146,45 @@ public class AmortizationEntry {
      */
     public void setEndingBalance(double endingBalance) {
         this.endingBalance = endingBalance;
+    }
+    
+    /**
+     * Gets the total monthly payment (principal + interest)
+     * 
+     * @return Monthly payment
+     */
+    public double getMonthlyPayment() {
+        return payment;
+    }
+    
+    /**
+     * Gets the remaining balance after payment
+     * 
+     * @return Remaining balance
+     */
+    public double getRemainingBalance() {
+        return endingBalance;
+    }
+    
+    /**
+     * Gets the year part of the payment date
+     * 
+     * @return Year of the payment
+     */
+    public int getYear() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(paymentDate);
+        return cal.get(Calendar.YEAR);
+    }
+    
+    /**
+     * Gets the month part of the payment date
+     * 
+     * @return Month of the payment (1-12)
+     */
+    public int getMonth() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(paymentDate);
+        return cal.get(Calendar.MONTH) + 1; // Calendar.MONTH is 0-based, we add 1 to make it 1-based
     }
 }

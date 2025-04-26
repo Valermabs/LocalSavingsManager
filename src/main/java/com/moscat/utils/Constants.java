@@ -29,6 +29,7 @@ public class Constants {
     public static final String STATUS_ACTIVE = "Active";
     public static final String STATUS_INACTIVE = "Inactive";
     public static final String ACCOUNT_ACTIVE = "Active";
+    public static final String ACCOUNT_DORMANT = "Dormant";
     
     // Transaction types
     public static final String TRANSACTION_TYPE_DEPOSIT = "Deposit";

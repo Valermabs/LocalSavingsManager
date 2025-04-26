@@ -27,6 +27,16 @@ public class DateUtils {
     }
     
     /**
+     * Alias for formatDateForDisplay for compatibility
+     * 
+     * @param date Date to format
+     * @return Formatted date string
+     */
+    public static String formatDate(Date date) {
+        return formatDateForDisplay(date);
+    }
+    
+    /**
      * Formats a date for database storage
      * 
      * @param date Date to format
@@ -126,6 +136,15 @@ public class DateUtils {
         } catch (ParseException e) {
             return new Date(); // Fallback
         }
+    }
+    
+    /**
+     * Gets the current date as a SQL date
+     * 
+     * @return Current SQL date
+     */
+    public static java.sql.Date getCurrentSqlDate() {
+        return toSqlDate(getCurrentDate());
     }
     
     /**
