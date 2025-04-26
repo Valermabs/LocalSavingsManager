@@ -28,23 +28,8 @@ public class AuthController {
      * @return User object if login successful, null otherwise
      */
     public static User login(String username, String password) {
-        // For testing purposes only, allow login with default admin credentials
+        // Log login attempt (for debugging only)
         System.out.println("Login attempt with username: '" + username + "' and password length: " + password.length());
-        if (username.trim().equals("mmpcadmin") && password.equals("#MMPC@dmin2o25")) {
-            User defaultAdmin = new User();
-            defaultAdmin.setId(1);
-            defaultAdmin.setUsername("mmpcadmin");
-            defaultAdmin.setFirstName("MOSCAT");
-            defaultAdmin.setLastName("Admin");
-            defaultAdmin.setEmail("admin@moscat.coop");
-            defaultAdmin.setRole(Constants.ROLE_SUPER_ADMIN);
-            defaultAdmin.setActive(true);
-            defaultAdmin.setLastLogin(new Date());
-            
-            // Set as current user
-            currentUser = defaultAdmin;
-            return defaultAdmin;
-        }
         
         // Check database for user
         String query = "SELECT * FROM users WHERE username = ?";
@@ -79,6 +64,8 @@ public class AuthController {
                     
                     // Update last login time
                     updateLastLogin(user.getId());
+                    // Update last login time in the User object too
+                    user.setLastLogin(new Date());
                     
                     // Set as current user
                     currentUser = user;
@@ -500,6 +487,29 @@ public class AuthController {
         }
         
         String query = "UPDATE users SET active = FALSE WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, userId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Updates the last login timestamp for a user
+     * 
+     * @param userId User ID
+     * @return true if update successful, false otherwise
+     */
+    private static boolean updateLastLogin(int userId) {
+        String query = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {

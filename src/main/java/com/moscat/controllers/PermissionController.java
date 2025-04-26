@@ -1,192 +1,126 @@
 package com.moscat.controllers;
 
-import com.moscat.models.Permission;
-import com.moscat.models.UserPermission;
 import com.moscat.models.User;
 import com.moscat.utils.Constants;
 import com.moscat.utils.DatabaseManager;
-import com.moscat.utils.DateUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Controller for permission-related operations
+ * Controller for managing permissions
  */
 public class PermissionController {
     
+    // Cache for permission IDs
+    private static Map<String, Integer> permissionIdCache = new HashMap<>();
+    
     /**
-     * Creates the permissions table if it doesn't exist
+     * Creates permissions table if it doesn't exist
      */
     public static void createPermissionsTableIfNotExists() {
-        String sql = "CREATE TABLE IF NOT EXISTS permissions (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "name VARCHAR(100) NOT NULL, " +
-                "code VARCHAR(50) NOT NULL UNIQUE, " +
-                "description VARCHAR(255), " +
-                "module VARCHAR(50), " +
-                "active BOOLEAN DEFAULT TRUE, " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                ")";
-        
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+             java.sql.Statement stmt = conn.createStatement()) {
+            
+            String query = "CREATE TABLE IF NOT EXISTS permissions ("
+                    + "id INTEGER PRIMARY KEY AUTO_INCREMENT,"
+                    + "code VARCHAR(50) NOT NULL UNIQUE,"
+                    + "name VARCHAR(100) NOT NULL,"
+                    + "description VARCHAR(255),"
+                    + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                    + ")";
+            
+            stmt.execute(query);
             System.out.println("Permissions table created or already exists.");
+            
         } catch (SQLException e) {
             e.printStackTrace();
-            System.err.println("Error creating permissions table: " + e.getMessage());
         }
     }
     
     /**
-     * Creates the user permissions table if it doesn't exist
+     * Creates user permissions table if it doesn't exist
      */
     public static void createUserPermissionsTableIfNotExists() {
-        String sql = "CREATE TABLE IF NOT EXISTS user_permissions (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "user_id INT NOT NULL, " +
-                "permission_id INT NOT NULL, " +
-                "active BOOLEAN DEFAULT TRUE, " +
-                "granted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "expiry_date TIMESTAMP NULL, " +
-                "granted_by INT, " +
-                "notes VARCHAR(255), " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, " +
-                "FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE, " +
-                "UNIQUE(user_id, permission_id)" +
-                ")";
-        
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+             java.sql.Statement stmt = conn.createStatement()) {
+            
+            String query = "CREATE TABLE IF NOT EXISTS user_permissions ("
+                    + "id INTEGER PRIMARY KEY AUTO_INCREMENT,"
+                    + "user_id INTEGER NOT NULL,"
+                    + "permission_id INTEGER NOT NULL,"
+                    + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                    + "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,"
+                    + "FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,"
+                    + "UNIQUE(user_id, permission_id)"
+                    + ")";
+            
+            stmt.execute(query);
             System.out.println("User permissions table created or already exists.");
+            
         } catch (SQLException e) {
             e.printStackTrace();
-            System.err.println("Error creating user permissions table: " + e.getMessage());
         }
     }
     
     /**
-     * Initializes default permissions if they don't exist
+     * Initializes default permissions
      */
     public static void initializeDefaultPermissions() {
-        // Define default permissions
-        List<Permission> defaultPermissions = new ArrayList<>();
-        
-        // Member management permissions
-        defaultPermissions.add(new Permission("View Members", "MEMBER_VIEW", "Can view member information", "MEMBERS"));
-        defaultPermissions.add(new Permission("Add Members", "MEMBER_ADD", "Can add new members", "MEMBERS"));
-        defaultPermissions.add(new Permission("Edit Members", "MEMBER_EDIT", "Can edit member information", "MEMBERS"));
-        defaultPermissions.add(new Permission("Delete Members", "MEMBER_DELETE", "Can delete members", "MEMBERS"));
-        defaultPermissions.add(new Permission("Reactivate Members", "MEMBER_REACTIVATE", "Can reactivate dormant members", "MEMBERS"));
-        
-        // Savings account permissions
-        defaultPermissions.add(new Permission("View Savings Accounts", "SAVINGS_VIEW", "Can view savings accounts", "SAVINGS"));
-        defaultPermissions.add(new Permission("Create Savings Accounts", "SAVINGS_CREATE", "Can create new savings accounts", "SAVINGS"));
-        defaultPermissions.add(new Permission("Process Deposits", "SAVINGS_DEPOSIT", "Can process deposits", "SAVINGS"));
-        defaultPermissions.add(new Permission("Process Withdrawals", "SAVINGS_WITHDRAW", "Can process withdrawals", "SAVINGS"));
-        defaultPermissions.add(new Permission("Adjust Interest Rates", "SAVINGS_ADJUST_INTEREST", "Can adjust interest rates", "SAVINGS"));
-        defaultPermissions.add(new Permission("Close Accounts", "SAVINGS_CLOSE", "Can close savings accounts", "SAVINGS"));
-        
-        // Loan permissions
-        defaultPermissions.add(new Permission("View Loans", "LOAN_VIEW", "Can view loan information", "LOANS"));
-        defaultPermissions.add(new Permission("Create Loan Applications", "LOAN_CREATE", "Can create loan applications", "LOANS"));
-        defaultPermissions.add(new Permission("Approve Loans", "LOAN_APPROVE", "Can approve loan applications", "LOANS"));
-        defaultPermissions.add(new Permission("Reject Loans", "LOAN_REJECT", "Can reject loan applications", "LOANS"));
-        defaultPermissions.add(new Permission("Disburse Loans", "LOAN_DISBURSE", "Can disburse approved loans", "LOANS"));
-        defaultPermissions.add(new Permission("Adjust Loan Terms", "LOAN_ADJUST", "Can adjust loan terms", "LOANS"));
-        defaultPermissions.add(new Permission("Process Loan Payments", "LOAN_PAYMENT", "Can process loan payments", "LOANS"));
-        defaultPermissions.add(new Permission("Handle Delinquent Loans", "LOAN_DELINQUENT", "Can manage delinquent loans", "LOANS"));
-        
-        // Report permissions
-        defaultPermissions.add(new Permission("View Reports", "REPORT_VIEW", "Can view all reports", "REPORTS"));
-        defaultPermissions.add(new Permission("Generate Member Reports", "REPORT_MEMBER", "Can generate member reports", "REPORTS"));
-        defaultPermissions.add(new Permission("Generate Savings Reports", "REPORT_SAVINGS", "Can generate savings reports", "REPORTS"));
-        defaultPermissions.add(new Permission("Generate Loan Reports", "REPORT_LOAN", "Can generate loan reports", "REPORTS"));
-        defaultPermissions.add(new Permission("Generate Financial Reports", "REPORT_FINANCIAL", "Can generate financial reports", "REPORTS"));
-        
-        // Admin permissions
-        defaultPermissions.add(new Permission("Manage Users", "ADMIN_USERS", "Can manage system users", "ADMIN"));
-        defaultPermissions.add(new Permission("Manage Permissions", "ADMIN_PERMISSIONS", "Can manage permissions", "ADMIN"));
-        defaultPermissions.add(new Permission("System Settings", "ADMIN_SETTINGS", "Can modify system settings", "ADMIN"));
-        defaultPermissions.add(new Permission("View Audit Logs", "ADMIN_AUDIT", "Can view audit logs", "ADMIN"));
-        defaultPermissions.add(new Permission("Database Backup", "ADMIN_BACKUP", "Can perform database backups", "ADMIN"));
-        
-        // Insert permissions if they don't exist
-        for (Permission permission : defaultPermissions) {
-            try {
-                if (!permissionExists(permission.getCode())) {
-                    createPermission(permission);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                System.err.println("Error checking/creating permission: " + e.getMessage());
-            }
-        }
+        // Define standard permissions
+        createPermissionIfNotExists(Constants.PERMISSION_USER_MANAGEMENT, "User Management", "Manage system users");
+        createPermissionIfNotExists(Constants.PERMISSION_MEMBER_MANAGEMENT, "Member Management", "Manage cooperative members");
+        createPermissionIfNotExists(Constants.PERMISSION_ACCOUNT_MANAGEMENT, "Account Management", "Manage savings accounts");
+        createPermissionIfNotExists(Constants.PERMISSION_TRANSACTION_MANAGEMENT, "Transaction Management", "Manage financial transactions");
+        createPermissionIfNotExists(Constants.PERMISSION_LOAN_MANAGEMENT, "Loan Management", "Manage loans");
+        createPermissionIfNotExists(Constants.PERMISSION_REPORT_GENERATION, "Report Generation", "Generate reports");
+        createPermissionIfNotExists(Constants.PERMISSION_SYSTEM_SETTINGS, "System Settings", "Manage system settings");
     }
     
     /**
-     * Checks if a permission with the given code exists
+     * Creates a permission if it doesn't exist
      * 
      * @param code Permission code
-     * @return true if exists, false otherwise
-     * @throws SQLException if database error occurs
+     * @param name Permission name
+     * @param description Permission description
+     * @return Permission ID
      */
-    private static boolean permissionExists(String code) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM permissions WHERE code = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, code);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
+    private static int createPermissionIfNotExists(String code, String name, String description) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            // Check if permission exists
+            String checkQuery = "SELECT id FROM permissions WHERE code = ?";
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+                checkStmt.setString(1, code);
+                ResultSet rs = checkStmt.executeQuery();
+                
                 if (rs.next()) {
-                    return rs.getInt(1) > 0;
+                    int id = rs.getInt("id");
+                    permissionIdCache.put(code, id);
+                    return id;
                 }
             }
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Creates a new permission
-     * 
-     * @param permission Permission object
-     * @return true if created successfully, false otherwise
-     */
-    public static boolean createPermission(Permission permission) {
-        String sql = "INSERT INTO permissions (name, code, description, module, active, created_at, updated_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setString(1, permission.getName());
-            stmt.setString(2, permission.getCode());
-            stmt.setString(3, permission.getDescription());
-            stmt.setString(4, permission.getModule());
-            stmt.setBoolean(5, permission.isActive());
-            stmt.setTimestamp(6, DateUtils.getCurrentTimestamp());
-            stmt.setTimestamp(7, DateUtils.getCurrentTimestamp());
             
-            int affectedRows = stmt.executeUpdate();
-            
-            if (affectedRows > 0) {
-                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+            // Create permission
+            String insertQuery = "INSERT INTO permissions (code, name, description) VALUES (?, ?, ?)";
+            try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                insertStmt.setString(1, code);
+                insertStmt.setString(2, name);
+                insertStmt.setString(3, description);
+                
+                int rowsAffected = insertStmt.executeUpdate();
+                
+                if (rowsAffected > 0) {
+                    ResultSet generatedKeys = insertStmt.getGeneratedKeys();
                     if (generatedKeys.next()) {
-                        permission.setId(generatedKeys.getInt(1));
-                        return true;
+                        int id = generatedKeys.getInt(1);
+                        permissionIdCache.put(code, id);
+                        return id;
                     }
                 }
             }
@@ -194,74 +128,108 @@ public class PermissionController {
             e.printStackTrace();
         }
         
-        return false;
+        return -1;
     }
     
     /**
-     * Gets a permission by its ID
+     * Checks if the current user has a specific permission
      * 
-     * @param id Permission ID
-     * @return Permission object if found, null otherwise
+     * @param permissionCode Permission code
+     * @return true if the user has the permission, false otherwise
      */
-    public static Permission getPermissionById(int id) {
-        String sql = "SELECT * FROM permissions WHERE id = ?";
+    public static boolean currentUserHasPermission(String permissionCode) {
+        User currentUser = AuthController.getCurrentUser();
         
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToPermission(rs);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (currentUser == null) {
+            return false;
         }
         
-        return null;
+        // SuperAdmin has all permissions
+        if (currentUser.isSuperAdmin()) {
+            return true;
+        }
+        
+        // Check if the user has this specific permission
+        int userId = currentUser.getId();
+        return userHasPermission(userId, permissionCode);
     }
     
     /**
-     * Gets a permission by its code
+     * Checks if a user has a specific permission
      * 
-     * @param code Permission code
-     * @return Permission object if found, null otherwise
+     * @param userId User ID
+     * @param permissionCode Permission code
+     * @return true if the user has the permission, false otherwise
      */
-    public static Permission getPermissionByCode(String code) {
-        String sql = "SELECT * FROM permissions WHERE code = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, code);
+    public static boolean userHasPermission(int userId, String permissionCode) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT 1 FROM user_permissions up "
+                    + "JOIN permissions p ON up.permission_id = p.id "
+                    + "WHERE up.user_id = ? AND p.code = ?";
             
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToPermission(rs);
-                }
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, userId);
+                stmt.setString(2, permissionCode);
+                
+                ResultSet rs = stmt.executeQuery();
+                return rs.next();
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        
-        return null;
     }
     
     /**
      * Gets all permissions
      * 
-     * @return List of permissions
+     * @return List of permission codes and names
      */
-    public static List<Permission> getAllPermissions() {
-        String sql = "SELECT * FROM permissions ORDER BY module, name";
-        List<Permission> permissions = new ArrayList<>();
+    public static List<Map<String, Object>> getAllPermissions() {
+        List<Map<String, Object>> permissions = new ArrayList<>();
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement stmt = conn.prepareStatement("SELECT id, code, name, description FROM permissions ORDER BY name");
+             ResultSet rs = stmt.executeQuery()) {
             
             while (rs.next()) {
-                permissions.add(mapResultSetToPermission(rs));
+                Map<String, Object> permission = new HashMap<>();
+                permission.put("id", rs.getInt("id"));
+                permission.put("code", rs.getString("code"));
+                permission.put("name", rs.getString("name"));
+                permission.put("description", rs.getString("description"));
+                
+                permissions.add(permission);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return permissions;
+    }
+    
+    /**
+     * Gets permissions for a specific user
+     * 
+     * @param userId User ID
+     * @return List of permission codes
+     */
+    public static List<String> getUserPermissions(int userId) {
+        List<String> permissions = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT p.code FROM user_permissions up "
+                    + "JOIN permissions p ON up.permission_id = p.id "
+                    + "WHERE up.user_id = ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, userId);
+                
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    permissions.add(rs.getString("code"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -271,289 +239,153 @@ public class PermissionController {
     }
     
     /**
-     * Gets all permissions grouped by module
-     * 
-     * @return Map of module name to list of permissions
-     */
-    public static Map<String, List<Permission>> getPermissionsByModule() {
-        List<Permission> allPermissions = getAllPermissions();
-        Map<String, List<Permission>> permissionsByModule = new HashMap<>();
-        
-        for (Permission permission : allPermissions) {
-            String module = permission.getModule();
-            if (!permissionsByModule.containsKey(module)) {
-                permissionsByModule.put(module, new ArrayList<>());
-            }
-            permissionsByModule.get(module).add(permission);
-        }
-        
-        return permissionsByModule;
-    }
-    
-    /**
-     * Updates a permission
-     * 
-     * @param permission Permission object
-     * @return true if updated successfully, false otherwise
-     */
-    public static boolean updatePermission(Permission permission) {
-        String sql = "UPDATE permissions SET name = ?, description = ?, module = ?, " +
-                "active = ?, updated_at = ? WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, permission.getName());
-            stmt.setString(2, permission.getDescription());
-            stmt.setString(3, permission.getModule());
-            stmt.setBoolean(4, permission.isActive());
-            stmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
-            stmt.setInt(6, permission.getId());
-            
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Deletes a permission
-     * 
-     * @param id Permission ID
-     * @return true if deleted successfully, false otherwise
-     */
-    public static boolean deletePermission(int id) {
-        String sql = "DELETE FROM permissions WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Assigns a permission to a user
+     * Grants a permission to a user
      * 
      * @param userId User ID
-     * @param permissionId Permission ID
-     * @param grantedBy ID of the user granting the permission
-     * @return true if assigned successfully, false otherwise
+     * @param permissionCode Permission code
+     * @return true if granted successfully, false otherwise
      */
-    public static boolean assignPermissionToUser(int userId, int permissionId, int grantedBy) {
-        String sql = "INSERT INTO user_permissions (user_id, permission_id, granted_by, created_at, updated_at) " +
-                "VALUES (?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE active = TRUE, granted_by = ?, updated_at = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    public static boolean grantPermission(int userId, String permissionCode) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            // Get permission ID
+            int permissionId = getPermissionId(permissionCode);
+            if (permissionId == -1) {
+                return false;
+            }
             
-            java.sql.Timestamp now = DateUtils.getCurrentTimestamp();
+            // Check if already granted
+            if (userHasPermission(userId, permissionCode)) {
+                return true;
+            }
             
-            stmt.setInt(1, userId);
-            stmt.setInt(2, permissionId);
-            stmt.setInt(3, grantedBy);
-            stmt.setTimestamp(4, now);
-            stmt.setTimestamp(5, now);
-            stmt.setInt(6, grantedBy);
-            stmt.setTimestamp(7, now);
-            
-            return stmt.executeUpdate() > 0;
+            // Grant permission
+            String query = "INSERT INTO user_permissions (user_id, permission_id) VALUES (?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, userId);
+                stmt.setInt(2, permissionId);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        
-        return false;
     }
     
     /**
      * Revokes a permission from a user
      * 
      * @param userId User ID
-     * @param permissionId Permission ID
+     * @param permissionCode Permission code
      * @return true if revoked successfully, false otherwise
      */
-    public static boolean revokePermissionFromUser(int userId, int permissionId) {
-        String sql = "UPDATE user_permissions SET active = FALSE, updated_at = ? " +
-                "WHERE user_id = ? AND permission_id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setTimestamp(1, DateUtils.getCurrentTimestamp());
-            stmt.setInt(2, userId);
-            stmt.setInt(3, permissionId);
+    public static boolean revokePermission(int userId, String permissionCode) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            // Get permission ID
+            int permissionId = getPermissionId(permissionCode);
+            if (permissionId == -1) {
+                return false;
+            }
             
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Gets all permissions assigned to a user
-     * 
-     * @param userId User ID
-     * @param activeOnly If true, only return active permissions
-     * @return List of user permissions
-     */
-    public static List<UserPermission> getUserPermissions(int userId, boolean activeOnly) {
-        String sql = "SELECT up.*, p.* FROM user_permissions up " +
-                "JOIN permissions p ON up.permission_id = p.id " +
-                "WHERE up.user_id = ?";
-        
-        if (activeOnly) {
-            sql += " AND up.active = TRUE AND p.active = TRUE";
-        }
-        
-        sql += " ORDER BY p.module, p.name";
-        
-        List<UserPermission> userPermissions = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    UserPermission userPermission = mapResultSetToUserPermission(rs);
-                    Permission permission = mapResultSetToPermission(rs);
-                    userPermission.setPermission(permission);
-                    userPermissions.add(userPermission);
-                }
+            // Revoke permission
+            String query = "DELETE FROM user_permissions WHERE user_id = ? AND permission_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, userId);
+                stmt.setInt(2, permissionId);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-        
-        return userPermissions;
-    }
-    
-    /**
-     * Gets permission codes for a user (used for checking permissions)
-     * 
-     * @param userId User ID
-     * @return List of permission codes
-     */
-    public static List<String> getUserPermissionCodes(int userId) {
-        String sql = "SELECT p.code FROM user_permissions up " +
-                "JOIN permissions p ON up.permission_id = p.id " +
-                "WHERE up.user_id = ? AND up.active = TRUE AND p.active = TRUE";
-        
-        List<String> permissionCodes = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    permissionCodes.add(rs.getString("code"));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return permissionCodes;
-    }
-    
-    /**
-     * Checks if a user has a specific permission
-     * 
-     * @param userId User ID
-     * @param permissionCode Permission code
-     * @return true if user has the permission, false otherwise
-     */
-    public static boolean hasPermission(int userId, String permissionCode) {
-        // Super Admin has all permissions
-        User user = AuthController.getUserById(userId);
-        if (user != null && Constants.ROLE_SUPER_ADMIN.equals(user.getRole())) {
-            return true;
-        }
-        
-        String sql = "SELECT COUNT(*) FROM user_permissions up " +
-                "JOIN permissions p ON up.permission_id = p.id " +
-                "WHERE up.user_id = ? AND p.code = ? AND up.active = TRUE AND p.active = TRUE";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            stmt.setString(2, permissionCode);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Checks if the currently logged-in user has a specific permission
-     * 
-     * @param permissionCode Permission code
-     * @return true if user has the permission, false otherwise
-     */
-    public static boolean currentUserHasPermission(String permissionCode) {
-        User currentUser = AuthController.getCurrentUser();
-        if (currentUser == null) {
             return false;
         }
+    }
+    
+    /**
+     * Sets permissions for a user (removes existing ones and adds new ones)
+     * 
+     * @param userId User ID
+     * @param permissionCodes List of permission codes
+     * @return true if set successfully, false otherwise
+     */
+    public static boolean setUserPermissions(int userId, List<String> permissionCodes) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            // Begin transaction
+            conn.setAutoCommit(false);
+            
+            try {
+                // Remove all existing permissions
+                String deleteQuery = "DELETE FROM user_permissions WHERE user_id = ?";
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery)) {
+                    deleteStmt.setInt(1, userId);
+                    deleteStmt.executeUpdate();
+                }
+                
+                // Add new permissions
+                if (permissionCodes != null && !permissionCodes.isEmpty()) {
+                    String insertQuery = "INSERT INTO user_permissions (user_id, permission_id) VALUES (?, ?)";
+                    try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                        for (String code : permissionCodes) {
+                            int permissionId = getPermissionId(code);
+                            if (permissionId != -1) {
+                                insertStmt.setInt(1, userId);
+                                insertStmt.setInt(2, permissionId);
+                                insertStmt.addBatch();
+                            }
+                        }
+                        insertStmt.executeBatch();
+                    }
+                }
+                
+                // Commit transaction
+                conn.commit();
+                return true;
+                
+            } catch (SQLException e) {
+                // Rollback transaction on error
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            } finally {
+                // Restore auto-commit
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Gets the ID of a permission
+     * 
+     * @param permissionCode Permission code
+     * @return Permission ID or -1 if not found
+     */
+    private static int getPermissionId(String permissionCode) {
+        // Check cache first
+        if (permissionIdCache.containsKey(permissionCode)) {
+            return permissionIdCache.get(permissionCode);
+        }
         
-        return hasPermission(currentUser.getId(), permissionCode);
-    }
-    
-    /**
-     * Maps a ResultSet row to a Permission object
-     * 
-     * @param rs ResultSet
-     * @return Permission object
-     * @throws SQLException if mapping fails
-     */
-    private static Permission mapResultSetToPermission(ResultSet rs) throws SQLException {
-        Permission permission = new Permission();
-        permission.setId(rs.getInt("id"));
-        permission.setName(rs.getString("name"));
-        permission.setCode(rs.getString("code"));
-        permission.setDescription(rs.getString("description"));
-        permission.setModule(rs.getString("module"));
-        permission.setActive(rs.getBoolean("active"));
-        permission.setCreatedAt(rs.getTimestamp("created_at"));
-        permission.setUpdatedAt(rs.getTimestamp("updated_at"));
-        return permission;
-    }
-    
-    /**
-     * Maps a ResultSet row to a UserPermission object
-     * 
-     * @param rs ResultSet
-     * @return UserPermission object
-     * @throws SQLException if mapping fails
-     */
-    private static UserPermission mapResultSetToUserPermission(ResultSet rs) throws SQLException {
-        UserPermission userPermission = new UserPermission();
-        userPermission.setId(rs.getInt("id"));
-        userPermission.setUserId(rs.getInt("user_id"));
-        userPermission.setPermissionId(rs.getInt("permission_id"));
-        userPermission.setActive(rs.getBoolean("active"));
-        userPermission.setGrantedDate(rs.getTimestamp("granted_date"));
-        userPermission.setExpiryDate(rs.getTimestamp("expiry_date"));
-        userPermission.setGrantedBy(rs.getInt("granted_by"));
-        userPermission.setNotes(rs.getString("notes"));
-        userPermission.setCreatedAt(rs.getTimestamp("created_at"));
-        userPermission.setUpdatedAt(rs.getTimestamp("updated_at"));
-        return userPermission;
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT id FROM permissions WHERE code = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, permissionCode);
+                
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    int id = rs.getInt("id");
+                    permissionIdCache.put(permissionCode, id);
+                    return id;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return -1;
     }
 }

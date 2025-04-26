@@ -4,7 +4,7 @@ import com.moscat.utils.Constants;
 import java.util.Date;
 
 /**
- * Model for user data
+ * Model class for User
  */
 public class User {
     
@@ -16,30 +16,29 @@ public class User {
     private String email;
     private String contactNumber;
     private String role;
-    private String status;
-    private Date lastLogin;
     private boolean active;
-    private Date createdAt;
+    private Date lastLogin;
     
     /**
      * Default constructor
      */
     public User() {
+        // Default constructor
     }
     
     /**
-     * Gets the ID
+     * Gets the user ID
      * 
-     * @return ID
+     * @return User ID
      */
     public int getId() {
         return id;
     }
     
     /**
-     * Sets the ID
+     * Sets the user ID
      * 
-     * @param id ID
+     * @param id User ID
      */
     public void setId(int id) {
         this.id = id;
@@ -64,18 +63,18 @@ public class User {
     }
     
     /**
-     * Gets the password hash
+     * Gets the password (hashed)
      * 
-     * @return Password hash
+     * @return Password
      */
     public String getPassword() {
         return password;
     }
     
     /**
-     * Sets the password hash
+     * Sets the password (hashed)
      * 
-     * @param password Password hash
+     * @param password Password
      */
     public void setPassword(String password) {
         this.password = password;
@@ -118,6 +117,35 @@ public class User {
     }
     
     /**
+     * Gets the full name (first name + last name)
+     * 
+     * @return Full name
+     */
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+    
+    /**
+     * Sets the full name by splitting it into first and last name
+     * 
+     * @param fullName Full name in "FirstName LastName" format
+     */
+    public void setFullName(String fullName) {
+        if (fullName != null && !fullName.isEmpty()) {
+            String[] parts = fullName.split(" ", 2);
+            if (parts.length > 0) {
+                this.firstName = parts[0];
+                
+                if (parts.length > 1) {
+                    this.lastName = parts[1];
+                } else {
+                    this.lastName = ""; // Set empty last name if not provided
+                }
+            }
+        }
+    }
+    
+    /**
      * Gets the email
      * 
      * @return Email
@@ -133,60 +161,6 @@ public class User {
      */
     public void setEmail(String email) {
         this.email = email;
-    }
-    
-    /**
-     * Gets the role
-     * 
-     * @return Role
-     */
-    public String getRole() {
-        return role;
-    }
-    
-    /**
-     * Sets the role
-     * 
-     * @param role Role
-     */
-    public void setRole(String role) {
-        this.role = role;
-    }
-    
-    /**
-     * Gets the last login date
-     * 
-     * @return Last login date
-     */
-    public Date getLastLogin() {
-        return lastLogin;
-    }
-    
-    /**
-     * Sets the last login date
-     * 
-     * @param lastLogin Last login date
-     */
-    public void setLastLogin(Date lastLogin) {
-        this.lastLogin = lastLogin;
-    }
-    
-    /**
-     * Checks if the user is active
-     * 
-     * @return true if active, false otherwise
-     */
-    public boolean isActive() {
-        return active;
-    }
-    
-    /**
-     * Sets the active status
-     * 
-     * @param active Active status
-     */
-    public void setActive(boolean active) {
-        this.active = active;
     }
     
     /**
@@ -208,112 +182,88 @@ public class User {
     }
     
     /**
-     * Gets the status
+     * Gets the role
      * 
-     * @return Status
+     * @return Role
      */
-    public String getStatus() {
-        return status;
+    public String getRole() {
+        return role;
     }
     
     /**
-     * Sets the status
+     * Sets the role
      * 
-     * @param status Status
+     * @param role Role
      */
-    public void setStatus(String status) {
-        this.status = status;
+    public void setRole(String role) {
+        this.role = role;
     }
     
     /**
-     * Gets the full name
+     * Checks if user is active
      * 
-     * @return Full name
+     * @return true if active, false otherwise
      */
-    public String getFullName() {
-        return firstName + " " + lastName;
+    public boolean isActive() {
+        return active;
     }
     
     /**
-     * Sets the full name by splitting it into first and last name
+     * Sets whether user is active
      * 
-     * @param fullName Full name
+     * @param active Active status
      */
-    public void setFullName(String fullName) {
-        if (fullName != null && !fullName.isEmpty()) {
-            String[] nameParts = fullName.trim().split("\\s+");
-            if (nameParts.length > 0) {
-                this.firstName = nameParts[0];
-                
-                if (nameParts.length > 1) {
-                    // Last name is everything after the first name
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 1; i < nameParts.length; i++) {
-                        if (i > 1) {
-                            sb.append(" ");
-                        }
-                        sb.append(nameParts[i]);
-                    }
-                    this.lastName = sb.toString();
-                } else {
-                    this.lastName = "";
-                }
-            }
-        }
+    public void setActive(boolean active) {
+        this.active = active;
     }
     
     /**
-     * Checks if the user is a super admin
+     * Gets the last login date
      * 
-     * @return true if super admin, false otherwise
+     * @return Last login date
+     */
+    public Date getLastLogin() {
+        return lastLogin;
+    }
+    
+    /**
+     * Sets the last login date
+     * 
+     * @param lastLogin Last login date
+     */
+    public void setLastLogin(Date lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+    
+    /**
+     * Checks if user is a SuperAdmin
+     * 
+     * @return true if SuperAdmin, false otherwise
      */
     public boolean isSuperAdmin() {
-        return Constants.ROLE_SUPER_ADMIN.equals(role);
+        return role != null && role.equals(Constants.ROLE_SUPER_ADMIN);
     }
     
     /**
-     * Checks if the user is a treasurer
+     * Checks if user is a Treasurer
      * 
-     * @return true if treasurer, false otherwise
+     * @return true if Treasurer, false otherwise
      */
     public boolean isTreasurer() {
-        return Constants.ROLE_TREASURER.equals(role);
+        return role != null && role.equals(Constants.ROLE_TREASURER);
     }
     
     /**
-     * Checks if the user is a bookkeeper
+     * Checks if user is a Bookkeeper
      * 
-     * @return true if bookkeeper, false otherwise
+     * @return true if Bookkeeper, false otherwise
      */
     public boolean isBookkeeper() {
-        return Constants.ROLE_BOOKKEEPER.equals(role);
+        return role != null && role.equals(Constants.ROLE_BOOKKEEPER);
     }
     
-    /**
-     * Gets the created at date
-     * 
-     * @return Created at date
-     */
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    
-    /**
-     * Sets the created at date
-     * 
-     * @param createdAt Created at date
-     */
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    /**
-     * Returns a string representation of the user
-     * 
-     * @return String representation
-     */
     @Override
     public String toString() {
-        return getFullName() + " (" + username + ")";
+        return getFullName() + " (" + username + " - " + role + ")";
     }
 }

@@ -5,74 +5,72 @@ import com.moscat.models.User;
 import com.moscat.utils.Constants;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * Login dialog
+ * Login dialog for the application
  */
 public class LoginView extends JDialog {
     
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
-    private JLabel errorLabel;
+    private JButton cancelButton;
+    private JLabel messageLabel;
     
     /**
-     * Constructs a new LoginView
+     * Creates a new login dialog
      * 
-     * @param parentFrame Parent JFrame
+     * @param parent Parent frame
      */
-    public LoginView(JFrame parentFrame) {
-        super(parentFrame, "MOSCAT Login", true);
+    public LoginView(JFrame parent) {
+        super(parent, "Login", true);
         
-        // Basic dialog setup
-        setSize(400, 300);
-        setResizable(false);
-        setLocationRelativeTo(parentFrame);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        // Set up the layout
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(10, 10, 10, 10);
         
-        // Create main panel
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        // Create header panel
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        headerPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
-        
-        JLabel titleLabel = new JLabel("MOSCAT Cooperative");
+        // Title label
+        JLabel titleLabel = new JLabel("MOSCAT Cooperative System");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.gridwidth = 2;
+        panel.add(titleLabel, constraints);
         
-        JLabel subtitleLabel = new JLabel("Savings & Loan Management System");
-        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        
-        headerPanel.add(titleLabel);
-        headerPanel.add(subtitleLabel);
-        
-        // Create form panel
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
-        
+        // Username label
         JLabel usernameLabel = new JLabel("Username:");
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        panel.add(usernameLabel, constraints);
+        
+        // Username field
         usernameField = new JTextField(20);
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        panel.add(usernameField, constraints);
         
+        // Password label
         JLabel passwordLabel = new JLabel("Password:");
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        panel.add(passwordLabel, constraints);
+        
+        // Password field
         passwordField = new JPasswordField(20);
+        constraints.gridx = 1;
+        constraints.gridy = 2;
+        panel.add(passwordField, constraints);
         
-        errorLabel = new JLabel("");
-        errorLabel.setForeground(Color.RED);
-        
-        formPanel.add(usernameLabel);
-        formPanel.add(usernameField);
-        formPanel.add(passwordLabel);
-        formPanel.add(passwordField);
-        formPanel.add(errorLabel);
-        
-        // Create button panel
+        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         
+        // Login button
         loginButton = new JButton("Login");
         loginButton.addActionListener(new ActionListener() {
             @Override
@@ -80,85 +78,110 @@ public class LoginView extends JDialog {
                 login();
             }
         });
-        
         buttonPanel.add(loginButton);
         
-        // Add panels to main panel
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
-        mainPanel.add(formPanel, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        // Cancel button
+        cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+                System.exit(0);
+            }
+        });
+        buttonPanel.add(cancelButton);
         
-        // Set content pane
-        setContentPane(mainPanel);
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        constraints.gridwidth = 2;
+        panel.add(buttonPanel, constraints);
+        
+        // Message label
+        messageLabel = new JLabel(" ");
+        messageLabel.setForeground(Color.RED);
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.gridwidth = 2;
+        panel.add(messageLabel, constraints);
         
         // Set default button
         getRootPane().setDefaultButton(loginButton);
+        
+        // Set content pane
+        setContentPane(panel);
+        
+        // Pack and center
+        pack();
+        setLocationRelativeTo(parent);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
     
     /**
-     * Attempts to log in the user
+     * Handles the login action
      */
     private void login() {
-        String username = usernameField.getText().trim();
+        String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
         
         // Validate input
         if (username.isEmpty() || password.isEmpty()) {
-            errorLabel.setText("Username and password are required.");
+            messageLabel.setText("Please enter username and password");
             return;
         }
         
-        // Attempt to login
+        // Attempt login
         User user = AuthController.login(username, password);
         
         if (user != null) {
-            // Open dashboard based on role
-            switch (user.getRole()) {
-                case Constants.ROLE_SUPER_ADMIN:
-                    openSuperAdminDashboard();
-                    break;
-                case Constants.ROLE_TREASURER:
-                    openTreasurerDashboard();
-                    break;
-                case Constants.ROLE_BOOKKEEPER:
-                    openBookkeeperDashboard();
-                    break;
-                default:
-                    errorLabel.setText("Unknown user role.");
-                    return;
-            }
-            
-            // Close login dialog
+            // Successful login
             dispose();
+            
+            // Open appropriate dashboard based on user role
+            if (user.isSuperAdmin()) {
+                // Open admin dashboard
+                JOptionPane.showMessageDialog(
+                    null,
+                    "Welcome Admin " + user.getFirstName() + "!",
+                    "Login Successful",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+                // TODO: Add AdminDashboard
+                // new AdminDashboard(user).setVisible(true);
+            } else if (user.isTreasurer()) {
+                // Open treasurer dashboard
+                JOptionPane.showMessageDialog(
+                    null,
+                    "Welcome Treasurer " + user.getFirstName() + "!",
+                    "Login Successful",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+                // TODO: Add TreasurerDashboard
+                // new TreasurerDashboard(user).setVisible(true);
+            } else if (user.isBookkeeper()) {
+                // Open bookkeeper dashboard
+                JOptionPane.showMessageDialog(
+                    null,
+                    "Welcome Bookkeeper " + user.getFirstName() + "!",
+                    "Login Successful",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+                // TODO: Add BookkeeperDashboard
+                // new BookkeeperDashboard(user).setVisible(true);
+            } else {
+                // Unrecognized role
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Unknown user role: " + user.getRole(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+                AuthController.logout();
+            }
         } else {
-            errorLabel.setText("Invalid username or password.");
+            // Failed login
+            messageLabel.setText("Invalid username or password");
+            passwordField.setText("");
+            usernameField.requestFocus();
         }
-    }
-    
-    /**
-     * Opens the super admin dashboard
-     */
-    private void openSuperAdminDashboard() {
-        JFrame parentFrame = (JFrame) getParent();
-        SuperAdminDashboard dashboard = new SuperAdminDashboard(parentFrame);
-        dashboard.setVisible(true);
-    }
-    
-    /**
-     * Opens the treasurer dashboard
-     */
-    private void openTreasurerDashboard() {
-        JFrame parentFrame = (JFrame) getParent();
-        TreasurerDashboard dashboard = new TreasurerDashboard(parentFrame);
-        dashboard.setVisible(true);
-    }
-    
-    /**
-     * Opens the bookkeeper dashboard
-     */
-    private void openBookkeeperDashboard() {
-        JFrame parentFrame = (JFrame) getParent();
-        BookkeeperDashboard dashboard = new BookkeeperDashboard(parentFrame);
-        dashboard.setVisible(true);
     }
 }

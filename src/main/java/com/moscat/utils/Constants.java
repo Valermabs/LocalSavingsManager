@@ -5,6 +5,10 @@ package com.moscat.utils;
  */
 public class Constants {
     
+    // Application settings
+    public static final String APP_NAME = "MOSCAT Cooperative";
+    public static final String APP_VERSION = "1.0.0";
+    
     // User roles
     public static final String ROLE_SUPER_ADMIN = "SuperAdmin";
     public static final String ROLE_TREASURER = "Treasurer";
@@ -13,166 +17,110 @@ public class Constants {
     // User status
     public static final String STATUS_ACTIVE = "Active";
     public static final String STATUS_INACTIVE = "Inactive";
-    public static final String STATUS_LOCKED = "Locked";
-    public static final String STATUS_PENDING = "Pending";
+    public static final String STATUS_SUSPENDED = "Suspended";
+    
+    // Member status
+    public static final String MEMBER_STATUS_ACTIVE = "Active";
+    public static final String MEMBER_STATUS_INACTIVE = "Inactive";
+    public static final String MEMBER_STATUS_SUSPENDED = "Suspended";
     
     // Account status
-    public static final String ACCOUNT_ACTIVE = "Active";
-    public static final String ACCOUNT_DORMANT = "Dormant";
-    public static final String ACCOUNT_CLOSED = "Closed";
-    public static final String ACCOUNT_SUSPENDED = "Suspended";
+    public static final String ACCOUNT_STATUS_ACTIVE = "Active";
+    public static final String ACCOUNT_STATUS_DORMANT = "Dormant";
+    public static final String ACCOUNT_STATUS_CLOSED = "Closed";
+    public static final String ACCOUNT_STATUS_FROZEN = "Frozen";
     
-    // Savings status (aliases for account status)
-    public static final String SAVINGS_STATUS_ACTIVE = ACCOUNT_ACTIVE;
-    public static final String SAVINGS_STATUS_DORMANT = ACCOUNT_DORMANT;
-    public static final String SAVINGS_STATUS_CLOSED = ACCOUNT_CLOSED;
-    public static final String SAVINGS_STATUS_SUSPENDED = ACCOUNT_SUSPENDED;
-    
-    // Transaction types
-    public static final String TRANSACTION_DEPOSIT = "Deposit";
-    public static final String TRANSACTION_WITHDRAWAL = "Withdrawal";
-    public static final String TRANSACTION_TRANSFER = "Transfer";
-    public static final String TRANSACTION_INTEREST = "Interest";
-    public static final String TRANSACTION_FEE = "Fee";
-    public static final String TRANSACTION_LOAN_PAYMENT = "Loan Payment";
-    public static final String TRANSACTION_LOAN_RELEASE = "Loan Release";
-    public static final String TRANSACTION_INTEREST_EARNING = "Interest Earning";
-    public static final String TRANSACTION_INTEREST_WITHDRAWAL = "Interest Withdrawal";
-    
-    // Loan status
-    public static final String LOAN_PENDING = "Pending";
-    public static final String LOAN_APPROVED = "Approved";
-    public static final String LOAN_REJECTED = "Rejected";
-    public static final String LOAN_DISBURSED = "Disbursed";
-    public static final String LOAN_ACTIVE = "Active";
-    public static final String LOAN_COMPLETED = "Completed";
-    public static final String LOAN_DEFAULTED = "Defaulted";
-    
-    // Loan status codes (used in controller logic)
-    public static final String LOAN_STATUS_PENDING = LOAN_PENDING;
-    public static final String LOAN_STATUS_APPROVED = LOAN_APPROVED;
-    public static final String LOAN_STATUS_REJECTED = LOAN_REJECTED;
-    public static final String LOAN_STATUS_DISBURSED = LOAN_DISBURSED;
-    public static final String LOAN_STATUS_ACTIVE = LOAN_ACTIVE;
-    public static final String LOAN_STATUS_COMPLETED = LOAN_COMPLETED;
-    public static final String LOAN_STATUS_DEFAULTED = LOAN_DEFAULTED;
-    
-    // Payment status
-    public static final String PAYMENT_PAID = "Paid";
-    public static final String PAYMENT_UNPAID = "Unpaid";
-    public static final String PAYMENT_LATE = "Late";
-    public static final String PAYMENT_PARTIAL = "Partial";
-    
-    // Loan payment status (aliases for payment status)
-    public static final String LOAN_PAID = PAYMENT_PAID;
+    // Savings account status - aliases for account status
+    public static final String SAVINGS_STATUS_ACTIVE = ACCOUNT_STATUS_ACTIVE;
+    public static final String SAVINGS_STATUS_DORMANT = ACCOUNT_STATUS_DORMANT;
+    public static final String SAVINGS_STATUS_CLOSED = ACCOUNT_STATUS_CLOSED;
+    public static final String SAVINGS_STATUS_FROZEN = ACCOUNT_STATUS_FROZEN;
     
     // Account types
-    public static final String ACCOUNT_SAVINGS = "Savings";
-    public static final String ACCOUNT_TIME_DEPOSIT = "Time Deposit";
-    public static final String ACCOUNT_SHARE_CAPITAL = "Share Capital";
+    public static final String ACCOUNT_TYPE_REGULAR_SAVINGS = "Regular Savings";
+    public static final String ACCOUNT_TYPE_TIME_DEPOSIT = "Time Deposit";
+    public static final String ACCOUNT_TYPE_SHARE_CAPITAL = "Share Capital";
+    
+    // Transaction types
+    public static final String TRANSACTION_TYPE_DEPOSIT = "Deposit";
+    public static final String TRANSACTION_TYPE_WITHDRAWAL = "Withdrawal";
+    public static final String TRANSACTION_TYPE_INTEREST = "Interest";
+    public static final String TRANSACTION_TYPE_FEE = "Fee";
+    public static final String TRANSACTION_TYPE_TRANSFER = "Transfer";
+    public static final String TRANSACTION_TYPE_LOAN_RELEASE = "Loan Release";
+    public static final String TRANSACTION_TYPE_LOAN_PAYMENT = "Loan Payment";
+    
+    // Transaction type aliases - for backward compatibility
+    public static final String TRANSACTION_LOAN_RELEASE = TRANSACTION_TYPE_LOAN_RELEASE;
+    public static final String TRANSACTION_LOAN_PAYMENT = TRANSACTION_TYPE_LOAN_PAYMENT;
     
     // Loan types
-    public static final String LOAN_PERSONAL = "Personal Loan";
-    public static final String LOAN_BUSINESS = "Business Loan";
-    public static final String LOAN_EMERGENCY = "Emergency Loan";
-    public static final String LOAN_HOUSING = "Housing Loan";
-    public static final String LOAN_EDUCATIONAL = "Educational Loan";
+    public static final String LOAN_TYPE_PERSONAL = "Personal";
+    public static final String LOAN_TYPE_BUSINESS = "Business";
+    public static final String LOAN_TYPE_EMERGENCY = "Emergency";
+    public static final String LOAN_TYPE_EDUCATIONAL = "Educational";
     
-    // Loan type codes (used in controller logic)
-    public static final String LOAN_TYPE_PERSONAL = "PERSONAL";
-    public static final String LOAN_TYPE_BUSINESS = "BUSINESS";
-    public static final String LOAN_TYPE_EMERGENCY = "EMERGENCY";
-    public static final String LOAN_TYPE_HOUSING = "HOUSING";
-    public static final String LOAN_TYPE_EDUCATIONAL = "EDUCATIONAL";
+    // Loan status
+    public static final String LOAN_STATUS_PENDING = "Pending";
+    public static final String LOAN_STATUS_APPROVED = "Approved";
+    public static final String LOAN_STATUS_REJECTED = "Rejected";
+    public static final String LOAN_STATUS_DISBURSED = "Disbursed";
+    public static final String LOAN_STATUS_ACTIVE = "Active";
+    public static final String LOAN_STATUS_PAID = "Paid";
+    public static final String LOAN_STATUS_COMPLETED = "Completed";
+    public static final String LOAN_STATUS_DEFAULTED = "Defaulted";
+    
+    // Loan status aliases - for backward compatibility
+    public static final String LOAN_PENDING = LOAN_STATUS_PENDING;
+    public static final String LOAN_APPROVED = LOAN_STATUS_APPROVED;
+    public static final String LOAN_REJECTED = LOAN_STATUS_REJECTED;
+    public static final String LOAN_ACTIVE = LOAN_STATUS_ACTIVE;
+    public static final String LOAN_PAID = LOAN_STATUS_PAID;
+    
+    // Payment status
+    public static final String PAYMENT_STATUS_PAID = "Paid";
+    public static final String PAYMENT_STATUS_UNPAID = "Unpaid";
+    public static final String PAYMENT_STATUS_PARTIAL = "Partial";
+    public static final String PAYMENT_STATUS_LATE = "Late";
+    
+    // Payment frequency
+    public static final String PAYMENT_FREQUENCY_MONTHLY = "Monthly";
+    public static final String PAYMENT_FREQUENCY_BIWEEKLY = "Bi-weekly";
+    public static final String PAYMENT_FREQUENCY_WEEKLY = "Weekly";
     
     // Interest calculation methods
-    public static final String INTEREST_DAILY = "Daily";
-    public static final String INTEREST_MONTHLY = "Monthly";
-    public static final String INTEREST_QUARTERLY = "Quarterly";
-    public static final String INTEREST_ANNUALLY = "Annually";
+    public static final String INTEREST_CALCULATION_DAILY = "Daily";
+    public static final String INTEREST_CALCULATION_MONTHLY = "Monthly";
+    public static final String INTEREST_CALCULATION_QUARTERLY = "Quarterly";
     
-    // Payment frequencies
-    public static final String FREQUENCY_MONTHLY = "Monthly";
-    public static final String FREQUENCY_QUARTERLY = "Quarterly";
-    public static final String FREQUENCY_SEMI_ANNUALLY = "Semi-Annually";
-    public static final String FREQUENCY_ANNUALLY = "Annually";
+    // Permissions
+    public static final String PERMISSION_USER_MANAGEMENT = "USER_MANAGEMENT";
+    public static final String PERMISSION_MEMBER_MANAGEMENT = "MEMBER_MANAGEMENT";
+    public static final String PERMISSION_ACCOUNT_MANAGEMENT = "ACCOUNT_MANAGEMENT";
+    public static final String PERMISSION_TRANSACTION_MANAGEMENT = "TRANSACTION_MANAGEMENT";
+    public static final String PERMISSION_LOAN_MANAGEMENT = "LOAN_MANAGEMENT";
+    public static final String PERMISSION_REPORT_GENERATION = "REPORT_GENERATION";
+    public static final String PERMISSION_SYSTEM_SETTINGS = "SYSTEM_SETTINGS";
     
-    // Date formats
-    public static final String DATE_FORMAT_DISPLAY = "yyyy-MM-dd";
-    public static final String DATE_FORMAT_DATABASE = "yyyy-MM-dd HH:mm:ss";
-    public static final String DATE_FORMAT_SHORT = "MM/dd/yyyy";
+    // Date format
+    public static final String DATE_FORMAT = "yyyy-MM-dd";
+    public static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     
-    // Dormancy period in months
-    public static final int DORMANCY_PERIOD_MONTHS = 12;
-    
-    // Minimum balance for savings account
-    public static final double MINIMUM_BALANCE_SAVINGS = 500.0;
+    // Dormancy period in days
+    public static final int DORMANCY_PERIOD_DAYS = 180; // 6 months
     
     // Default interest rates
-    public static final double DEFAULT_INTEREST_RATE_SAVINGS = 0.025; // 2.5%
-    public static final double DEFAULT_INTEREST_RATE_TIME_DEPOSIT = 0.045; // 4.5%
-    public static final double DEFAULT_INTEREST_RATE_SHARE_CAPITAL = 0.07; // 7%
+    public static final double DEFAULT_SAVINGS_INTEREST_RATE = 0.025; // 2.5%
+    public static final double DEFAULT_TIME_DEPOSIT_INTEREST_RATE = 0.04; // 4.0%
+    public static final double DEFAULT_SHARE_CAPITAL_INTEREST_RATE = 0.05; // 5.0%
     
-    // Aliases for interest rates
-    public static final double DEFAULT_SAVINGS_INTEREST_RATE = DEFAULT_INTEREST_RATE_SAVINGS;
+    // Default minimum balances
+    public static final double DEFAULT_SAVINGS_MINIMUM_BALANCE = 500.0;
+    public static final double DEFAULT_TIME_DEPOSIT_MINIMUM_BALANCE = 5000.0;
+    public static final double DEFAULT_SHARE_CAPITAL_MINIMUM_BALANCE = 1000.0;
     
-    // Default loan interest rates
-    public static final double DEFAULT_INTEREST_RATE_PERSONAL = 0.12; // 12%
-    public static final double DEFAULT_INTEREST_RATE_BUSINESS = 0.15; // 15%
-    public static final double DEFAULT_INTEREST_RATE_EMERGENCY = 0.10; // 10%
-    public static final double DEFAULT_INTEREST_RATE_HOUSING = 0.09; // 9%
-    public static final double DEFAULT_INTEREST_RATE_EDUCATIONAL = 0.08; // 8%
-    
-    // Maximum loan terms in years
-    public static final int MAX_TERM_PERSONAL = 3;
-    public static final int MAX_TERM_BUSINESS = 5;
-    public static final int MAX_TERM_EMERGENCY = 1;
-    public static final int MAX_TERM_HOUSING = 15;
-    public static final int MAX_TERM_EDUCATIONAL = 5;
-    
-    // Maximum loan amounts
-    public static final double MAX_AMOUNT_PERSONAL = 500000.0;
-    public static final double MAX_AMOUNT_BUSINESS = 1000000.0;
-    public static final double MAX_AMOUNT_EMERGENCY = 100000.0;
-    public static final double MAX_AMOUNT_HOUSING = 3000000.0;
-    public static final double MAX_AMOUNT_EDUCATIONAL = 300000.0;
-    
-    // Currency format
-    public static final String CURRENCY_SYMBOL = "₱";
-    public static final String CURRENCY_FORMAT = "###,##0.00";
-    
-    // ID number prefixes
-    public static final String MEMBER_ID_PREFIX = "MEM";
-    public static final String ACCOUNT_ID_PREFIX = "ACC";
-    public static final String LOAN_ID_PREFIX = "LOAN";
-    public static final String TRANSACTION_ID_PREFIX = "TXN";
-    
-    // Permission modules
-    public static final String MODULE_MEMBERS = "MEMBERS";
-    public static final String MODULE_SAVINGS = "SAVINGS";
-    public static final String MODULE_LOANS = "LOANS";
-    public static final String MODULE_REPORTS = "REPORTS";
-    public static final String MODULE_ADMIN = "ADMIN";
-    
-    // Permission codes for Treasurer role
-    public static final String[] TREASURER_PERMISSIONS = {
-        "MEMBER_VIEW", "MEMBER_ADD", "MEMBER_EDIT",
-        "SAVINGS_VIEW", "SAVINGS_CREATE", "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAW",
-        "LOAN_VIEW", "LOAN_CREATE", "LOAN_APPROVE", "LOAN_DISBURSE", "LOAN_PAYMENT",
-        "REPORT_VIEW", "REPORT_MEMBER", "REPORT_SAVINGS", "REPORT_LOAN"
-    };
-    
-    // Permission codes for Bookkeeper role
-    public static final String[] BOOKKEEPER_PERMISSIONS = {
-        "MEMBER_VIEW",
-        "SAVINGS_VIEW",
-        "LOAN_VIEW",
-        "REPORT_VIEW", "REPORT_MEMBER", "REPORT_SAVINGS", "REPORT_LOAN", "REPORT_FINANCIAL"
-    };
-    
-    // UI components dimensions
-    public static final int TEXT_FIELD_HEIGHT = 30;
-    public static final int BUTTON_HEIGHT = 35;
-    public static final int TABLE_ROW_HEIGHT = 25;
-    public static final int PANEL_SPACING = 10;
+    // System settings keys
+    public static final String SETTING_INTEREST_RATE = "interest_rate";
+    public static final String SETTING_MINIMUM_BALANCE = "minimum_balance";
+    public static final String SETTING_DORMANCY_PERIOD = "dormancy_period";
 }

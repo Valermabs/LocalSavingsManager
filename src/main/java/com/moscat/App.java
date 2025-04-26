@@ -2,6 +2,7 @@ package com.moscat;
 
 import com.moscat.utils.DatabaseManager;
 import com.moscat.views.LoginView;
+import com.moscat.views.SetupView;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,9 +40,15 @@ public class App {
         // Show splash screen
         showSplashScreen(mainFrame);
         
-        // Show login dialog
+        // Check if we need first-time setup
         SwingUtilities.invokeLater(() -> {
-            new LoginView(mainFrame).setVisible(true);
+            if (isFirstTimeSetupNeeded()) {
+                // Show setup dialog
+                new SetupView(mainFrame).setVisible(true);
+            } else {
+                // Show regular login dialog
+                new LoginView(mainFrame).setVisible(true);
+            }
         });
     }
     
@@ -280,5 +287,39 @@ public class App {
                 e.printStackTrace();
             }
         }).start();
+    }
+    
+    /**
+     * Checks if this is the first time the application is run
+     * and no users exist in the database
+     * 
+     * @return true if setup is needed, false otherwise
+     */
+    private static boolean isFirstTimeSetupNeeded() {
+        Connection conn = null;
+        java.sql.PreparedStatement stmt = null;
+        java.sql.ResultSet rs = null;
+        
+        try {
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            // Check if any users exist
+            String query = "SELECT COUNT(*) FROM users";
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                int userCount = rs.getInt(1);
+                return userCount == 0; // Setup needed if no users exist
+            }
+            
+            return true; // Default to true if we can't determine
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return true; // Default to true if there's an error
+        } finally {
+            DatabaseManager.closeResources(rs, stmt, conn);
+        }
     }
 }

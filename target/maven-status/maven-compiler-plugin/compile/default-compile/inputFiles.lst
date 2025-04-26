@@ -26,6 +26,7 @@
 /home/runner/workspace/src/main/java/com/moscat/views/components/CustomTextField.java
 /home/runner/workspace/src/main/java/com/moscat/views/UserPermissionsView.java
 /home/runner/workspace/src/main/java/com/moscat/utils/DatabaseManager.java
+/home/runner/workspace/src/main/java/com/moscat/views/SetupView.java
 /home/runner/workspace/src/main/java/com/moscat/views/BookkeeperDashboard.java
 /home/runner/workspace/src/main/java/com/moscat/utils/DateUtils.java
 /home/runner/workspace/src/main/java/com/moscat/models/LoanDeduction.java

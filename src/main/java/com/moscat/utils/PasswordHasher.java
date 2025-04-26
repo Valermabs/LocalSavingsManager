@@ -6,31 +6,19 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * Utility for password hashing
+ * Utility class for password hashing and verification
  */
 public class PasswordHasher {
     
-    // Hash algorithm
-    private static final String ALGORITHM = "SHA-256";
-    
-    // Salt length in bytes
-    private static final int SALT_LENGTH = 16;
+    private static final int SALT_LENGTH = 16; // 16 bytes = 128 bits
+    private static final String HASH_ALGORITHM = "SHA-256";
+    private static final String DELIMITER = ":";
     
     /**
-     * Alias for hash method for backward compatibility
+     * Hashes a password using SHA-256 with a random salt
      * 
-     * @param password Plain text password
-     * @return Hashed password
-     */
-    public static String hashPassword(String password) {
-        return hash(password);
-    }
-    
-    /**
-     * Hashes a password with a random salt
-     * 
-     * @param password Plain text password
-     * @return Base64-encoded string containing salt and hash
+     * @param password Password to hash
+     * @return Hashed password with salt (format: salt:hash)
      */
     public static String hash(String password) {
         try {
@@ -40,15 +28,16 @@ public class PasswordHasher {
             random.nextBytes(salt);
             
             // Hash the password with the salt
-            byte[] hash = hashWithSalt(password, salt);
+            MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
+            md.update(salt);
+            byte[] hashedPassword = md.digest(password.getBytes());
             
-            // Combine salt and hash
-            byte[] combined = new byte[salt.length + hash.length];
-            System.arraycopy(salt, 0, combined, 0, salt.length);
-            System.arraycopy(hash, 0, combined, salt.length, hash.length);
+            // Encode salt and hash to Base64
+            String saltBase64 = Base64.getEncoder().encodeToString(salt);
+            String hashBase64 = Base64.getEncoder().encodeToString(hashedPassword);
             
-            // Encode as Base64
-            return Base64.getEncoder().encodeToString(combined);
+            // Return salt and hash concatenated with a delimiter
+            return saltBase64 + DELIMITER + hashBase64;
             
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error hashing password", e);
@@ -58,48 +47,43 @@ public class PasswordHasher {
     /**
      * Verifies a password against a stored hash
      * 
-     * @param password Plain text password
-     * @param storedHash Base64-encoded string containing salt and hash
+     * @param password Password to verify
+     * @param storedHash Stored hash (format: salt:hash)
      * @return true if password matches, false otherwise
      */
     public static boolean verify(String password, String storedHash) {
         try {
-            // Decode the stored hash
-            byte[] combined = Base64.getDecoder().decode(storedHash);
+            // Split stored hash into salt and hash
+            String[] parts = storedHash.split(DELIMITER);
+            if (parts.length != 2) {
+                return false;
+            }
             
-            // Extract salt and hash
-            byte[] salt = new byte[SALT_LENGTH];
-            byte[] hash = new byte[combined.length - SALT_LENGTH];
-            System.arraycopy(combined, 0, salt, 0, salt.length);
-            System.arraycopy(combined, salt.length, hash, 0, hash.length);
+            // Decode Base64 salt and hash
+            byte[] salt = Base64.getDecoder().decode(parts[0]);
+            byte[] hash = Base64.getDecoder().decode(parts[1]);
             
-            // Hash the input password with the extracted salt
-            byte[] computedHash = hashWithSalt(password, salt);
+            // Hash the provided password with the same salt
+            MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
+            md.update(salt);
+            byte[] passwordHash = md.digest(password.getBytes());
             
-            // Compare the computed hash with the stored hash
-            return MessageDigest.isEqual(hash, computedHash);
+            // Compare the hashes
+            if (hash.length != passwordHash.length) {
+                return false;
+            }
+            
+            // Compare each byte
+            for (int i = 0; i < hash.length; i++) {
+                if (hash[i] != passwordHash[i]) {
+                    return false;
+                }
+            }
+            
+            return true;
             
         } catch (Exception e) {
             return false;
         }
-    }
-    
-    /**
-     * Hashes a password with a given salt
-     * 
-     * @param password Plain text password
-     * @param salt Salt
-     * @return Hash
-     * @throws NoSuchAlgorithmException if the algorithm is not available
-     */
-    private static byte[] hashWithSalt(String password, byte[] salt) throws NoSuchAlgorithmException {
-        // Get a MessageDigest instance for the specified algorithm
-        MessageDigest md = MessageDigest.getInstance(ALGORITHM);
-        
-        // Add salt to digest
-        md.update(salt);
-        
-        // Hash the password
-        return md.digest(password.getBytes());
     }
 }
