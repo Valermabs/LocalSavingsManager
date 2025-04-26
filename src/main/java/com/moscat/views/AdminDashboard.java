@@ -262,7 +262,20 @@ public class AdminDashboard extends JFrame {
      */
     private void openUserManagement() {
         // We need to use the parent frame as the owner for the dialog
-        Frame owner = SwingUtilities.getWindowAncestor(this);
+        Window windowAncestor = SwingUtilities.getWindowAncestor(this);
+        Frame owner = null;
+        
+        // Check if window ancestor is a Frame
+        if (windowAncestor instanceof Frame) {
+            owner = (Frame) windowAncestor;
+        } else {
+            // Get all frames if no direct ancestor frame
+            Frame[] frames = Frame.getFrames();
+            if (frames.length > 0) {
+                owner = frames[0]; // Use the first frame
+            }
+        }
+        
         UserManagementView userManagementView = new UserManagementView(owner);
         
         // Add to a dialog to display
