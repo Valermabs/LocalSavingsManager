@@ -261,8 +261,17 @@ public class AdminDashboard extends JFrame {
      * Opens the user management view
      */
     private void openUserManagement() {
-        UserManagementView userManagementView = new UserManagementView(currentUser);
-        userManagementView.setVisible(true);
+        // We need to use the parent frame as the owner for the dialog
+        Frame owner = SwingUtilities.getWindowAncestor(this);
+        UserManagementView userManagementView = new UserManagementView(owner);
+        
+        // Add to a dialog to display
+        JDialog dialog = new JDialog(owner, "User Management", true);
+        dialog.setContentPane(userManagementView);
+        dialog.pack();
+        dialog.setSize(800, 600);
+        dialog.setLocationRelativeTo(owner);
+        dialog.setVisible(true);
     }
     
     /**

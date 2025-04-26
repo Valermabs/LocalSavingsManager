@@ -18,6 +18,7 @@ public class Constants {
     public static final String STATUS_ACTIVE = "Active";
     public static final String STATUS_INACTIVE = "Inactive";
     public static final String STATUS_SUSPENDED = "Suspended";
+    public static final String STATUS_DORMANT = "Dormant";
     
     // Member status - aliases for user status
     public static final String MEMBER_STATUS_ACTIVE = STATUS_ACTIVE;
