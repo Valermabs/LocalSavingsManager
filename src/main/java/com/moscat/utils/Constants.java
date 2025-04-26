@@ -6,46 +6,76 @@ package com.moscat.utils;
 public class Constants {
     
     // User roles
-    public static final String ROLE_SUPER_ADMIN = "SUPER_ADMIN";
-    public static final String ROLE_TREASURER = "TREASURER";
-    public static final String ROLE_BOOKKEEPER = "BOOKKEEPER";
+    public static final String ROLE_SUPER_ADMIN = "Super Admin";
+    public static final String ROLE_TREASURER = "Treasurer";
+    public static final String ROLE_BOOKKEEPER = "Bookkeeper";
     
     // Member status
-    public static final String STATUS_ACTIVE = "ACTIVE";
-    public static final String STATUS_INACTIVE = "INACTIVE";
-    public static final String STATUS_PENDING = "PENDING";
+    public static final String MEMBER_STATUS_ACTIVE = "Active";
+    public static final String MEMBER_STATUS_INACTIVE = "Inactive";
+    public static final String MEMBER_STATUS_SUSPENDED = "Suspended";
     
-    // Account status
-    public static final String ACCOUNT_ACTIVE = "ACTIVE";
-    public static final String ACCOUNT_DORMANT = "DORMANT";
-    public static final String ACCOUNT_CLOSED = "CLOSED";
+    // Savings account types
+    public static final String SAVINGS_TYPE_REGULAR = "Regular";
+    public static final String SAVINGS_TYPE_TIME_DEPOSIT = "Time Deposit";
+    public static final String SAVINGS_TYPE_EDUCATION = "Education";
     
-    // Loan status
-    public static final String LOAN_PENDING = "PENDING";
-    public static final String LOAN_APPROVED = "APPROVED";
-    public static final String LOAN_REJECTED = "REJECTED";
-    public static final String LOAN_ACTIVE = "ACTIVE";
-    public static final String LOAN_PAID = "PAID";
-    public static final String LOAN_DEFAULTED = "DEFAULTED";
-    public static final String LOAN_RESTRUCTURED = "RESTRUCTURED";
+    // Savings account status
+    public static final String SAVINGS_STATUS_ACTIVE = "Active";
+    public static final String SAVINGS_STATUS_DORMANT = "Dormant";
+    public static final String SAVINGS_STATUS_CLOSED = "Closed";
     
     // Transaction types
-    public static final String TRANSACTION_DEPOSIT = "DEPOSIT";
-    public static final String TRANSACTION_WITHDRAWAL = "WITHDRAWAL";
-    public static final String TRANSACTION_INTEREST_EARNING = "INTEREST";
-    public static final String TRANSACTION_LOAN_RELEASE = "LOAN_RELEASE";
-    public static final String TRANSACTION_LOAN_PAYMENT = "LOAN_PAYMENT";
-    public static final String TRANSACTION_FEE = "FEE";
+    public static final String TRANSACTION_TYPE_DEPOSIT = "Deposit";
+    public static final String TRANSACTION_TYPE_WITHDRAWAL = "Withdrawal";
+    public static final String TRANSACTION_TYPE_TRANSFER = "Transfer";
+    public static final String TRANSACTION_TYPE_INTEREST = "Interest";
+    public static final String TRANSACTION_TYPE_FEE = "Fee";
     
-    // UI Constants
-    public static final int TEXT_FIELD_HEIGHT = 30;
+    // Loan types
+    public static final String LOAN_TYPE_PERSONAL = "Personal";
+    public static final String LOAN_TYPE_BUSINESS = "Business";
+    public static final String LOAN_TYPE_EMERGENCY = "Emergency";
+    public static final String LOAN_TYPE_EDUCATIONAL = "Educational";
     
-    // Database constants
-    public static final String DB_URL = "jdbc:h2:./database/moscat";
-    public static final String DB_USER = "sa";
-    public static final String DB_PASSWORD = "";
+    // Loan status
+    public static final String LOAN_STATUS_PENDING = "Pending";
+    public static final String LOAN_STATUS_APPROVED = "Approved";
+    public static final String LOAN_STATUS_REJECTED = "Rejected";
+    public static final String LOAN_STATUS_ACTIVE = "Active";
+    public static final String LOAN_STATUS_COMPLETED = "Completed";
+    public static final String LOAN_STATUS_DEFAULTED = "Defaulted";
+    public static final String LOAN_STATUS_RESTRUCTURED = "Restructured";
     
-    // Application settings
-    public static final double DEFAULT_SAVINGS_INTEREST_RATE = 0.025; // 2.5% annual interest
-    public static final int DORMANT_ACCOUNT_MONTHS = 6; // Account is dormant after 6 months of inactivity
+    // Payment frequencies
+    public static final String PAYMENT_FREQUENCY_DAILY = "Daily";
+    public static final String PAYMENT_FREQUENCY_WEEKLY = "Weekly";
+    public static final String PAYMENT_FREQUENCY_BIWEEKLY = "Bi-weekly";
+    public static final String PAYMENT_FREQUENCY_MONTHLY = "Monthly";
+    public static final String PAYMENT_FREQUENCY_QUARTERLY = "Quarterly";
+    
+    // Payment status
+    public static final String PAYMENT_STATUS_PAID = "Paid";
+    public static final String PAYMENT_STATUS_UNPAID = "Unpaid";
+    public static final String PAYMENT_STATUS_PARTIAL = "Partial";
+    public static final String PAYMENT_STATUS_LATE = "Late";
+    
+    // Database table names
+    public static final String TABLE_USERS = "users";
+    public static final String TABLE_MEMBERS = "members";
+    public static final String TABLE_SAVINGS_ACCOUNTS = "savings_accounts";
+    public static final String TABLE_TRANSACTIONS = "transactions";
+    public static final String TABLE_LOANS = "loans";
+    public static final String TABLE_LOAN_PAYMENTS = "loan_payments";
+    
+    // Default interest rates
+    public static final double DEFAULT_SAVINGS_INTEREST_RATE = 0.025; // 2.5%
+    public static final double DEFAULT_LOAN_INTEREST_RATE = 0.12; // 12%
+    
+    // System settings
+    public static final String SETTING_SAVINGS_INTEREST_RATE = "savings_interest_rate";
+    public static final String SETTING_LOAN_INTEREST_RATE = "loan_interest_rate";
+    public static final String SETTING_MEMBERSHIP_FEE = "membership_fee";
+    public static final String SETTING_MINIMUM_BALANCE = "minimum_balance";
+    public static final String SETTING_DORMANT_DAYS = "dormant_days";
 }

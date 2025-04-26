@@ -3,133 +3,77 @@ package com.moscat.views;
 import com.moscat.controllers.AuthController;
 import com.moscat.models.User;
 import com.moscat.utils.Constants;
-import com.moscat.views.components.CustomButton;
-import com.moscat.views.components.CustomTextField;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 /**
- * Login view for user authentication
+ * Login dialog
  */
-public class LoginView extends JPanel {
+public class LoginView extends JDialog {
     
-    private JFrame parentFrame;
-    private CustomTextField usernameField;
+    private JTextField usernameField;
     private JPasswordField passwordField;
+    private JButton loginButton;
     private JLabel errorLabel;
     
     /**
-     * Constructor
+     * Constructs a new LoginView
      * 
-     * @param parentFrame Parent frame
+     * @param parentFrame Parent JFrame
      */
     public LoginView(JFrame parentFrame) {
-        this.parentFrame = parentFrame;
-        initializeUI();
-    }
-    
-    /**
-     * Initializes UI components
-     */
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        super(parentFrame, "MOSCAT Login", true);
         
-        // Create logo panel
-        JPanel logoPanel = createLogoPanel();
+        // Basic dialog setup
+        setSize(400, 300);
+        setResizable(false);
+        setLocationRelativeTo(parentFrame);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         
-        // Create login form panel
-        JPanel loginPanel = createLoginFormPanel();
+        // Create main panel
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        // Add panels to main view
-        add(logoPanel, BorderLayout.NORTH);
-        add(loginPanel, BorderLayout.CENTER);
-    }
-    
-    /**
-     * Creates the logo panel
-     * 
-     * @return JPanel with logo
-     */
-    private JPanel createLogoPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(0, 87, 146)); // Dark blue
-        panel.setPreferredSize(new Dimension(0, 150));
+        // Create header panel
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        headerPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
         
         JLabel titleLabel = new JLabel("MOSCAT Cooperative");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         
-        JLabel subtitleLabel = new JLabel("Multipurpose Cooperative Savings and Loan System");
-        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        subtitleLabel.setForeground(Color.WHITE);
-        subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        JLabel subtitleLabel = new JLabel("Savings & Loan Management System");
+        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         
-        JPanel titlePanel = new JPanel(new GridLayout(2, 1));
-        titlePanel.setOpaque(false);
-        titlePanel.add(titleLabel);
-        titlePanel.add(subtitleLabel);
+        headerPanel.add(titleLabel);
+        headerPanel.add(subtitleLabel);
         
-        panel.add(titlePanel, BorderLayout.CENTER);
+        // Create form panel
+        JPanel formPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+        formPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
         
-        return panel;
-    }
-    
-    /**
-     * Creates the login form panel
-     * 
-     * @return JPanel with login form
-     */
-    private JPanel createLoginFormPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(50, 100, 50, 100));
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameField = new JTextField(20);
         
-        // Create form title
-        JLabel formTitleLabel = new JLabel("Login");
-        formTitleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        formTitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordField = new JPasswordField(20);
         
-        // Create error label
         errorLabel = new JLabel("");
         errorLabel.setForeground(Color.RED);
-        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        errorLabel.setVisible(false);
         
-        // Create username field
-        usernameField = new CustomTextField();
-        usernameField.setPlaceholder("Username");
-        usernameField.setPreferredSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
-        usernameField.setMaximumSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
+        formPanel.add(usernameLabel);
+        formPanel.add(usernameField);
+        formPanel.add(passwordLabel);
+        formPanel.add(passwordField);
+        formPanel.add(errorLabel);
         
-        // Create password field
-        passwordField = new JPasswordField();
-        passwordField.setPreferredSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
-        passwordField.setMaximumSize(new Dimension(300, Constants.TEXT_FIELD_HEIGHT));
+        // Create button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         
-        // Add key listener to password field for enter key
-        passwordField.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    login();
-                }
-            }
-        });
-        
-        // Create login button
-        CustomButton loginButton = new CustomButton("Login");
-        loginButton.setPreferredSize(new Dimension(300, 40));
-        loginButton.setMaximumSize(new Dimension(300, 40));
-        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginButton = new JButton("Login");
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -137,77 +81,85 @@ public class LoginView extends JPanel {
             }
         });
         
-        // Add components to panel
-        panel.add(formTitleLabel);
-        panel.add(Box.createVerticalStrut(20));
-        panel.add(errorLabel);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(new JLabel("Username:"));
-        panel.add(Box.createVerticalStrut(5));
-        panel.add(usernameField);
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(new JLabel("Password:"));
-        panel.add(Box.createVerticalStrut(5));
-        panel.add(passwordField);
-        panel.add(Box.createVerticalStrut(25));
-        panel.add(loginButton);
+        buttonPanel.add(loginButton);
         
-        return panel;
+        // Add panels to main panel
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(formPanel, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Set content pane
+        setContentPane(mainPanel);
+        
+        // Set default button
+        getRootPane().setDefaultButton(loginButton);
     }
     
     /**
-     * Performs login
+     * Attempts to log in the user
      */
     private void login() {
-        // Clear error message
-        errorLabel.setVisible(false);
-        
-        // Get username and password
-        String username = usernameField.getText();
+        String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
         
-        // Validate inputs
+        // Validate input
         if (username.isEmpty() || password.isEmpty()) {
-            showError("Please enter both username and password.");
+            errorLabel.setText("Username and password are required.");
             return;
         }
         
-        // Attempt login
+        // Attempt to login
         User user = AuthController.login(username, password);
         
         if (user != null) {
-            // Login successful, determine dashboard based on role
-            JPanel dashboard;
-            
+            // Open dashboard based on role
             switch (user.getRole()) {
                 case Constants.ROLE_SUPER_ADMIN:
-                    dashboard = new SuperAdminDashboard(parentFrame);
+                    openSuperAdminDashboard();
                     break;
                 case Constants.ROLE_TREASURER:
-                    dashboard = new TreasurerDashboard(parentFrame);
+                    openTreasurerDashboard();
                     break;
                 case Constants.ROLE_BOOKKEEPER:
-                    dashboard = new BookkeeperDashboard(parentFrame);
+                    openBookkeeperDashboard();
                     break;
                 default:
-                    dashboard = new DashboardView(parentFrame);
+                    errorLabel.setText("Unknown user role.");
+                    return;
             }
             
-            // Change view to dashboard
-            com.moscat.App.changeView(dashboard);
+            // Close login dialog
+            dispose();
         } else {
-            // Login failed
-            showError("Invalid username or password. Please try again.");
+            errorLabel.setText("Invalid username or password.");
         }
     }
     
     /**
-     * Shows an error message
-     * 
-     * @param message Error message
+     * Opens the super admin dashboard
      */
-    private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setVisible(true);
+    private void openSuperAdminDashboard() {
+        JFrame parentFrame = (JFrame) getParent();
+        SuperAdminDashboard dashboard = new SuperAdminDashboard(parentFrame);
+        dashboard.setVisible(true);
+    }
+    
+    /**
+     * Opens the treasurer dashboard
+     */
+    private void openTreasurerDashboard() {
+        JFrame parentFrame = (JFrame) getParent();
+        TreasurerDashboard dashboard = new TreasurerDashboard(parentFrame);
+        dashboard.setVisible(true);
+    }
+    
+    /**
+     * Opens the bookkeeper dashboard
+     */
+    private void openBookkeeperDashboard() {
+        JFrame parentFrame = (JFrame) getParent();
+        // Use SuperAdminDashboard for now until BookkeeperDashboard is implemented
+        SuperAdminDashboard dashboard = new SuperAdminDashboard(parentFrame);
+        dashboard.setVisible(true);
     }
 }

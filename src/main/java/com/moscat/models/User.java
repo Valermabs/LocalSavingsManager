@@ -1,5 +1,6 @@
 package com.moscat.models;
 
+import com.moscat.utils.Constants;
 import java.util.Date;
 
 /**
@@ -13,7 +14,9 @@ public class User {
     private String firstName;
     private String lastName;
     private String email;
+    private String contactNumber;
     private String role;
+    private String status;
     private Date lastLogin;
     private boolean active;
     
@@ -186,11 +189,84 @@ public class User {
     }
     
     /**
+     * Gets the contact number
+     * 
+     * @return Contact number
+     */
+    public String getContactNumber() {
+        return contactNumber;
+    }
+    
+    /**
+     * Sets the contact number
+     * 
+     * @param contactNumber Contact number
+     */
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+    
+    /**
+     * Gets the status
+     * 
+     * @return Status
+     */
+    public String getStatus() {
+        return status;
+    }
+    
+    /**
+     * Sets the status
+     * 
+     * @param status Status
+     */
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    /**
      * Gets the full name
      * 
      * @return Full name
      */
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+    
+    /**
+     * Sets the full name by splitting it into first and last name
+     * 
+     * @param fullName Full name
+     */
+    public void setFullName(String fullName) {
+        if (fullName != null && !fullName.isEmpty()) {
+            String[] nameParts = fullName.trim().split("\\s+");
+            if (nameParts.length > 0) {
+                this.firstName = nameParts[0];
+                
+                if (nameParts.length > 1) {
+                    // Last name is everything after the first name
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 1; i < nameParts.length; i++) {
+                        if (i > 1) {
+                            sb.append(" ");
+                        }
+                        sb.append(nameParts[i]);
+                    }
+                    this.lastName = sb.toString();
+                } else {
+                    this.lastName = "";
+                }
+            }
+        }
+    }
+    
+    /**
+     * Checks if the user is a super admin
+     * 
+     * @return true if super admin, false otherwise
+     */
+    public boolean isSuperAdmin() {
+        return Constants.ROLE_SUPER_ADMIN.equals(role);
     }
 }

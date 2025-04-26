@@ -2,104 +2,107 @@ package com.moscat.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 
 /**
- * Utility methods for working with dates
+ * Utility class for date operations
  */
 public class DateUtils {
     
-    // Date format patterns
-    private static final String DISPLAY_DATE_FORMAT = "MMM dd, yyyy";
-    private static final String SQL_DATE_FORMAT = "yyyy-MM-dd";
-    private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    private static final SimpleDateFormat DISPLAY_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
+    private static final SimpleDateFormat DB_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
     
     /**
-     * Formats a date for display in UI
+     * Formats a date for display
      * 
      * @param date Date to format
-     * @return Formatted date string or empty string if date is null
+     * @return Formatted date string
      */
     public static String formatDateForDisplay(Date date) {
         if (date == null) {
             return "";
         }
-        SimpleDateFormat sdf = new SimpleDateFormat(DISPLAY_DATE_FORMAT);
-        return sdf.format(date);
+        return DISPLAY_FORMAT.format(date);
     }
     
     /**
-     * Formats a date for SQL operations
+     * Formats a date for database storage
      * 
      * @param date Date to format
-     * @return Formatted date string or empty string if date is null
+     * @return Formatted date string
      */
-    public static String formatDateForSQL(Date date) {
+    public static String formatDateForDatabase(Date date) {
         if (date == null) {
-            return "";
+            return null;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat(SQL_DATE_FORMAT);
-        return sdf.format(date);
+        return DB_FORMAT.format(date);
     }
     
     /**
-     * Formats a date and time for SQL operations
+     * Formats a timestamp for display
      * 
-     * @param date Date to format
-     * @return Formatted datetime string or empty string if date is null
+     * @param timestamp Timestamp to format
+     * @return Formatted timestamp string
      */
-    public static String formatDateTimeForSQL(Date date) {
-        if (date == null) {
+    public static String formatTimestampForDisplay(Date timestamp) {
+        if (timestamp == null) {
             return "";
         }
-        SimpleDateFormat sdf = new SimpleDateFormat(DATETIME_FORMAT);
-        return sdf.format(date);
+        return TIMESTAMP_FORMAT.format(timestamp);
     }
     
     /**
-     * Parses a date string in display format
+     * Parses a date string from the display format
      * 
      * @param dateStr Date string in display format
-     * @return Parsed date or null if parsing fails
+     * @return Parsed date
+     * @throws ParseException if the date string cannot be parsed
      */
-    public static Date parseDisplayDate(String dateStr) {
+    public static Date parseDisplayDate(String dateStr) throws ParseException {
         if (dateStr == null || dateStr.isEmpty()) {
             return null;
         }
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(DISPLAY_DATE_FORMAT);
-            return sdf.parse(dateStr);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return DISPLAY_FORMAT.parse(dateStr);
     }
     
     /**
-     * Parses a date string in SQL format
+     * Parses a date string from the database format
      * 
-     * @param dateStr Date string in SQL format
-     * @return Parsed date or null if parsing fails
+     * @param dateStr Date string in database format
+     * @return Parsed date
+     * @throws ParseException if the date string cannot be parsed
      */
-    public static Date parseSQLDate(String dateStr) {
+    public static Date parseDatabaseDate(String dateStr) throws ParseException {
         if (dateStr == null || dateStr.isEmpty()) {
             return null;
         }
+        return DB_FORMAT.parse(dateStr);
+    }
+    
+    /**
+     * Checks if a string is a valid date in display format
+     * 
+     * @param dateStr Date string to check
+     * @return true if valid, false otherwise
+     */
+    public static boolean isValidDisplayDate(String dateStr) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(SQL_DATE_FORMAT);
-            return sdf.parse(dateStr);
+            if (dateStr == null || dateStr.isEmpty()) {
+                return false;
+            }
+            parseDisplayDate(dateStr);
+            return true;
         } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
+            return false;
         }
     }
     
     /**
      * Converts a java.util.Date to java.sql.Date
      * 
-     * @param date Java date
-     * @return SQL date or null if the input is null
+     * @param date Date to convert
+     * @return SQL date
      */
     public static java.sql.Date toSqlDate(Date date) {
         if (date == null) {
@@ -109,148 +112,19 @@ public class DateUtils {
     }
     
     /**
-     * Gets the current date with time set to 00:00:00
+     * Gets the current date at midnight
      * 
-     * @return Current date at start of day
-     */
-    public static Date getCurrentDateNoTime() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-    
-    /**
-     * Calculates age based on birth date
-     * 
-     * @param birthDate Birth date
-     * @return Age in years
-     */
-    public static int calculateAge(Date birthDate) {
-        if (birthDate == null) {
-            return 0;
-        }
-        
-        Calendar birthCal = Calendar.getInstance();
-        birthCal.setTime(birthDate);
-        
-        Calendar nowCal = Calendar.getInstance();
-        
-        int age = nowCal.get(Calendar.YEAR) - birthCal.get(Calendar.YEAR);
-        
-        // Check if birthday has occurred this year
-        if (nowCal.get(Calendar.MONTH) < birthCal.get(Calendar.MONTH) || 
-                (nowCal.get(Calendar.MONTH) == birthCal.get(Calendar.MONTH) && 
-                nowCal.get(Calendar.DAY_OF_MONTH) < birthCal.get(Calendar.DAY_OF_MONTH))) {
-            age--;
-        }
-        
-        return age;
-    }
-    
-    /**
-     * Gets the first day of the current month
-     * 
-     * @return First day of current month
-     */
-    public static Date getFirstDayOfCurrentMonth() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.DAY_OF_MONTH, 1);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-    
-    /**
-     * Gets the last day of the current month
-     * 
-     * @return Last day of current month
-     */
-    public static Date getLastDayOfCurrentMonth() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 999);
-        return calendar.getTime();
-    }
-    
-    /**
-     * Gets the first day of the given month and year
-     * 
-     * @param year Year
-     * @param month Month (1-12)
-     * @return First day of specified month
-     */
-    public static Date getFirstDayOfMonth(int year, int month) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month - 1); // Calendar months are 0-based
-        calendar.set(Calendar.DAY_OF_MONTH, 1);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-    
-    /**
-     * Gets the last day of the given month and year
-     * 
-     * @param year Year
-     * @param month Month (1-12)
-     * @return Last day of specified month
-     */
-    public static Date getLastDayOfMonth(int year, int month) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month - 1); // Calendar months are 0-based
-        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 999);
-        return calendar.getTime();
-    }
-    
-    /**
-     * Adds a number of days to a date
-     * 
-     * @param date Base date
-     * @param days Number of days to add (can be negative)
-     * @return New date
-     */
-    public static Date addDays(Date date, int days) {
-        if (date == null) {
-            return null;
-        }
-        
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.DAY_OF_YEAR, days);
-        return calendar.getTime();
-    }
-    
-    /**
-     * Gets the current date (today)
-     * 
-     * @return Current date
+     * @return Current date at midnight
      */
     public static Date getCurrentDate() {
-        return new Date();
-    }
-    
-    /**
-     * Gets the current timestamp for database operations
-     * 
-     * @return Current timestamp as java.sql.Timestamp
-     */
-    public static java.sql.Timestamp getCurrentTimestamp() {
-        return new java.sql.Timestamp(System.currentTimeMillis());
+        try {
+            // Get current date
+            Date now = new Date();
+            // Format and parse to remove time component
+            String dateStr = DISPLAY_FORMAT.format(now);
+            return DISPLAY_FORMAT.parse(dateStr);
+        } catch (ParseException e) {
+            return new Date(); // Fallback
+        }
     }
 }
