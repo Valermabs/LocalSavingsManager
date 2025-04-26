@@ -2,80 +2,92 @@ package com.moscat;
 
 import com.moscat.utils.DatabaseManager;
 import com.moscat.views.LoginView;
-
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * Main Application Class for MOSCAT Multipurpose Cooperative
- * Savings and Loan System
+ * Main application class
  */
 public class App {
     private static JFrame mainFrame;
     
+    /**
+     * Main method
+     * 
+     * @param args Command line arguments
+     */
     public static void main(String[] args) {
         try {
-            // Set Look and Feel to system default
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            // Set look and feel
+            setLookAndFeel();
             
-            // Initialize database
-            DatabaseManager dbManager = DatabaseManager.getInstance();
-            dbManager.initializeDatabase();
+            // Initialize the database
+            DatabaseManager.getInstance(); // This will call the singleton constructor which initializes the database
             
-            // Setup main application frame
-            SwingUtilities.invokeLater(() -> {
-                mainFrame = new JFrame("MOSCAT Multipurpose Cooperative");
-                mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                mainFrame.setSize(1200, 800);
-                
-                // Center the frame on screen
-                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                int x = (screenSize.width - mainFrame.getWidth()) / 2;
-                int y = (screenSize.height - mainFrame.getHeight()) / 2;
-                mainFrame.setLocation(x, y);
-                
-                // Set application icon
-                ImageIcon icon = new ImageIcon(App.class.getResource("/moscat_logo.png"));
-                if (icon.getImageLoadStatus() == MediaTracker.COMPLETE) {
-                    mainFrame.setIconImage(icon.getImage());
-                }
-                
-                // Start with login view
-                LoginView loginView = new LoginView(mainFrame);
-                mainFrame.setContentPane(loginView);
-                
-                // Display the frame
-                mainFrame.setVisible(true);
-            });
+            // Create and configure the main frame
+            setupMainFrame();
+            
+            // Show the login screen
+            changeView(new LoginView(mainFrame));
+            
         } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null, 
                     "Error starting application: " + e.getMessage(), 
-                    "Application Error", 
+                    "Error", 
                     JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
             System.exit(1);
         }
     }
     
     /**
-     * Changes the current view in the main application frame
-     * 
-     * @param panel The new panel to display
+     * Sets up the main application frame
      */
-    public static void changeView(JPanel panel) {
+    private static void setupMainFrame() {
+        mainFrame = new JFrame("MOSCAT Multipurpose Cooperative");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setSize(1024, 768);
+        mainFrame.setLocationRelativeTo(null);
+        mainFrame.setVisible(true);
+    }
+    
+    /**
+     * Changes the current view
+     * 
+     * @param view New view to display
+     */
+    public static void changeView(JPanel view) {
         if (mainFrame != null) {
-            mainFrame.setContentPane(panel);
+            mainFrame.getContentPane().removeAll();
+            mainFrame.getContentPane().add(view, BorderLayout.CENTER);
             mainFrame.revalidate();
             mainFrame.repaint();
         }
     }
     
     /**
-     * Returns the main application frame
-     * 
-     * @return JFrame The main application frame
+     * Sets the application look and feel
      */
-    public static JFrame getMainFrame() {
-        return mainFrame;
+    private static void setLookAndFeel() {
+        try {
+            // Use the system look and feel
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            
+            // Set default font
+            Font defaultFont = new Font("Arial", Font.PLAIN, 12);
+            UIManager.put("Button.font", defaultFont);
+            UIManager.put("Label.font", defaultFont);
+            UIManager.put("TextField.font", defaultFont);
+            UIManager.put("TextArea.font", defaultFont);
+            UIManager.put("ComboBox.font", defaultFont);
+            UIManager.put("CheckBox.font", defaultFont);
+            UIManager.put("RadioButton.font", defaultFont);
+            UIManager.put("Table.font", defaultFont);
+            UIManager.put("TableHeader.font", defaultFont);
+            UIManager.put("TabbedPane.font", defaultFont);
+            
+        } catch (Exception e) {
+            System.err.println("Error setting look and feel: " + e.getMessage());
+        }
     }
 }

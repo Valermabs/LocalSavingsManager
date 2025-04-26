@@ -1,16 +1,16 @@
 package com.moscat.models;
 
-import java.sql.Date;
+import java.util.Date;
 
 /**
- * Model class for system users
+ * Model for user data
  */
 public class User {
+    
     private int id;
     private String username;
-    private String password;
-    private String role; // SUPER_ADMIN, TREASURER, BOOKKEEPER
-    private String status; // ACTIVE, INACTIVE
+    private String role;
+    private String status;
     private String fullName;
     private String email;
     private String contactNumber;
@@ -24,111 +24,163 @@ public class User {
     }
     
     /**
-     * Parameterized constructor
+     * Gets the ID
      * 
-     * @param id User ID
-     * @param username Username
-     * @param password Password (hashed)
-     * @param role User role
-     * @param status User status
-     * @param fullName Full name
-     * @param email Email address
-     * @param contactNumber Contact number
-     * @param createdAt Creation date
-     * @param lastLogin Last login date
+     * @return ID
      */
-    public User(int id, String username, String password, String role, String status,
-            String fullName, String email, String contactNumber, Date createdAt, Date lastLogin) {
-        this.id = id;
-        this.username = username;
-        this.password = password;
-        this.role = role;
-        this.status = status;
-        this.fullName = fullName;
-        this.email = email;
-        this.contactNumber = contactNumber;
-        this.createdAt = createdAt;
-        this.lastLogin = lastLogin;
-    }
-    
-    // Getters and Setters
-    
     public int getId() {
         return id;
     }
     
+    /**
+     * Sets the ID
+     * 
+     * @param id ID
+     */
     public void setId(int id) {
         this.id = id;
     }
     
+    /**
+     * Gets the username
+     * 
+     * @return Username
+     */
     public String getUsername() {
         return username;
     }
     
+    /**
+     * Sets the username
+     * 
+     * @param username Username
+     */
     public void setUsername(String username) {
         this.username = username;
     }
     
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
+    /**
+     * Gets the role
+     * 
+     * @return Role
+     */
     public String getRole() {
         return role;
     }
     
+    /**
+     * Sets the role
+     * 
+     * @param role Role
+     */
     public void setRole(String role) {
         this.role = role;
     }
     
+    /**
+     * Gets the status
+     * 
+     * @return Status
+     */
     public String getStatus() {
         return status;
     }
     
+    /**
+     * Sets the status
+     * 
+     * @param status Status
+     */
     public void setStatus(String status) {
         this.status = status;
     }
     
+    /**
+     * Gets the full name
+     * 
+     * @return Full name
+     */
     public String getFullName() {
         return fullName;
     }
     
+    /**
+     * Sets the full name
+     * 
+     * @param fullName Full name
+     */
     public void setFullName(String fullName) {
         this.fullName = fullName;
     }
     
+    /**
+     * Gets the email
+     * 
+     * @return Email
+     */
     public String getEmail() {
         return email;
     }
     
+    /**
+     * Sets the email
+     * 
+     * @param email Email
+     */
     public void setEmail(String email) {
         this.email = email;
     }
     
+    /**
+     * Gets the contact number
+     * 
+     * @return Contact number
+     */
     public String getContactNumber() {
         return contactNumber;
     }
     
+    /**
+     * Sets the contact number
+     * 
+     * @param contactNumber Contact number
+     */
     public void setContactNumber(String contactNumber) {
         this.contactNumber = contactNumber;
     }
     
+    /**
+     * Gets the creation date
+     * 
+     * @return Creation date
+     */
     public Date getCreatedAt() {
         return createdAt;
     }
     
+    /**
+     * Sets the creation date
+     * 
+     * @param createdAt Creation date
+     */
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
     
+    /**
+     * Gets the last login date
+     * 
+     * @return Last login date
+     */
     public Date getLastLogin() {
         return lastLogin;
     }
     
+    /**
+     * Sets the last login date
+     * 
+     * @param lastLogin Last login date
+     */
     public void setLastLogin(Date lastLogin) {
         this.lastLogin = lastLogin;
     }
@@ -136,36 +188,27 @@ public class User {
     /**
      * Checks if the user is a super admin
      * 
-     * @return true if super admin, false otherwise
+     * @return true if the user is a super admin, false otherwise
      */
     public boolean isSuperAdmin() {
-        return "SUPER_ADMIN".equals(role);
+        return role != null && role.equals(com.moscat.utils.Constants.ROLE_SUPER_ADMIN);
     }
     
     /**
      * Checks if the user is a treasurer
      * 
-     * @return true if treasurer, false otherwise
+     * @return true if the user is a treasurer, false otherwise
      */
     public boolean isTreasurer() {
-        return "TREASURER".equals(role);
+        return role != null && role.equals(com.moscat.utils.Constants.ROLE_TREASURER);
     }
     
     /**
      * Checks if the user is a bookkeeper
      * 
-     * @return true if bookkeeper, false otherwise
+     * @return true if the user is a bookkeeper, false otherwise
      */
     public boolean isBookkeeper() {
-        return "BOOKKEEPER".equals(role);
-    }
-    
-    /**
-     * Checks if the user is active
-     * 
-     * @return true if active, false otherwise
-     */
-    public boolean isActive() {
-        return "ACTIVE".equals(status);
+        return role != null && role.equals(com.moscat.utils.Constants.ROLE_BOOKKEEPER);
     }
 }

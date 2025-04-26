@@ -3,58 +3,101 @@ package com.moscat.controllers;
 import com.moscat.models.Transaction;
 import com.moscat.utils.Constants;
 import com.moscat.utils.DatabaseManager;
+import com.moscat.utils.DateUtils;
 
+import javax.swing.*;
+import javax.swing.table.TableModel;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Controller for transaction operations
+ * Controller for transaction management
  */
 public class TransactionController {
     
     /**
-     * Gets a transaction by ID
+     * Gets recent transactions
      * 
-     * @param transactionId Transaction ID
-     * @return Transaction object, or null if not found
+     * @param limit Maximum number of transactions to return
+     * @return List of recent transactions
      */
-    public static Transaction getTransactionById(int transactionId) {
-        String query = "SELECT * FROM transactions WHERE id = ?";
+    public static List<Transaction> getRecentTransactions(int limit) {
+        String query = "SELECT * FROM transactions ORDER BY transaction_date DESC LIMIT ?";
+        List<Transaction> transactions = new ArrayList<>();
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setInt(1, transactionId);
+            stmt.setInt(1, limit);
             ResultSet rs = stmt.executeQuery();
             
-            if (rs.next()) {
-                return mapResultSetToTransaction(rs);
+            while (rs.next()) {
+                transactions.add(mapResultSetToTransaction(rs));
             }
-            
-            return null;
             
         } catch (SQLException e) {
             e.printStackTrace();
-            return null;
         }
+        
+        return transactions;
     }
     
     /**
-     * Gets all transactions for a specific date range
+     * Gets transactions for a specific account
+     * 
+     * @param accountId Account ID
+     * @param limit Maximum number of transactions to return (0 for all)
+     * @return List of account transactions
+     */
+    public static List<Transaction> getAccountTransactions(int accountId, int limit) {
+        String query = "SELECT * FROM transactions WHERE account_id = ? ORDER BY transaction_date DESC";
+        if (limit > 0) {
+            query += " LIMIT ?";
+        }
+        
+        List<Transaction> transactions = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, accountId);
+            
+            if (limit > 0) {
+                stmt.setInt(2, limit);
+            }
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                transactions.add(mapResultSetToTransaction(rs));
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return transactions;
+    }
+    
+    /**
+     * Gets transactions by date range
      * 
      * @param startDate Start date (yyyy-MM-dd)
      * @param endDate End date (yyyy-MM-dd)
-     * @return List of transactions
+     * @return List of transactions in date range
      */
     public static List<Transaction> getTransactionsByDateRange(String startDate, String endDate) {
-        String query = "SELECT * FROM transactions WHERE " +
-                "DATE(transaction_date) BETWEEN ? AND ? " +
-                "ORDER BY transaction_date DESC";
-        
+        String query = "SELECT * FROM transactions WHERE DATE(transaction_date) BETWEEN ? AND ? ORDER BY transaction_date DESC";
         List<Transaction> transactions = new ArrayList<>();
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
@@ -76,51 +119,57 @@ public class TransactionController {
     }
     
     /**
-     * Gets all transactions for a specific account
+     * Gets transactions by reference number
      * 
-     * @param accountId Account ID
-     * @return List of transactions
+     * @param referenceNumber Transaction reference number
+     * @return Transaction or null if not found
      */
-    public static List<Transaction> getTransactionsByAccount(int accountId) {
-        String query = "SELECT * FROM transactions WHERE account_id = ? ORDER BY transaction_date DESC";
-        
-        List<Transaction> transactions = new ArrayList<>();
+    public static Transaction getTransactionByReference(String referenceNumber) {
+        String query = "SELECT * FROM transactions WHERE reference_number = ?";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setInt(1, accountId);
+            stmt.setString(1, referenceNumber);
             ResultSet rs = stmt.executeQuery();
             
-            while (rs.next()) {
-                transactions.add(mapResultSetToTransaction(rs));
+            if (rs.next()) {
+                return mapResultSetToTransaction(rs);
             }
             
         } catch (SQLException e) {
             e.printStackTrace();
         }
         
-        return transactions;
+        return null;
     }
     
     /**
-     * Gets all transactions for a specific member
+     * Searches for transactions matching the search term
      * 
-     * @param memberId Member ID
-     * @return List of transactions
+     * @param searchTerm Search term (reference number, description, etc.)
+     * @return List of matching transactions
      */
-    public static List<Transaction> getTransactionsByMember(int memberId) {
+    public static List<Transaction> searchTransactions(String searchTerm) {
         String query = "SELECT t.* FROM transactions t " +
-                "JOIN savings_accounts s ON t.account_id = s.id " +
-                "WHERE s.member_id = ? " +
+                "LEFT JOIN savings_accounts a ON t.account_id = a.id " +
+                "LEFT JOIN members m ON a.member_id = m.id " +
+                "WHERE t.reference_number LIKE ? OR t.description LIKE ? " +
+                "OR a.account_number LIKE ? OR m.first_name LIKE ? OR m.last_name LIKE ? " +
                 "ORDER BY t.transaction_date DESC";
         
         List<Transaction> transactions = new ArrayList<>();
+        String searchPattern = "%" + searchTerm + "%";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setInt(1, memberId);
+            stmt.setString(1, searchPattern);
+            stmt.setString(2, searchPattern);
+            stmt.setString(3, searchPattern);
+            stmt.setString(4, searchPattern);
+            stmt.setString(5, searchPattern);
+            
             ResultSet rs = stmt.executeQuery();
             
             while (rs.next()) {
@@ -135,71 +184,15 @@ public class TransactionController {
     }
     
     /**
-     * Gets all transactions for a specific transaction type
+     * Gets summary of transactions for a specific date
      * 
-     * @param transactionType Transaction type
-     * @return List of transactions
-     */
-    public static List<Transaction> getTransactionsByType(String transactionType) {
-        String query = "SELECT * FROM transactions WHERE transaction_type = ? ORDER BY transaction_date DESC";
-        
-        List<Transaction> transactions = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, transactionType);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                transactions.add(mapResultSetToTransaction(rs));
-            }
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return transactions;
-    }
-    
-    /**
-     * Gets all transactions processed by a specific user
-     * 
-     * @param userId User ID
-     * @return List of transactions
-     */
-    public static List<Transaction> getTransactionsByUser(int userId) {
-        String query = "SELECT * FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC";
-        
-        List<Transaction> transactions = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, userId);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                transactions.add(mapResultSetToTransaction(rs));
-            }
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return transactions;
-    }
-    
-    /**
-     * Gets daily transaction summary
-     * 
-     * @param date Date (yyyy-MM-dd)
-     * @return List of transaction summary objects with type and total amount
+     * @param date Date string (yyyy-MM-dd)
+     * @return List of transaction summaries
      */
     public static List<TransactionSummary> getDailyTransactionSummary(String date) {
         String query = "SELECT transaction_type, SUM(amount) as total_amount " +
                 "FROM transactions WHERE DATE(transaction_date) = ? " +
-                "GROUP BY transaction_type";
+                "GROUP BY transaction_type ORDER BY transaction_type";
         
         List<TransactionSummary> summaries = new ArrayList<>();
         
@@ -213,7 +206,6 @@ public class TransactionController {
                 TransactionSummary summary = new TransactionSummary();
                 summary.setTransactionType(rs.getString("transaction_type"));
                 summary.setTotalAmount(rs.getDouble("total_amount"));
-                
                 summaries.add(summary);
             }
             
@@ -225,130 +217,49 @@ public class TransactionController {
     }
     
     /**
-     * Gets monthly transaction summary
+     * Exports a table to CSV file
      * 
-     * @param year Year
-     * @param month Month (1-12)
-     * @return List of transaction summary objects with type and total amount
+     * @param table JTable to export
+     * @param filePath Path to save CSV file
+     * @return true if export successful, false otherwise
      */
-    public static List<TransactionSummary> getMonthlyTransactionSummary(int year, int month) {
-        String query = "SELECT transaction_type, SUM(amount) as total_amount " +
-                "FROM transactions WHERE YEAR(transaction_date) = ? AND MONTH(transaction_date) = ? " +
-                "GROUP BY transaction_type";
-        
-        List<TransactionSummary> summaries = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public static boolean exportTransactionsToCSV(JTable table, String filePath) {
+        try {
+            TableModel model = table.getModel();
+            FileWriter csv = new FileWriter(filePath);
+            PrintWriter out = new PrintWriter(csv);
             
-            stmt.setInt(1, year);
-            stmt.setInt(2, month);
-            ResultSet rs = stmt.executeQuery();
+            // Write headers
+            for (int i = 0; i < model.getColumnCount(); i++) {
+                out.write(model.getColumnName(i));
+                if (i < model.getColumnCount() - 1) {
+                    out.write(",");
+                }
+            }
+            out.write("\n");
             
-            while (rs.next()) {
-                TransactionSummary summary = new TransactionSummary();
-                summary.setTransactionType(rs.getString("transaction_type"));
-                summary.setTotalAmount(rs.getDouble("total_amount"));
-                
-                summaries.add(summary);
+            // Write data
+            for (int i = 0; i < model.getRowCount(); i++) {
+                for (int j = 0; j < model.getColumnCount(); j++) {
+                    String value = model.getValueAt(i, j) != null ? model.getValueAt(i, j).toString() : "";
+                    // Escape commas in the value
+                    if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+                        value = "\"" + value.replace("\"", "\"\"") + "\"";
+                    }
+                    out.write(value);
+                    if (j < model.getColumnCount() - 1) {
+                        out.write(",");
+                    }
+                }
+                out.write("\n");
             }
             
-        } catch (SQLException e) {
+            out.close();
+            return true;
+            
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        
-        return summaries;
-    }
-    
-    /**
-     * Gets yearly transaction summary
-     * 
-     * @param year Year
-     * @return List of transaction summary objects with type and total amount
-     */
-    public static List<TransactionSummary> getYearlyTransactionSummary(int year) {
-        String query = "SELECT transaction_type, SUM(amount) as total_amount " +
-                "FROM transactions WHERE YEAR(transaction_date) = ? " +
-                "GROUP BY transaction_type";
-        
-        List<TransactionSummary> summaries = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, year);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                TransactionSummary summary = new TransactionSummary();
-                summary.setTransactionType(rs.getString("transaction_type"));
-                summary.setTotalAmount(rs.getDouble("total_amount"));
-                
-                summaries.add(summary);
-            }
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return summaries;
-    }
-    
-    /**
-     * Gets the user who processed a transaction
-     * 
-     * @param transactionId Transaction ID
-     * @return User ID who processed the transaction
-     */
-    public static int getTransactionProcessor(int transactionId) {
-        String query = "SELECT user_id FROM transactions WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, transactionId);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                return rs.getInt("user_id");
-            }
-            
-            return -1;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return -1;
-        }
-    }
-    
-    /**
-     * Gets the savings account balance for a specific date
-     * 
-     * @param accountId Account ID
-     * @param date Date (yyyy-MM-dd)
-     * @return Account balance as of the specified date
-     */
-    public static double getAccountBalanceAsOfDate(int accountId, String date) {
-        String query = "SELECT running_balance FROM transactions " +
-                "WHERE account_id = ? AND DATE(transaction_date) <= ? " +
-                "ORDER BY transaction_date DESC LIMIT 1";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, accountId);
-            stmt.setString(2, date);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                return rs.getDouble("running_balance");
-            }
-            
-            return 0; // No transactions found
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return 0;
+            return false;
         }
     }
     
@@ -357,25 +268,24 @@ public class TransactionController {
      * 
      * @param rs ResultSet
      * @return Transaction object
-     * @throws SQLException If database operation fails
+     * @throws SQLException If database error occurs
      */
     private static Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
         Transaction transaction = new Transaction();
         transaction.setId(rs.getInt("id"));
         transaction.setAccountId(rs.getInt("account_id"));
+        transaction.setUserId(rs.getInt("user_id"));
         transaction.setTransactionType(rs.getString("transaction_type"));
         transaction.setAmount(rs.getDouble("amount"));
         transaction.setRunningBalance(rs.getDouble("running_balance"));
-        transaction.setReferenceNumber(rs.getString("reference_number"));
         transaction.setDescription(rs.getString("description"));
-        transaction.setUserId(rs.getInt("user_id"));
+        transaction.setReferenceNumber(rs.getString("reference_number"));
         transaction.setTransactionDate(rs.getTimestamp("transaction_date"));
-        
         return transaction;
     }
     
     /**
-     * Inner class for transaction summary
+     * Transaction summary class
      */
     public static class TransactionSummary {
         private String transactionType;
@@ -397,23 +307,20 @@ public class TransactionController {
             this.totalAmount = totalAmount;
         }
         
-        /**
-         * Gets the transaction type display name
-         * 
-         * @return Display name for the transaction type
-         */
         public String getTransactionTypeDisplay() {
             switch (transactionType) {
                 case Constants.TRANSACTION_DEPOSIT:
                     return "Deposit";
                 case Constants.TRANSACTION_WITHDRAWAL:
                     return "Withdrawal";
-                case Constants.TRANSACTION_LOAN_PAYMENT:
-                    return "Loan Payment";
-                case Constants.TRANSACTION_LOAN_RELEASE:
-                    return "Loan Release";
                 case Constants.TRANSACTION_INTEREST_EARNING:
                     return "Interest Earning";
+                case Constants.TRANSACTION_LOAN_RELEASE:
+                    return "Loan Release";
+                case Constants.TRANSACTION_LOAN_PAYMENT:
+                    return "Loan Payment";
+                case Constants.TRANSACTION_FEE:
+                    return "Fee";
                 default:
                     return transactionType;
             }

@@ -1,9 +1,8 @@
 package com.moscat.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Base64;
 
 /**
  * Utility class for password hashing and verification
@@ -11,26 +10,26 @@ import java.util.Base64;
 public class PasswordHasher {
     
     /**
-     * Hashes a password using SHA-256 algorithm
+     * Hashes a password using SHA-256
      * 
-     * @param password The password to hash
-     * @return The hashed password
+     * @param password Password to hash
+     * @return Hashed password
      */
     public static String hashPassword(String password) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(password.getBytes());
-            return Base64.getEncoder().encodeToString(hash);
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error hashing password", e);
         }
     }
     
     /**
-     * Verifies if a password matches a hash
+     * Verifies a password against a hash
      * 
-     * @param password The password to verify
-     * @param hash The hash to verify against
+     * @param password Password to verify
+     * @param hash Hash to verify against
      * @return true if the password matches the hash, false otherwise
      */
     public static boolean verifyPassword(String password, String hash) {
@@ -39,21 +38,20 @@ public class PasswordHasher {
     }
     
     /**
-     * Generates a random password of specified length
+     * Converts bytes to hexadecimal string
      * 
-     * @param length The length of the password
-     * @return A random password
+     * @param bytes Bytes to convert
+     * @return Hexadecimal string
      */
-    public static String generateRandomPassword(int length) {
-        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        
-        for (int i = 0; i < length; i++) {
-            int randomIndex = random.nextInt(chars.length());
-            sb.append(chars.charAt(randomIndex));
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
         }
-        
-        return sb.toString();
+        return hexString.toString();
     }
 }

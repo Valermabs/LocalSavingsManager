@@ -1,7 +1,8 @@
-modules = ["java"]
+modules = ["java", "java-17"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["maven"]
 
 [workflows]
 runButton = "Project"
@@ -13,28 +14,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Java Application"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "java-app"
+args = "MOSCAT Application"
 
 [[workflows.workflow]]
-name = "Java Application"
+name = "MOSCAT Application"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd src && javac -d ../out main/java/com/moscat/App.java main/java/com/moscat/utils/*.java main/java/com/moscat/models/*.java main/java/com/moscat/controllers/*.java main/java/com/moscat/views/*.java main/java/com/moscat/views/components/*.java && cd .. && java -cp out:. com.moscat.App"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "java-app"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd ~/project && mvn compile exec:java -Dexec.mainClass=\"com.moscat.App\""
+args = "mkdir -p out && mvn compile exec:java -Dexec.mainClass=\"com.moscat.App\""
 
 [deployment]
 run = ["sh", "-c", "cd src && javac -d ../out main/java/com/moscat/App.java main/java/com/moscat/utils/*.java main/java/com/moscat/models/*.java main/java/com/moscat/controllers/*.java main/java/com/moscat/views/*.java main/java/com/moscat/views/components/*.java && cd .. && java -cp out:. com.moscat.App"]

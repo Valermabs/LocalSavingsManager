@@ -464,6 +464,31 @@ public class DashboardView extends JPanel {
     }
     
     /**
+     * Gets display text for transaction type
+     * 
+     * @param transactionType Transaction type code
+     * @return Human-readable transaction type
+     */
+    protected String getTransactionTypeDisplay(String transactionType) {
+        switch (transactionType) {
+            case "DEPOSIT":
+                return "Deposit";
+            case "WITHDRAWAL":
+                return "Withdrawal";
+            case "INTEREST_EARNING":
+                return "Interest Earning";
+            case "LOAN_RELEASE":
+                return "Loan Release";
+            case "LOAN_PAYMENT":
+                return "Loan Payment";
+            case "FEE":
+                return "Fee";
+            default:
+                return transactionType;
+        }
+    }
+    
+    /**
      * Logs out the current user
      */
     protected void logout() {

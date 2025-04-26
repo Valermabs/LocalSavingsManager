@@ -1,27 +1,27 @@
 package com.moscat.models;
 
-import java.sql.Date;
+import java.util.Date;
 
 /**
- * Model class for cooperative members
+ * Model for member data
  */
 public class Member {
+    
     private int id;
     private String memberNumber;
     private String firstName;
     private String middleName;
     private String lastName;
-    private int age;
     private Date birthDate;
-    private String presentAddress;
-    private String permanentAddress;
     private String contactNumber;
     private String email;
+    private String presentAddress;
+    private String permanentAddress;
     private String employer;
-    private String employmentStatus; // REGULAR, CONTRACT OF SERVICE, JOB ORDER
+    private String employmentStatus;
     private double grossMonthlyIncome;
     private double avgNetMonthlyIncome;
-    private String status; // ACTIVE, DORMANT, CLOSED
+    private String status;
     private Date joinDate;
     private Date lastActivityDate;
     private double loanEligibilityAmount;
@@ -33,204 +33,325 @@ public class Member {
     }
     
     /**
-     * Parameterized constructor
+     * Gets the ID
      * 
-     * @param id Member ID
-     * @param memberNumber Member number
-     * @param firstName First name
-     * @param middleName Middle name
-     * @param lastName Last name
-     * @param age Age
-     * @param birthDate Birth date
-     * @param presentAddress Present address
-     * @param permanentAddress Permanent address
-     * @param contactNumber Contact number
-     * @param email Email address
-     * @param employer Employer
-     * @param employmentStatus Employment status
-     * @param grossMonthlyIncome Gross monthly income
-     * @param avgNetMonthlyIncome Average net monthly income
-     * @param status Member status
-     * @param joinDate Join date
-     * @param lastActivityDate Last activity date
-     * @param loanEligibilityAmount Loan eligibility amount
+     * @return ID
      */
-    public Member(int id, String memberNumber, String firstName, String middleName, String lastName,
-            int age, Date birthDate, String presentAddress, String permanentAddress,
-            String contactNumber, String email, String employer, String employmentStatus,
-            double grossMonthlyIncome, double avgNetMonthlyIncome, String status,
-            Date joinDate, Date lastActivityDate, double loanEligibilityAmount) {
-        this.id = id;
-        this.memberNumber = memberNumber;
-        this.firstName = firstName;
-        this.middleName = middleName;
-        this.lastName = lastName;
-        this.age = age;
-        this.birthDate = birthDate;
-        this.presentAddress = presentAddress;
-        this.permanentAddress = permanentAddress;
-        this.contactNumber = contactNumber;
-        this.email = email;
-        this.employer = employer;
-        this.employmentStatus = employmentStatus;
-        this.grossMonthlyIncome = grossMonthlyIncome;
-        this.avgNetMonthlyIncome = avgNetMonthlyIncome;
-        this.status = status;
-        this.joinDate = joinDate;
-        this.lastActivityDate = lastActivityDate;
-        this.loanEligibilityAmount = loanEligibilityAmount;
-    }
-
-    // Getters and Setters
-    
     public int getId() {
         return id;
     }
     
+    /**
+     * Sets the ID
+     * 
+     * @param id ID
+     */
     public void setId(int id) {
         this.id = id;
     }
     
+    /**
+     * Gets the member number
+     * 
+     * @return Member number
+     */
     public String getMemberNumber() {
         return memberNumber;
     }
     
+    /**
+     * Sets the member number
+     * 
+     * @param memberNumber Member number
+     */
     public void setMemberNumber(String memberNumber) {
         this.memberNumber = memberNumber;
     }
     
+    /**
+     * Gets the first name
+     * 
+     * @return First name
+     */
     public String getFirstName() {
         return firstName;
     }
     
+    /**
+     * Sets the first name
+     * 
+     * @param firstName First name
+     */
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
     
+    /**
+     * Gets the middle name
+     * 
+     * @return Middle name
+     */
     public String getMiddleName() {
         return middleName;
     }
     
+    /**
+     * Sets the middle name
+     * 
+     * @param middleName Middle name
+     */
     public void setMiddleName(String middleName) {
         this.middleName = middleName;
     }
     
+    /**
+     * Gets the last name
+     * 
+     * @return Last name
+     */
     public String getLastName() {
         return lastName;
     }
     
+    /**
+     * Sets the last name
+     * 
+     * @param lastName Last name
+     */
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
     
-    public int getAge() {
-        return age;
-    }
-    
-    public void setAge(int age) {
-        this.age = age;
-    }
-    
+    /**
+     * Gets the birth date
+     * 
+     * @return Birth date
+     */
     public Date getBirthDate() {
         return birthDate;
     }
     
+    /**
+     * Sets the birth date
+     * 
+     * @param birthDate Birth date
+     */
     public void setBirthDate(Date birthDate) {
         this.birthDate = birthDate;
     }
     
-    public String getPresentAddress() {
-        return presentAddress;
-    }
-    
-    public void setPresentAddress(String presentAddress) {
-        this.presentAddress = presentAddress;
-    }
-    
-    public String getPermanentAddress() {
-        return permanentAddress;
-    }
-    
-    public void setPermanentAddress(String permanentAddress) {
-        this.permanentAddress = permanentAddress;
-    }
-    
+    /**
+     * Gets the contact number
+     * 
+     * @return Contact number
+     */
     public String getContactNumber() {
         return contactNumber;
     }
     
+    /**
+     * Sets the contact number
+     * 
+     * @param contactNumber Contact number
+     */
     public void setContactNumber(String contactNumber) {
         this.contactNumber = contactNumber;
     }
     
+    /**
+     * Gets the email
+     * 
+     * @return Email
+     */
     public String getEmail() {
         return email;
     }
     
+    /**
+     * Sets the email
+     * 
+     * @param email Email
+     */
     public void setEmail(String email) {
         this.email = email;
     }
     
+    /**
+     * Gets the present address
+     * 
+     * @return Present address
+     */
+    public String getPresentAddress() {
+        return presentAddress;
+    }
+    
+    /**
+     * Sets the present address
+     * 
+     * @param presentAddress Present address
+     */
+    public void setPresentAddress(String presentAddress) {
+        this.presentAddress = presentAddress;
+    }
+    
+    /**
+     * Gets the permanent address
+     * 
+     * @return Permanent address
+     */
+    public String getPermanentAddress() {
+        return permanentAddress;
+    }
+    
+    /**
+     * Sets the permanent address
+     * 
+     * @param permanentAddress Permanent address
+     */
+    public void setPermanentAddress(String permanentAddress) {
+        this.permanentAddress = permanentAddress;
+    }
+    
+    /**
+     * Gets the employer
+     * 
+     * @return Employer
+     */
     public String getEmployer() {
         return employer;
     }
     
+    /**
+     * Sets the employer
+     * 
+     * @param employer Employer
+     */
     public void setEmployer(String employer) {
         this.employer = employer;
     }
     
+    /**
+     * Gets the employment status
+     * 
+     * @return Employment status
+     */
     public String getEmploymentStatus() {
         return employmentStatus;
     }
     
+    /**
+     * Sets the employment status
+     * 
+     * @param employmentStatus Employment status
+     */
     public void setEmploymentStatus(String employmentStatus) {
         this.employmentStatus = employmentStatus;
     }
     
+    /**
+     * Gets the gross monthly income
+     * 
+     * @return Gross monthly income
+     */
     public double getGrossMonthlyIncome() {
         return grossMonthlyIncome;
     }
     
+    /**
+     * Sets the gross monthly income
+     * 
+     * @param grossMonthlyIncome Gross monthly income
+     */
     public void setGrossMonthlyIncome(double grossMonthlyIncome) {
         this.grossMonthlyIncome = grossMonthlyIncome;
     }
     
+    /**
+     * Gets the average net monthly income
+     * 
+     * @return Average net monthly income
+     */
     public double getAvgNetMonthlyIncome() {
         return avgNetMonthlyIncome;
     }
     
+    /**
+     * Sets the average net monthly income
+     * 
+     * @param avgNetMonthlyIncome Average net monthly income
+     */
     public void setAvgNetMonthlyIncome(double avgNetMonthlyIncome) {
         this.avgNetMonthlyIncome = avgNetMonthlyIncome;
     }
     
+    /**
+     * Gets the status
+     * 
+     * @return Status
+     */
     public String getStatus() {
         return status;
     }
     
+    /**
+     * Sets the status
+     * 
+     * @param status Status
+     */
     public void setStatus(String status) {
         this.status = status;
     }
     
+    /**
+     * Gets the join date
+     * 
+     * @return Join date
+     */
     public Date getJoinDate() {
         return joinDate;
     }
     
+    /**
+     * Sets the join date
+     * 
+     * @param joinDate Join date
+     */
     public void setJoinDate(Date joinDate) {
         this.joinDate = joinDate;
     }
     
+    /**
+     * Gets the last activity date
+     * 
+     * @return Last activity date
+     */
     public Date getLastActivityDate() {
         return lastActivityDate;
     }
     
+    /**
+     * Sets the last activity date
+     * 
+     * @param lastActivityDate Last activity date
+     */
     public void setLastActivityDate(Date lastActivityDate) {
         this.lastActivityDate = lastActivityDate;
     }
     
+    /**
+     * Gets the loan eligibility amount
+     * 
+     * @return Loan eligibility amount
+     */
     public double getLoanEligibilityAmount() {
         return loanEligibilityAmount;
     }
     
+    /**
+     * Sets the loan eligibility amount
+     * 
+     * @param loanEligibilityAmount Loan eligibility amount
+     */
     public void setLoanEligibilityAmount(double loanEligibilityAmount) {
         this.loanEligibilityAmount = loanEligibilityAmount;
     }
@@ -238,31 +359,15 @@ public class Member {
     /**
      * Gets the full name of the member
      * 
-     * @return Full name (last name, first name middle initial)
+     * @return Full name
      */
     public String getFullName() {
-        String middleInitial = "";
+        StringBuilder sb = new StringBuilder();
+        sb.append(firstName);
         if (middleName != null && !middleName.isEmpty()) {
-            middleInitial = " " + middleName.charAt(0) + ".";
+            sb.append(" ").append(middleName);
         }
-        return lastName + ", " + firstName + middleInitial;
-    }
-    
-    /**
-     * Checks if the member account is active
-     * 
-     * @return true if active, false otherwise
-     */
-    public boolean isActive() {
-        return "ACTIVE".equals(status);
-    }
-    
-    /**
-     * Checks if the member account is dormant
-     * 
-     * @return true if dormant, false otherwise
-     */
-    public boolean isDormant() {
-        return "DORMANT".equals(status);
+        sb.append(" ").append(lastName);
+        return sb.toString();
     }
 }

@@ -2,6 +2,7 @@ package com.moscat.views;
 
 import com.moscat.App;
 import com.moscat.controllers.AuthController;
+import com.moscat.models.User;
 import com.moscat.utils.Constants;
 import com.moscat.views.components.CustomButton;
 import com.moscat.views.components.CustomTextField;
@@ -22,11 +23,11 @@ public class LoginView extends JPanel {
     private JFrame parentFrame;
     private CustomTextField usernameField;
     private JPasswordField passwordField;
-    private JLabel errorLabel;
     private JButton loginButton;
+    private JLabel statusLabel;
     
     /**
-     * Constructor for LoginView
+     * Constructs a new LoginView
      * 
      * @param parentFrame Parent JFrame
      */
@@ -39,167 +40,195 @@ public class LoginView extends JPanel {
      * Initializes the UI components
      */
     private void initializeUI() {
-        // Set layout
         setLayout(new BorderLayout());
-        setBorder(new EmptyBorder(40, 40, 40, 40));
+        setBackground(Color.WHITE);
         
-        // Create components
-        JPanel centerPanel = new JPanel(new GridBagLayout());
+        // Create logo panel
+        JPanel logoPanel = createLogoPanel();
+        
+        // Create login form panel
         JPanel loginPanel = createLoginPanel();
         
-        centerPanel.add(loginPanel);
-        add(centerPanel, BorderLayout.CENTER);
+        // Add panels to main panel
+        add(logoPanel, BorderLayout.NORTH);
+        add(loginPanel, BorderLayout.CENTER);
     }
     
     /**
-     * Creates the login panel with input fields and buttons
+     * Creates the logo panel
      * 
-     * @return JPanel containing login components
+     * @return JPanel with logo
+     */
+    private JPanel createLogoPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(50, 0, 30, 0));
+        
+        // Create logo label
+        JLabel logoLabel = new JLabel("MOSCAT Multipurpose Cooperative");
+        logoLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        logoLabel.setForeground(new Color(0, 87, 146)); // Dark blue color
+        
+        panel.add(logoLabel);
+        return panel;
+    }
+    
+    /**
+     * Creates the login form panel
+     * 
+     * @return JPanel with login form
      */
     private JPanel createLoginPanel() {
         JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createEtchedBorder(),
-                new EmptyBorder(20, 20, 20, 20)));
-        panel.setMaximumSize(new Dimension(400, 300));
+        panel.setLayout(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
         
-        // Logo or header
-        JLabel logoLabel = new JLabel("MOSCAT Multipurpose Cooperative");
-        logoLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         
-        JLabel subtitleLabel = new JLabel("Savings and Loan System");
-        subtitleLabel.setFont(new Font("Arial", Font.ITALIC, 14));
-        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Create login form panel
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+                new EmptyBorder(30, 30, 30, 30)));
         
-        // Login form
-        JPanel formPanel = new JPanel(new GridLayout(4, 1, 0, 10));
-        formPanel.setMaximumSize(new Dimension(350, 200));
-        formPanel.setBorder(new EmptyBorder(20, 0, 20, 0));
+        GridBagConstraints formGbc = new GridBagConstraints();
+        formGbc.insets = new Insets(5, 5, 5, 5);
+        formGbc.fill = GridBagConstraints.HORIZONTAL;
         
+        // Login form title
+        JLabel titleLabel = new JLabel("Login to your account");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setHorizontalAlignment(JLabel.CENTER);
+        formGbc.gridx = 0;
+        formGbc.gridy = 0;
+        formGbc.gridwidth = 2;
+        formPanel.add(titleLabel, formGbc);
+        
+        // Spacer
+        JLabel spacerLabel = new JLabel(" ");
+        formGbc.gridx = 0;
+        formGbc.gridy = 1;
+        formGbc.gridwidth = 2;
+        formPanel.add(spacerLabel, formGbc);
+        
+        // Username label
         JLabel usernameLabel = new JLabel("Username:");
+        formGbc.gridx = 0;
+        formGbc.gridy = 2;
+        formGbc.gridwidth = 2;
+        formPanel.add(usernameLabel, formGbc);
+        
+        // Username field
         usernameField = new CustomTextField();
-        usernameField.setPreferredSize(new Dimension(200, Constants.TEXT_FIELD_HEIGHT));
+        usernameField.setPreferredSize(new Dimension(250, Constants.TEXT_FIELD_HEIGHT));
+        formGbc.gridx = 0;
+        formGbc.gridy = 3;
+        formGbc.gridwidth = 2;
+        formPanel.add(usernameField, formGbc);
         
+        // Password label
         JLabel passwordLabel = new JLabel("Password:");
-        passwordField = new JPasswordField();
-        passwordField.setPreferredSize(new Dimension(200, Constants.TEXT_FIELD_HEIGHT));
+        formGbc.gridx = 0;
+        formGbc.gridy = 4;
+        formGbc.gridwidth = 2;
+        formPanel.add(passwordLabel, formGbc);
         
-        // Error label
-        errorLabel = new JLabel("");
-        errorLabel.setForeground(Color.RED);
-        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Password field
+        passwordField = new JPasswordField();
+        passwordField.setPreferredSize(new Dimension(250, Constants.TEXT_FIELD_HEIGHT));
+        formGbc.gridx = 0;
+        formGbc.gridy = 5;
+        formGbc.gridwidth = 2;
+        formPanel.add(passwordField, formGbc);
+        
+        // Status label (for error messages)
+        statusLabel = new JLabel(" ");
+        statusLabel.setForeground(Color.RED);
+        statusLabel.setHorizontalAlignment(JLabel.CENTER);
+        formGbc.gridx = 0;
+        formGbc.gridy = 6;
+        formGbc.gridwidth = 2;
+        formPanel.add(statusLabel, formGbc);
         
         // Login button
         loginButton = new CustomButton("Login");
-        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginButton.setMaximumSize(new Dimension(120, Constants.BUTTON_HEIGHT));
+        loginButton.setPreferredSize(new Dimension(250, Constants.BUTTON_HEIGHT));
+        formGbc.gridx = 0;
+        formGbc.gridy = 7;
+        formGbc.gridwidth = 2;
+        formPanel.add(loginButton, formGbc);
         
-        // Add action listeners
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                attemptLogin();
-            }
-        });
+        // Add the form panel to the main panel
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(formPanel, gbc);
         
-        // Add key listeners
-        KeyAdapter enterKeyAdapter = new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    attemptLogin();
-                }
-            }
-        };
-        
-        usernameField.addKeyListener(enterKeyAdapter);
-        passwordField.addKeyListener(enterKeyAdapter);
-        
-        // Add components to form panel
-        formPanel.add(usernameLabel);
-        formPanel.add(usernameField);
-        formPanel.add(passwordLabel);
-        formPanel.add(passwordField);
-        
-        // Add all components to main panel
-        panel.add(logoLabel);
-        panel.add(Box.createVerticalStrut(5));
-        panel.add(subtitleLabel);
-        panel.add(Box.createVerticalStrut(20));
-        panel.add(formPanel);
-        panel.add(errorLabel);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(loginButton);
+        // Set up event listeners
+        setupEventListeners();
         
         return panel;
     }
     
     /**
-     * Attempts to authenticate the user with provided credentials
+     * Sets up event listeners for interactive components
      */
-    private void attemptLogin() {
-        String username = usernameField.getText();
-        String password = new String(passwordField.getPassword());
-        
-        // Input validation
-        if (username.isEmpty() || password.isEmpty()) {
-            errorLabel.setText("Username and password are required");
-            return;
-        }
-        
-        // Show loading indicator
-        loginButton.setEnabled(false);
-        loginButton.setText("Logging in...");
-        errorLabel.setText("");
-        
-        // Perform login in a separate thread to keep UI responsive
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+    private void setupEventListeners() {
+        // Login button action listener
+        loginButton.addActionListener(new ActionListener() {
             @Override
-            protected Boolean doInBackground() throws Exception {
-                return AuthController.authenticate(username, password);
+            public void actionPerformed(ActionEvent e) {
+                performLogin();
             }
-            
+        });
+        
+        // Password field key listener for Enter key
+        passwordField.addKeyListener(new KeyAdapter() {
             @Override
-            protected void done() {
-                try {
-                    boolean success = get();
-                    
-                    if (success) {
-                        // Navigate to appropriate dashboard based on role
-                        navigateToDashboard();
-                    } else {
-                        errorLabel.setText("Invalid username or password");
-                        loginButton.setEnabled(true);
-                        loginButton.setText("Login");
-                        passwordField.setText("");
-                    }
-                } catch (Exception e) {
-                    errorLabel.setText("An error occurred while logging in");
-                    loginButton.setEnabled(true);
-                    loginButton.setText("Login");
-                    e.printStackTrace();
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    performLogin();
                 }
             }
-        };
-        
-        worker.execute();
+        });
     }
     
     /**
-     * Navigates to the appropriate dashboard based on user role
+     * Performs the login process
      */
-    private void navigateToDashboard() {
-        if (AuthController.isSuperAdmin()) {
-            App.changeView(new SuperAdminDashboard(parentFrame));
-        } else if (AuthController.isTreasurer()) {
-            App.changeView(new TreasurerDashboard(parentFrame));
-        } else if (AuthController.isBookkeeper()) {
-            App.changeView(new BookkeeperDashboard(parentFrame));
+    private void performLogin() {
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        
+        // Basic validation
+        if (username.isEmpty() || password.isEmpty()) {
+            statusLabel.setText("Please enter both username and password.");
+            return;
+        }
+        
+        // Attempt to login
+        boolean loginSuccess = AuthController.login(username, password);
+        
+        if (loginSuccess) {
+            // Redirect to appropriate dashboard based on role
+            User currentUser = AuthController.getCurrentUser();
+            
+            if (currentUser.isSuperAdmin()) {
+                App.changeView(new SuperAdminDashboard(parentFrame));
+            } else if (currentUser.isTreasurer()) {
+                App.changeView(new TreasurerDashboard(parentFrame));
+            } else if (currentUser.isBookkeeper()) {
+                App.changeView(new BookkeeperDashboard(parentFrame));
+            } else {
+                // Fallback to generic dashboard
+                App.changeView(new DashboardView(parentFrame));
+            }
         } else {
-            // Fallback to general dashboard
-            App.changeView(new DashboardView(parentFrame));
+            statusLabel.setText("Invalid username or password.");
         }
     }
 }
