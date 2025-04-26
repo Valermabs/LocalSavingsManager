@@ -1,0 +1,71 @@
+I want you to create me “MOSCAT Multipurpose Cooperative” Savings and Loan system with a working database. So make a database for it
+Features:
+Can create an account for a member through a registration form. Important information like First Name, Middle Name, Last Name, Age, Birthdate, Present Address, Permanent Address, Contact Number, Email Address, Employer, Employment Status (Regular, Contract of Service, Job Order), Gross Monthly Income, Average Net Monthly Income for the last three months, and other pertinent data that is usually required in banks and cooperatives.
+Does have  one super admin, who can add administrator accounts for treasurer and bookkeeper, and any other qualified personnel. The administrator accounts should have access to records except for account deletion which can only be done by the super administrator. The administrators can also change the account status of each member should they become dormant for having no transactions (deposit or withdrawal) in at least 12 months. 
+The system should automatically determine the dormancy of the account and should notify the administrator of the dormant accounts. The list of dormant accounts could be put on a certain page in the system. 
+The super administrator should have the ability to assign access to each administrator account. The Treasurer can add transactions (deposits or withdrawals) but the bookkeeper can only see the data, not edit them. 
+Super administrator account username: mmpcadmin ; password: #MMPC@dmin2o25
+
+Savings Features:
+The super administrator can set the savings interest to any percentage that can be changed anytime when the Board approves a  resolution. In case the super administrator changes the savings interest, the system for the date for which the interest takes effect and only then should it effect, not retroactive. Also, the system should ask the basis of the change of interest rate before the super administrator can finally set the interest rate. 
+The system should also ask how much the savings should be at least to earn an interest rate. Meaning, it will not apply an interest earning if the balance is below the minimum required balance to earn interest. 
+The system should also ask whether the interest rate is computed per month or daily. If so, the system should divide the interest rate assigned to the number of days in the year, or the number of months, whichever is applicable. 
+The system should compute the interest earning per day or per month depending on the set schedule. However, the interest earning should not be added to the principal. Meaning, the deposits remain as is, and the interest rates will be recorded in a separate column and would accumulate separately. 
+
+
+Loan Features:
+Any member can apply for loan. In the member’s account, there appears an amount they are eligible to loan for which is set by the treasurer based on their records. The member can then see in his account a tentative computation which shows the net loan proceeds, deductions, and monthly amortization schedule. 
+The treasurer in her account should set the deductions so there should be an option for the treasurer to add the deduction particular and the percentage of it from the loaned amount. 
+Another deduction is RLPF which is computed Php 1.00 per Php 1,000.00 computed monthly. Meaning if the loan amount is Php 100,000.00 in 2 years, then the RLPF is 100,000/1000 * 1 * 24 months.
+The previous loan balance should also be included in the deductions. 
+The system then computes for the net loan proceeds. 
+The treasurer should also have the ability to set the loan interest rate in his account. 
+The computation for the monthly amortization should follow a straight-line diminishing principal method combined with interest computed on the full principal annually, but the monthly amortization is recalculated each year. Follow these rules:
+  Inputs:
+principal: total loan amount (e.g., 150000)
+interest_rate: annual interest rate as a percentage (e.g., 12 for 12%)
+term_years: loan term in years (e.g., 3)
+  Computation logic:
+Divide the principal equally by the number of years to get the annual principal payment.
+For each year:
+Calculate remaining principal at the start of the year.
+Compute annual interest as:
+annual_interest = remaining_principal × (interest_rate / 100)
+Monthly amortization =
+(annual_interest / 12) + (annual_principal_payment / 12)
+Print the monthly amortization for each year.
+
+
+Bookkeeper account:
+The bookkeeper account should have a record of transactions and a monthly journal. 
+All other features necessary for a bookkeeper account should be included. 
+
+
+
+Reports generation:
+Each admin should be allowed to print reports that are appropriate for their account. 
+Super admin and treasurer can generate a report of a specific member if requested. This should include all transaction history, interest earned, and other relevant data. 
+
+Please make sure login is successful.
+Please make sure that add member is successful.
+Please make sure that the dashboard works well and all features are functional. 
+Please make sure that numeric fields are expecting numbers, not strings, to avoid error.
+
+Access:
+Super admin all access including, savings interest rate setting, transactions, loans, member registration, report generation. 
+Treasurer has access to transactions updating like deposit and withdrawal of a member, payments to loans, loan creation, member registration, report generation. 
+Bookkeeper account has access to transactions history and report generation only. 
+
+
+
+Loan Application Form
+
+Loan Type
+Loan Amount
+Interest Rate (fetched from the loan interest settings)
+Previous Loan Balance
+Loan Deductions 
+Fixed Loan Deduction is RLPF computed as 1 per 1000 times the number of term in months. But RLPF is not applicable for Petty Cash and Bonus Loan. 
+Allow me to add other loan deductions. 
+
+
