@@ -22,6 +22,7 @@
 /home/runner/workspace/src/main/java/com/moscat/views/UserAccountView.java
 /home/runner/workspace/src/main/java/com/moscat/models/Transaction.java
 /home/runner/workspace/src/main/java/com/moscat/views/TransactionView.java
+/home/runner/workspace/src/main/java/com/moscat/utils/UIHelper.java
 /home/runner/workspace/src/main/java/com/moscat/views/components/CustomTextField.java
 /home/runner/workspace/src/main/java/com/moscat/views/UserPermissionsView.java
 /home/runner/workspace/src/main/java/com/moscat/utils/DatabaseManager.java

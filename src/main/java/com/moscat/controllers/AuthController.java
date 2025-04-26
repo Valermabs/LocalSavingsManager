@@ -117,6 +117,88 @@ public class AuthController {
     }
     
     /**
+     * Checks if the current user is a treasurer
+     * 
+     * @return true if treasurer, false otherwise
+     */
+    public static boolean isTreasurer() {
+        return currentUser != null && currentUser.isTreasurer();
+    }
+    
+    /**
+     * Checks if the current user is a bookkeeper
+     * 
+     * @return true if bookkeeper, false otherwise
+     */
+    public static boolean isBookkeeper() {
+        return currentUser != null && currentUser.isBookkeeper();
+    }
+    
+    /**
+     * Checks if the current user has access to the specified feature based on their role
+     * 
+     * @param feature The feature to check access for
+     * @return true if the user has access, false otherwise
+     */
+    public static boolean hasRoleBasedAccess(String feature) {
+        if (currentUser == null) {
+            return false;
+        }
+        
+        // SuperAdmin has access to everything
+        if (isSuperAdmin()) {
+            return true;
+        }
+        
+        // Check role-specific permissions
+        switch (feature) {
+            // Features available to both Treasurer and Bookkeeper
+            case "VIEW_MEMBERS":
+            case "VIEW_TRANSACTIONS":
+            case "VIEW_LOANS":
+            case "GENERATE_REPORTS":
+                return isTreasurer() || isBookkeeper();
+                
+            // Features available only to Treasurer
+            case "REGISTER_MEMBERS":
+            case "DEPOSIT_WITHDRAWAL":
+            case "LOAN_CREATION":
+            case "LOAN_PAYMENTS":
+                return isTreasurer();
+                
+            // Features available only to SuperAdmin
+            case "INTEREST_RATE_SETTING":
+            case "USER_MANAGEMENT":
+            case "SYSTEM_SETTINGS":
+                return isSuperAdmin();
+                
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Checks if the current user has permission for specific operations
+     * This is a more granular check that uses the permission system
+     * 
+     * @param permissionCode The permission code to check
+     * @return true if the user has the permission, false otherwise
+     */
+    public static boolean hasPermission(String permissionCode) {
+        if (currentUser == null) {
+            return false;
+        }
+        
+        // SuperAdmin has all permissions
+        if (isSuperAdmin()) {
+            return true;
+        }
+        
+        // Use the PermissionController to check if this user has the specific permission
+        return PermissionController.currentUserHasPermission(permissionCode);
+    }
+    
+    /**
      * Gets a user by ID
      * 
      * @param userId User ID

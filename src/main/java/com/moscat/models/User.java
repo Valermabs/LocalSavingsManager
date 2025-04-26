@@ -272,6 +272,24 @@ public class User {
     }
     
     /**
+     * Checks if the user is a treasurer
+     * 
+     * @return true if treasurer, false otherwise
+     */
+    public boolean isTreasurer() {
+        return Constants.ROLE_TREASURER.equals(role);
+    }
+    
+    /**
+     * Checks if the user is a bookkeeper
+     * 
+     * @return true if bookkeeper, false otherwise
+     */
+    public boolean isBookkeeper() {
+        return Constants.ROLE_BOOKKEEPER.equals(role);
+    }
+    
+    /**
      * Gets the created at date
      * 
      * @return Created at date
@@ -287,5 +305,15 @@ public class User {
      */
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    /**
+     * Returns a string representation of the user
+     * 
+     * @return String representation
+     */
+    @Override
+    public String toString() {
+        return getFullName() + " (" + username + ")";
     }
 }

@@ -9,6 +9,7 @@ import com.moscat.utils.ColorScheme;
 import com.moscat.utils.Constants;
 import com.moscat.utils.UIHelper;
 
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -50,6 +51,22 @@ public class UserPermissionsView extends JPanel {
         // Load data
         loadUsers();
         loadPermissions();
+    }
+    
+    /**
+     * Constructor with preselected user
+     * 
+     * @param parentFrame Parent frame
+     * @param user User to preselect
+     */
+    public UserPermissionsView(JFrame parentFrame, User user) {
+        this(parentFrame);
+        this.selectedUser = user;
+        
+        // If user is provided, load their permissions
+        if (user != null) {
+            loadUserPermissions();
+        }
     }
     
     /**

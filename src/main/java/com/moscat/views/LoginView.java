@@ -158,8 +158,7 @@ public class LoginView extends JDialog {
      */
     private void openBookkeeperDashboard() {
         JFrame parentFrame = (JFrame) getParent();
-        // Use SuperAdminDashboard for now until BookkeeperDashboard is implemented
-        SuperAdminDashboard dashboard = new SuperAdminDashboard(parentFrame);
+        BookkeeperDashboard dashboard = new BookkeeperDashboard(parentFrame);
         dashboard.setVisible(true);
     }
 }
