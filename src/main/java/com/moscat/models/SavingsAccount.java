@@ -8,14 +8,16 @@ import java.util.Date;
 public class SavingsAccount {
     
     private int id;
-    private int memberId;
     private String accountNumber;
+    private int memberId;
+    private String accountType;
     private double balance;
-    private double interestEarned;
+    private double interestRate;
     private String status;
-    private Date openDate;
-    private Date lastActivityDate;
-    private Date lastInterestComputationDate;
+    private Date openedDate;
+    private Date lastTransactionDate;
+    private Date createdAt;
+    private Date updatedAt;
     
     /**
      * Default constructor
@@ -42,6 +44,24 @@ public class SavingsAccount {
     }
     
     /**
+     * Gets the account number
+     * 
+     * @return Account number
+     */
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+    
+    /**
+     * Sets the account number
+     * 
+     * @param accountNumber Account number
+     */
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+    
+    /**
      * Gets the member ID
      * 
      * @return Member ID
@@ -60,21 +80,21 @@ public class SavingsAccount {
     }
     
     /**
-     * Gets the account number
+     * Gets the account type
      * 
-     * @return Account number
+     * @return Account type
      */
-    public String getAccountNumber() {
-        return accountNumber;
+    public String getAccountType() {
+        return accountType;
     }
     
     /**
-     * Sets the account number
+     * Sets the account type
      * 
-     * @param accountNumber Account number
+     * @param accountType Account type
      */
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
+    public void setAccountType(String accountType) {
+        this.accountType = accountType;
     }
     
     /**
@@ -96,21 +116,21 @@ public class SavingsAccount {
     }
     
     /**
-     * Gets the interest earned
+     * Gets the interest rate
      * 
-     * @return Interest earned
+     * @return Interest rate
      */
-    public double getInterestEarned() {
-        return interestEarned;
+    public double getInterestRate() {
+        return interestRate;
     }
     
     /**
-     * Sets the interest earned
+     * Sets the interest rate
      * 
-     * @param interestEarned Interest earned
+     * @param interestRate Interest rate
      */
-    public void setInterestEarned(double interestEarned) {
-        this.interestEarned = interestEarned;
+    public void setInterestRate(double interestRate) {
+        this.interestRate = interestRate;
     }
     
     /**
@@ -132,92 +152,74 @@ public class SavingsAccount {
     }
     
     /**
-     * Gets the open date
+     * Gets the opened date
      * 
-     * @return Open date
+     * @return Opened date
      */
-    public Date getOpenDate() {
-        return openDate;
+    public Date getOpenedDate() {
+        return openedDate;
     }
     
     /**
-     * Sets the open date
+     * Sets the opened date
      * 
-     * @param openDate Open date
+     * @param openedDate Opened date
      */
-    public void setOpenDate(Date openDate) {
-        this.openDate = openDate;
+    public void setOpenedDate(Date openedDate) {
+        this.openedDate = openedDate;
     }
     
     /**
-     * Gets the last activity date
+     * Gets the last transaction date
      * 
-     * @return Last activity date
+     * @return Last transaction date
      */
-    public Date getLastActivityDate() {
-        return lastActivityDate;
+    public Date getLastTransactionDate() {
+        return lastTransactionDate;
     }
     
     /**
-     * Sets the last activity date
+     * Sets the last transaction date
      * 
-     * @param lastActivityDate Last activity date
+     * @param lastTransactionDate Last transaction date
      */
-    public void setLastActivityDate(Date lastActivityDate) {
-        this.lastActivityDate = lastActivityDate;
+    public void setLastTransactionDate(Date lastTransactionDate) {
+        this.lastTransactionDate = lastTransactionDate;
     }
     
     /**
-     * Gets the last interest computation date
+     * Gets the created at date
      * 
-     * @return Last interest computation date
+     * @return Created at date
      */
-    public Date getLastInterestComputationDate() {
-        return lastInterestComputationDate;
+    public Date getCreatedAt() {
+        return createdAt;
     }
     
     /**
-     * Sets the last interest computation date
+     * Sets the created at date
      * 
-     * @param lastInterestComputationDate Last interest computation date
+     * @param createdAt Created at date
      */
-    public void setLastInterestComputationDate(Date lastInterestComputationDate) {
-        this.lastInterestComputationDate = lastInterestComputationDate;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
     
     /**
-     * Gets the total balance (balance + interest earned)
+     * Gets the updated at date
      * 
-     * @return Total balance
+     * @return Updated at date
      */
-    public double getTotalBalance() {
-        return balance + interestEarned;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
     
     /**
-     * Checks if the account is active
+     * Sets the updated at date
      * 
-     * @return true if the account is active, false otherwise
+     * @param updatedAt Updated at date
      */
-    public boolean isActive() {
-        return status != null && status.equals(com.moscat.utils.Constants.ACCOUNT_ACTIVE);
-    }
-    
-    /**
-     * Checks if the account is dormant
-     * 
-     * @return true if the account is dormant, false otherwise
-     */
-    public boolean isDormant() {
-        return status != null && status.equals(com.moscat.utils.Constants.ACCOUNT_DORMANT);
-    }
-    
-    /**
-     * Checks if the account is closed
-     * 
-     * @return true if the account is closed, false otherwise
-     */
-    public boolean isClosed() {
-        return status != null && status.equals(com.moscat.utils.Constants.ACCOUNT_CLOSED);
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

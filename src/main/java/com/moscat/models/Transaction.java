@@ -8,14 +8,16 @@ import java.util.Date;
 public class Transaction {
     
     private int id;
+    private String transactionId;
     private int accountId;
-    private int userId;
     private String transactionType;
     private double amount;
-    private double runningBalance;
-    private String description;
-    private String referenceNumber;
     private Date transactionDate;
+    private String description;
+    private double balanceAfter;
+    private int performedById;
+    private String performedByUsername;
+    private Date createdAt;
     
     /**
      * Default constructor
@@ -42,6 +44,24 @@ public class Transaction {
     }
     
     /**
+     * Gets the transaction ID
+     * 
+     * @return Transaction ID
+     */
+    public String getTransactionId() {
+        return transactionId;
+    }
+    
+    /**
+     * Sets the transaction ID
+     * 
+     * @param transactionId Transaction ID
+     */
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+    
+    /**
      * Gets the account ID
      * 
      * @return Account ID
@@ -57,24 +77,6 @@ public class Transaction {
      */
     public void setAccountId(int accountId) {
         this.accountId = accountId;
-    }
-    
-    /**
-     * Gets the user ID
-     * 
-     * @return User ID
-     */
-    public int getUserId() {
-        return userId;
-    }
-    
-    /**
-     * Sets the user ID
-     * 
-     * @param userId User ID
-     */
-    public void setUserId(int userId) {
-        this.userId = userId;
     }
     
     /**
@@ -114,21 +116,21 @@ public class Transaction {
     }
     
     /**
-     * Gets the running balance
+     * Gets the transaction date
      * 
-     * @return Running balance
+     * @return Transaction date
      */
-    public double getRunningBalance() {
-        return runningBalance;
+    public Date getTransactionDate() {
+        return transactionDate;
     }
     
     /**
-     * Sets the running balance
+     * Sets the transaction date
      * 
-     * @param runningBalance Running balance
+     * @param transactionDate Transaction date
      */
-    public void setRunningBalance(double runningBalance) {
-        this.runningBalance = runningBalance;
+    public void setTransactionDate(Date transactionDate) {
+        this.transactionDate = transactionDate;
     }
     
     /**
@@ -150,38 +152,74 @@ public class Transaction {
     }
     
     /**
-     * Gets the reference number
+     * Gets the balance after transaction
      * 
-     * @return Reference number
+     * @return Balance after transaction
      */
-    public String getReferenceNumber() {
-        return referenceNumber;
+    public double getBalanceAfter() {
+        return balanceAfter;
     }
     
     /**
-     * Sets the reference number
+     * Sets the balance after transaction
      * 
-     * @param referenceNumber Reference number
+     * @param balanceAfter Balance after transaction
      */
-    public void setReferenceNumber(String referenceNumber) {
-        this.referenceNumber = referenceNumber;
+    public void setBalanceAfter(double balanceAfter) {
+        this.balanceAfter = balanceAfter;
     }
     
     /**
-     * Gets the transaction date
+     * Gets the performed by user ID
      * 
-     * @return Transaction date
+     * @return Performed by user ID
      */
-    public Date getTransactionDate() {
-        return transactionDate;
+    public int getPerformedById() {
+        return performedById;
     }
     
     /**
-     * Sets the transaction date
+     * Sets the performed by user ID
      * 
-     * @param transactionDate Transaction date
+     * @param performedById Performed by user ID
      */
-    public void setTransactionDate(Date transactionDate) {
-        this.transactionDate = transactionDate;
+    public void setPerformedById(int performedById) {
+        this.performedById = performedById;
+    }
+    
+    /**
+     * Gets the performed by username
+     * 
+     * @return Performed by username
+     */
+    public String getPerformedByUsername() {
+        return performedByUsername;
+    }
+    
+    /**
+     * Sets the performed by username
+     * 
+     * @param performedByUsername Performed by username
+     */
+    public void setPerformedByUsername(String performedByUsername) {
+        this.performedByUsername = performedByUsername;
+    }
+    
+    /**
+     * Gets the created at date
+     * 
+     * @return Created at date
+     */
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+    
+    /**
+     * Sets the created at date
+     * 
+     * @param createdAt Created at date
+     */
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 }

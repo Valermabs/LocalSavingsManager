@@ -127,4 +127,13 @@ public class DateUtils {
             return new Date(); // Fallback
         }
     }
+    
+    /**
+     * Gets the current timestamp
+     * 
+     * @return Current timestamp
+     */
+    public static java.sql.Timestamp getCurrentTimestamp() {
+        return new java.sql.Timestamp(System.currentTimeMillis());
+    }
 }

@@ -1,26 +1,153 @@
 package com.moscat.controllers;
 
-import com.moscat.models.InterestSettings;
+import com.moscat.models.Member;
 import com.moscat.models.SavingsAccount;
 import com.moscat.models.Transaction;
 import com.moscat.utils.Constants;
 import com.moscat.utils.DatabaseManager;
 import com.moscat.utils.DateUtils;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 
 /**
- * Controller for savings account management
+ * Controller for savings account operations
  */
 public class SavingsController {
+    
+    /**
+     * Creates a new savings account
+     * 
+     * @param account Savings account to create
+     * @param initialDeposit Initial deposit amount
+     * @param performedById User ID who performed the operation
+     * @return true if creation successful, false otherwise
+     */
+    public static boolean createSavingsAccount(SavingsAccount account, double initialDeposit, int performedById) {
+        // Validate input
+        if (account == null || account.getMemberId() <= 0 || account.getAccountType() == null || 
+                account.getInterestRate() < 0 || initialDeposit < 0) {
+            return false;
+        }
+        
+        Connection conn = null;
+        PreparedStatement accountStmt = null;
+        PreparedStatement transactionStmt = null;
+        
+        try {
+            // Get connection
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            // Start transaction
+            conn.setAutoCommit(false);
+            
+            // Generate account number
+            String accountNumber = generateAccountNumber(account.getMemberId());
+            account.setAccountNumber(accountNumber);
+            
+            // Set other fields
+            account.setBalance(initialDeposit);
+            account.setStatus(Constants.SAVINGS_STATUS_ACTIVE);
+            
+            // Insert savings account
+            String accountQuery = "INSERT INTO savings_accounts (account_number, member_id, account_type, " +
+                    "balance, interest_rate, status, opened_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            accountStmt = conn.prepareStatement(accountQuery, Statement.RETURN_GENERATED_KEYS);
+            accountStmt.setString(1, account.getAccountNumber());
+            accountStmt.setInt(2, account.getMemberId());
+            accountStmt.setString(3, account.getAccountType());
+            accountStmt.setDouble(4, account.getBalance());
+            accountStmt.setDouble(5, account.getInterestRate());
+            accountStmt.setString(6, account.getStatus());
+            accountStmt.setDate(7, DateUtils.toSqlDate(account.getOpenedDate()));
+            
+            int rowsAffected = accountStmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Get generated account ID
+                ResultSet generatedKeys = accountStmt.getGeneratedKeys();
+                
+                if (generatedKeys.next()) {
+                    int accountId = generatedKeys.getInt(1);
+                    account.setId(accountId);
+                    
+                    // Add initial deposit transaction if amount > 0
+                    if (initialDeposit > 0) {
+                        String transactionId = generateTransactionId();
+                        
+                        String transactionQuery = "INSERT INTO transactions (transaction_id, account_id, " +
+                                "transaction_type, amount, transaction_date, description, balance_after, performed_by) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                        
+                        transactionStmt = conn.prepareStatement(transactionQuery);
+                        transactionStmt.setString(1, transactionId);
+                        transactionStmt.setInt(2, accountId);
+                        transactionStmt.setString(3, Constants.TRANSACTION_DEPOSIT);
+                        transactionStmt.setDouble(4, initialDeposit);
+                        transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+                        transactionStmt.setString(6, "Initial deposit");
+                        transactionStmt.setDouble(7, initialDeposit);
+                        transactionStmt.setInt(8, performedById);
+                        
+                        transactionStmt.executeUpdate();
+                    }
+                    
+                    // Commit transaction
+                    conn.commit();
+                    return true;
+                }
+            }
+            
+            // Rollback on failure
+            conn.rollback();
+            return false;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            
+            // Rollback on exception
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            return false;
+        } finally {
+            // Close resources
+            if (transactionStmt != null) {
+                try {
+                    transactionStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (accountStmt != null) {
+                try {
+                    accountStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+        return false;
+    }
     
     /**
      * Gets a savings account by ID
@@ -28,7 +155,7 @@ public class SavingsController {
      * @param accountId Account ID
      * @return SavingsAccount or null if not found
      */
-    public static SavingsAccount getAccountById(int accountId) {
+    public static SavingsAccount getSavingsAccountById(int accountId) {
         String query = "SELECT * FROM savings_accounts WHERE id = ?";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
@@ -40,7 +167,6 @@ public class SavingsController {
             if (rs.next()) {
                 return mapResultSetToSavingsAccount(rs);
             }
-            
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -54,7 +180,7 @@ public class SavingsController {
      * @param accountNumber Account number
      * @return SavingsAccount or null if not found
      */
-    public static SavingsAccount getAccountByNumber(String accountNumber) {
+    public static SavingsAccount getSavingsAccountByNumber(String accountNumber) {
         String query = "SELECT * FROM savings_accounts WHERE account_number = ?";
         
         try (Connection conn = DatabaseManager.getInstance().getConnection();
@@ -66,7 +192,6 @@ public class SavingsController {
             if (rs.next()) {
                 return mapResultSetToSavingsAccount(rs);
             }
-            
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -75,639 +200,687 @@ public class SavingsController {
     }
     
     /**
-     * Opens a new savings account for a member
+     * Gets all savings accounts for a member
      * 
      * @param memberId Member ID
-     * @param initialDeposit Initial deposit amount
-     * @return true if account opened successfully, false otherwise
+     * @return List of savings accounts
      */
-    public static boolean openAccount(int memberId, double initialDeposit) {
-        if (memberId <= 0 || initialDeposit < 0) {
-            return false;
-        }
+    public static List<SavingsAccount> getSavingsAccountsByMemberId(int memberId) {
+        List<SavingsAccount> accounts = new ArrayList<>();
+        String query = "SELECT * FROM savings_accounts WHERE member_id = ? ORDER BY id";
         
-        Connection conn = null;
-        
-        try {
-            conn = DatabaseManager.getInstance().getConnection();
-            conn.setAutoCommit(false);
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            // Generate account number
-            String accountNumber = generateAccountNumber();
+            stmt.setInt(1, memberId);
+            ResultSet rs = stmt.executeQuery();
             
-            // Create savings account
-            String insertAccount = "INSERT INTO savings_accounts (member_id, account_number, " +
-                    "balance, interest_earned, status, open_date) VALUES (?, ?, ?, ?, ?, ?)";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(insertAccount, 
-                    PreparedStatement.RETURN_GENERATED_KEYS)) {
-                
-                stmt.setInt(1, memberId);
-                stmt.setString(2, accountNumber);
-                stmt.setDouble(3, initialDeposit);
-                stmt.setDouble(4, 0.0);
-                stmt.setString(5, Constants.ACCOUNT_ACTIVE);
-                stmt.setDate(6, DateUtils.getCurrentDate());
-                
-                int rowsAffected = stmt.executeUpdate();
-                
-                if (rowsAffected <= 0) {
-                    conn.rollback();
-                    return false;
-                }
-                
-                ResultSet generatedKeys = stmt.getGeneratedKeys();
-                int accountId;
-                
-                if (generatedKeys.next()) {
-                    accountId = generatedKeys.getInt(1);
-                } else {
-                    conn.rollback();
-                    return false;
-                }
-                
-                // If initial deposit is greater than 0, create initial deposit transaction
-                if (initialDeposit > 0) {
-                    String insertTransaction = "INSERT INTO transactions (account_id, user_id, " +
-                            "transaction_type, amount, running_balance, description, reference_number, " +
-                            "transaction_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                    
-                    try (PreparedStatement txnStmt = conn.prepareStatement(insertTransaction)) {
-                        
-                        txnStmt.setInt(1, accountId);
-                        txnStmt.setInt(2, AuthController.getCurrentUser().getId());
-                        txnStmt.setString(3, Constants.TRANSACTION_DEPOSIT);
-                        txnStmt.setDouble(4, initialDeposit);
-                        txnStmt.setDouble(5, initialDeposit);
-                        txnStmt.setString(6, "Initial deposit");
-                        txnStmt.setString(7, generateReferenceNumber(Constants.TRANSACTION_DEPOSIT));
-                        txnStmt.setTimestamp(8, DateUtils.getCurrentTimestamp());
-                        
-                        int txnRowsAffected = txnStmt.executeUpdate();
-                        
-                        if (txnRowsAffected <= 0) {
-                            conn.rollback();
-                            return false;
-                        }
-                    }
-                }
-                
-                conn.commit();
-                return true;
+            while (rs.next()) {
+                SavingsAccount account = mapResultSetToSavingsAccount(rs);
+                accounts.add(account);
             }
-            
         } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
             e.printStackTrace();
-            return false;
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
+        
+        return accounts;
     }
     
     /**
-     * Processes a deposit transaction
+     * Gets all active savings accounts
+     * 
+     * @return List of active savings accounts
+     */
+    public static List<SavingsAccount> getAllActiveSavingsAccounts() {
+        List<SavingsAccount> accounts = new ArrayList<>();
+        String query = "SELECT * FROM savings_accounts WHERE status = ? ORDER BY id";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, Constants.SAVINGS_STATUS_ACTIVE);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                SavingsAccount account = mapResultSetToSavingsAccount(rs);
+                accounts.add(account);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return accounts;
+    }
+    
+    /**
+     * Makes a deposit to a savings account
      * 
      * @param accountId Account ID
      * @param amount Deposit amount
      * @param description Transaction description
-     * @param userId User ID of the user performing the transaction
-     * @return true if deposit processed successfully, false otherwise
+     * @param performedById User ID who performed the operation
+     * @return true if deposit successful, false otherwise
      */
-    public static boolean processDeposit(int accountId, double amount, String description, int userId) {
-        if (accountId <= 0 || amount <= 0 || userId <= 0) {
+    public static boolean deposit(int accountId, double amount, String description, int performedById) {
+        // Validate input
+        if (accountId <= 0 || amount <= 0) {
             return false;
         }
         
         Connection conn = null;
+        PreparedStatement updateStmt = null;
+        PreparedStatement transactionStmt = null;
         
         try {
+            // Get connection
             conn = DatabaseManager.getInstance().getConnection();
+            
+            // Start transaction
             conn.setAutoCommit(false);
             
             // Get current account balance
-            String getBalance = "SELECT balance FROM savings_accounts WHERE id = ? FOR UPDATE";
+            SavingsAccount account = getSavingsAccountById(accountId);
             
-            double currentBalance = 0;
-            
-            try (PreparedStatement stmt = conn.prepareStatement(getBalance)) {
-                stmt.setInt(1, accountId);
-                ResultSet rs = stmt.executeQuery();
-                
-                if (rs.next()) {
-                    currentBalance = rs.getDouble("balance");
-                } else {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            // Calculate new balance
-            double newBalance = currentBalance + amount;
-            
-            // Update account balance
-            String updateBalance = "UPDATE savings_accounts SET balance = ?, last_activity_date = ? WHERE id = ?";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(updateBalance)) {
-                stmt.setDouble(1, newBalance);
-                stmt.setDate(2, DateUtils.getCurrentDate());
-                stmt.setInt(3, accountId);
-                
-                int rowsAffected = stmt.executeUpdate();
-                
-                if (rowsAffected <= 0) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            // Create transaction record
-            String insertTransaction = "INSERT INTO transactions (account_id, user_id, transaction_type, " +
-                    "amount, running_balance, description, reference_number, transaction_date) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(insertTransaction)) {
-                stmt.setInt(1, accountId);
-                stmt.setInt(2, userId);
-                stmt.setString(3, Constants.TRANSACTION_DEPOSIT);
-                stmt.setDouble(4, amount);
-                stmt.setDouble(5, newBalance);
-                stmt.setString(6, description);
-                stmt.setString(7, generateReferenceNumber(Constants.TRANSACTION_DEPOSIT));
-                stmt.setTimestamp(8, DateUtils.getCurrentTimestamp());
-                
-                int rowsAffected = stmt.executeUpdate();
-                
-                if (rowsAffected <= 0) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            conn.commit();
-            return true;
-            
-        } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            e.printStackTrace();
-            return false;
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    /**
-     * Processes a withdrawal transaction
-     * 
-     * @param accountId Account ID
-     * @param amount Withdrawal amount
-     * @param description Transaction description
-     * @param userId User ID of the user performing the transaction
-     * @return true if withdrawal processed successfully, false otherwise
-     */
-    public static boolean processWithdrawal(int accountId, double amount, String description, int userId) {
-        if (accountId <= 0 || amount <= 0 || userId <= 0) {
-            return false;
-        }
-        
-        Connection conn = null;
-        
-        try {
-            conn = DatabaseManager.getInstance().getConnection();
-            conn.setAutoCommit(false);
-            
-            // Get current account balance
-            String getBalance = "SELECT balance FROM savings_accounts WHERE id = ? FOR UPDATE";
-            
-            double currentBalance = 0;
-            
-            try (PreparedStatement stmt = conn.prepareStatement(getBalance)) {
-                stmt.setInt(1, accountId);
-                ResultSet rs = stmt.executeQuery();
-                
-                if (rs.next()) {
-                    currentBalance = rs.getDouble("balance");
-                } else {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            // Check if sufficient balance
-            if (currentBalance < amount) {
-                conn.rollback();
+            if (account == null) {
                 return false;
             }
             
             // Calculate new balance
-            double newBalance = currentBalance - amount;
+            double newBalance = account.getBalance() + amount;
             
             // Update account balance
-            String updateBalance = "UPDATE savings_accounts SET balance = ?, last_activity_date = ? WHERE id = ?";
+            String updateQuery = "UPDATE savings_accounts SET balance = ?, last_transaction_date = ? WHERE id = ?";
             
-            try (PreparedStatement stmt = conn.prepareStatement(updateBalance)) {
-                stmt.setDouble(1, newBalance);
-                stmt.setDate(2, DateUtils.getCurrentDate());
-                stmt.setInt(3, accountId);
+            updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setDouble(1, newBalance);
+            updateStmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            updateStmt.setInt(3, accountId);
+            
+            int rowsAffected = updateStmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Add transaction record
+                String transactionId = generateTransactionId();
                 
-                int rowsAffected = stmt.executeUpdate();
+                String transactionQuery = "INSERT INTO transactions (transaction_id, account_id, " +
+                        "transaction_type, amount, transaction_date, description, balance_after, performed_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 
-                if (rowsAffected <= 0) {
-                    conn.rollback();
-                    return false;
-                }
+                transactionStmt = conn.prepareStatement(transactionQuery);
+                transactionStmt.setString(1, transactionId);
+                transactionStmt.setInt(2, accountId);
+                transactionStmt.setString(3, Constants.TRANSACTION_DEPOSIT);
+                transactionStmt.setDouble(4, amount);
+                transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+                transactionStmt.setString(6, description);
+                transactionStmt.setDouble(7, newBalance);
+                transactionStmt.setInt(8, performedById);
+                
+                transactionStmt.executeUpdate();
+                
+                // Commit transaction
+                conn.commit();
+                return true;
             }
             
-            // Create transaction record
-            String insertTransaction = "INSERT INTO transactions (account_id, user_id, transaction_type, " +
-                    "amount, running_balance, description, reference_number, transaction_date) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(insertTransaction)) {
-                stmt.setInt(1, accountId);
-                stmt.setInt(2, userId);
-                stmt.setString(3, Constants.TRANSACTION_WITHDRAWAL);
-                stmt.setDouble(4, amount);
-                stmt.setDouble(5, newBalance);
-                stmt.setString(6, description);
-                stmt.setString(7, generateReferenceNumber(Constants.TRANSACTION_WITHDRAWAL));
-                stmt.setTimestamp(8, DateUtils.getCurrentTimestamp());
-                
-                int rowsAffected = stmt.executeUpdate();
-                
-                if (rowsAffected <= 0) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            conn.commit();
-            return true;
+            // Rollback on failure
+            conn.rollback();
+            return false;
             
         } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
             e.printStackTrace();
+            
+            // Rollback on exception
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
             return false;
         } finally {
-            try {
-                if (conn != null) {
+            // Close resources
+            if (transactionStmt != null) {
+                try {
+                    transactionStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (updateStmt != null) {
+                try {
+                    updateStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
                     conn.setAutoCommit(true);
                     conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
     }
     
     /**
-     * Gets the current interest settings
+     * Makes a withdrawal from a savings account
      * 
-     * @return InterestSettings object or null if not found
+     * @param accountId Account ID
+     * @param amount Withdrawal amount
+     * @param description Transaction description
+     * @param performedById User ID who performed the operation
+     * @return true if withdrawal successful, false otherwise
      */
-    public static InterestSettings getCurrentInterestSettings() {
-        String query = "SELECT * FROM interest_settings WHERE status = ? ORDER BY effective_date DESC LIMIT 1";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, Constants.STATUS_ACTIVE);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                return mapResultSetToInterestSettings(rs);
-            }
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Gets the interest settings history
-     * 
-     * @return List of interest settings
-     */
-    public static List<InterestSettings> getInterestSettingsHistory() {
-        String query = "SELECT * FROM interest_settings ORDER BY effective_date DESC";
-        List<InterestSettings> settingsList = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
-            
-            while (rs.next()) {
-                settingsList.add(mapResultSetToInterestSettings(rs));
-            }
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return settingsList;
-    }
-    
-    /**
-     * Creates a new interest settings record
-     * 
-     * @param settings InterestSettings object
-     * @return true if created successfully, false otherwise
-     */
-    public static boolean createInterestSettings(InterestSettings settings) {
-        // Deactivate current interest settings first
-        deactivateCurrentInterestSettings();
-        
-        // Insert new interest settings
-        String query = "INSERT INTO interest_settings (interest_rate, minimum_balance, calculation_method, " +
-                "effective_date, change_basis, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setDouble(1, settings.getInterestRate());
-            stmt.setDouble(2, settings.getMinimumBalance());
-            stmt.setString(3, settings.getCalculationMethod());
-            stmt.setDate(4, new java.sql.Date(settings.getEffectiveDate().getTime()));
-            stmt.setString(5, settings.getChangeBasis());
-            stmt.setString(6, settings.getStatus());
-            stmt.setDate(7, DateUtils.getCurrentDate());
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Deactivates the current interest settings
-     * 
-     * @return true if deactivated successfully, false otherwise
-     */
-    private static boolean deactivateCurrentInterestSettings() {
-        String query = "UPDATE interest_settings SET status = ? WHERE status = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, Constants.STATUS_INACTIVE);
-            stmt.setString(2, Constants.STATUS_ACTIVE);
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Calculates interest for all accounts
-     * 
-     * @return true if calculations successful, false otherwise
-     */
-    public static boolean calculateInterest() {
-        InterestSettings settings = getCurrentInterestSettings();
-        
-        if (settings == null) {
+    public static boolean withdraw(int accountId, double amount, String description, int performedById) {
+        // Validate input
+        if (accountId <= 0 || amount <= 0) {
             return false;
         }
         
         Connection conn = null;
+        PreparedStatement updateStmt = null;
+        PreparedStatement transactionStmt = null;
         
         try {
+            // Get connection
             conn = DatabaseManager.getInstance().getConnection();
+            
+            // Start transaction
             conn.setAutoCommit(false);
             
-            // Get all active accounts with balance above minimum
-            String query = "SELECT * FROM savings_accounts WHERE status = ? AND balance >= ?";
+            // Get current account balance
+            SavingsAccount account = getSavingsAccountById(accountId);
             
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setString(1, Constants.ACCOUNT_ACTIVE);
-                stmt.setDouble(2, settings.getMinimumBalance());
-                
-                ResultSet rs = stmt.executeQuery();
-                
-                while (rs.next()) {
-                    SavingsAccount account = mapResultSetToSavingsAccount(rs);
-                    
-                    // Calculate interest amount
-                    double interestAmount = calculateInterestAmount(account.getBalance(), settings);
-                    
-                    // Update interest earned
-                    double newInterestEarned = account.getInterestEarned() + interestAmount;
-                    
-                    String updateQuery = "UPDATE savings_accounts SET interest_earned = ? WHERE id = ?";
-                    
-                    try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
-                        updateStmt.setDouble(1, newInterestEarned);
-                        updateStmt.setInt(2, account.getId());
-                        
-                        int rowsAffected = updateStmt.executeUpdate();
-                        
-                        if (rowsAffected <= 0) {
-                            conn.rollback();
-                            return false;
-                        }
-                    }
-                    
-                    // Record interest transaction
-                    String insertTransaction = "INSERT INTO transactions (account_id, user_id, transaction_type, " +
-                            "amount, running_balance, description, reference_number, transaction_date) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                    
-                    try (PreparedStatement txnStmt = conn.prepareStatement(insertTransaction)) {
-                        txnStmt.setInt(1, account.getId());
-                        txnStmt.setInt(2, 1); // System user ID (assuming ID 1 is system)
-                        txnStmt.setString(3, Constants.TRANSACTION_INTEREST_EARNING);
-                        txnStmt.setDouble(4, interestAmount);
-                        txnStmt.setDouble(5, account.getBalance() + newInterestEarned);
-                        txnStmt.setString(6, "Interest earned");
-                        txnStmt.setString(7, generateReferenceNumber(Constants.TRANSACTION_INTEREST_EARNING));
-                        txnStmt.setTimestamp(8, DateUtils.getCurrentTimestamp());
-                        
-                        int rowsAffected = txnStmt.executeUpdate();
-                        
-                        if (rowsAffected <= 0) {
-                            conn.rollback();
-                            return false;
-                        }
-                    }
-                }
+            if (account == null) {
+                return false;
             }
             
-            conn.commit();
-            return true;
+            // Check if balance is sufficient
+            if (account.getBalance() < amount) {
+                return false;
+            }
+            
+            // Calculate new balance
+            double newBalance = account.getBalance() - amount;
+            
+            // Update account balance
+            String updateQuery = "UPDATE savings_accounts SET balance = ?, last_transaction_date = ? WHERE id = ?";
+            
+            updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setDouble(1, newBalance);
+            updateStmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            updateStmt.setInt(3, accountId);
+            
+            int rowsAffected = updateStmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Add transaction record
+                String transactionId = generateTransactionId();
+                
+                String transactionQuery = "INSERT INTO transactions (transaction_id, account_id, " +
+                        "transaction_type, amount, transaction_date, description, balance_after, performed_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                transactionStmt = conn.prepareStatement(transactionQuery);
+                transactionStmt.setString(1, transactionId);
+                transactionStmt.setInt(2, accountId);
+                transactionStmt.setString(3, Constants.TRANSACTION_WITHDRAWAL);
+                transactionStmt.setDouble(4, amount);
+                transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+                transactionStmt.setString(6, description);
+                transactionStmt.setDouble(7, newBalance);
+                transactionStmt.setInt(8, performedById);
+                
+                transactionStmt.executeUpdate();
+                
+                // Commit transaction
+                conn.commit();
+                return true;
+            }
+            
+            // Rollback on failure
+            conn.rollback();
+            return false;
             
         } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
             e.printStackTrace();
+            
+            // Rollback on exception
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
             return false;
         } finally {
-            try {
-                if (conn != null) {
+            // Close resources
+            if (transactionStmt != null) {
+                try {
+                    transactionStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (updateStmt != null) {
+                try {
+                    updateStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
                     conn.setAutoCommit(true);
                     conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
     }
     
     /**
-     * Calculates interest amount based on balance and settings
+     * Updates a savings account
      * 
-     * @param balance Account balance
-     * @param settings Interest settings
-     * @return Interest amount
+     * @param account Savings account to update
+     * @return true if update successful, false otherwise
      */
-    private static double calculateInterestAmount(double balance, InterestSettings settings) {
-        double annualRate = settings.getInterestRate() / 100; // Convert percentage to decimal
-        
-        if (settings.getCalculationMethod().equals("DAILY")) {
-            // Daily interest calculation (annual rate / 365)
-            return balance * (annualRate / 365);
-        } else {
-            // Monthly interest calculation (annual rate / 12)
-            return balance * (annualRate / 12);
+    public static boolean updateSavingsAccount(SavingsAccount account) {
+        // Validate input
+        if (account == null || account.getId() <= 0) {
+            return false;
         }
+        
+        String query = "UPDATE savings_accounts SET account_type = ?, interest_rate = ?, status = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, account.getAccountType());
+            stmt.setDouble(2, account.getInterestRate());
+            stmt.setString(3, account.getStatus());
+            stmt.setInt(4, account.getId());
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Gets transactions for a savings account
+     * 
+     * @param accountId Account ID
+     * @param limit Maximum number of transactions to return (0 for all)
+     * @return List of transactions
+     */
+    public static List<Transaction> getTransactionsByAccountId(int accountId, int limit) {
+        List<Transaction> transactions = new ArrayList<>();
+        
+        String query = "SELECT t.*, u.username AS performed_by_username " +
+                "FROM transactions t " +
+                "LEFT JOIN users u ON t.performed_by = u.id " +
+                "WHERE t.account_id = ? " +
+                "ORDER BY t.transaction_date DESC";
+        
+        if (limit > 0) {
+            query += " LIMIT ?";
+        }
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, accountId);
+            
+            if (limit > 0) {
+                stmt.setInt(2, limit);
+            }
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Transaction transaction = new Transaction();
+                transaction.setId(rs.getInt("id"));
+                transaction.setTransactionId(rs.getString("transaction_id"));
+                transaction.setAccountId(rs.getInt("account_id"));
+                transaction.setTransactionType(rs.getString("transaction_type"));
+                transaction.setAmount(rs.getDouble("amount"));
+                transaction.setTransactionDate(rs.getTimestamp("transaction_date"));
+                transaction.setDescription(rs.getString("description"));
+                transaction.setBalanceAfter(rs.getDouble("balance_after"));
+                transaction.setPerformedById(rs.getInt("performed_by"));
+                transaction.setPerformedByUsername(rs.getString("performed_by_username"));
+                transaction.setCreatedAt(rs.getTimestamp("created_at"));
+                
+                transactions.add(transaction);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return transactions;
+    }
+    
+    /**
+     * Calculates and applies interest for a savings account
+     * 
+     * @param accountId Account ID
+     * @param performedById User ID who performed the operation
+     * @return true if interest application successful, false otherwise
+     */
+    public static boolean applyInterest(int accountId, int performedById) {
+        // Validate input
+        if (accountId <= 0) {
+            return false;
+        }
+        
+        Connection conn = null;
+        PreparedStatement updateStmt = null;
+        PreparedStatement transactionStmt = null;
+        
+        try {
+            // Get connection
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            // Start transaction
+            conn.setAutoCommit(false);
+            
+            // Get current account details
+            SavingsAccount account = getSavingsAccountById(accountId);
+            
+            if (account == null || !Constants.STATUS_ACTIVE.equals(account.getStatus())) {
+                return false;
+            }
+            
+            // Calculate interest amount (simplified annual interest)
+            double interestAmount = account.getBalance() * account.getInterestRate() / 12; // Monthly interest
+            double newBalance = account.getBalance() + interestAmount;
+            
+            // Update account balance
+            String updateQuery = "UPDATE savings_accounts SET balance = ?, last_transaction_date = ? WHERE id = ?";
+            
+            updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setDouble(1, newBalance);
+            updateStmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            updateStmt.setInt(3, accountId);
+            
+            int rowsAffected = updateStmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Add interest transaction record
+                String transactionId = generateTransactionId();
+                
+                String transactionQuery = "INSERT INTO transactions (transaction_id, account_id, " +
+                        "transaction_type, amount, transaction_date, description, balance_after, performed_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                transactionStmt = conn.prepareStatement(transactionQuery);
+                transactionStmt.setString(1, transactionId);
+                transactionStmt.setInt(2, accountId);
+                transactionStmt.setString(3, Constants.TRANSACTION_INTEREST_EARNING);
+                transactionStmt.setDouble(4, interestAmount);
+                transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+                transactionStmt.setString(6, "Interest earning");
+                transactionStmt.setDouble(7, newBalance);
+                transactionStmt.setInt(8, performedById);
+                
+                transactionStmt.executeUpdate();
+                
+                // Commit transaction
+                conn.commit();
+                return true;
+            }
+            
+            // Rollback on failure
+            conn.rollback();
+            return false;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            
+            // Rollback on exception
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            return false;
+        } finally {
+            // Close resources
+            if (transactionStmt != null) {
+                try {
+                    transactionStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (updateStmt != null) {
+                try {
+                    updateStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Closes a savings account
+     * 
+     * @param accountId Account ID
+     * @param performedById User ID who performed the operation
+     * @return true if closure successful, false otherwise
+     */
+    public static boolean closeSavingsAccount(int accountId, int performedById) {
+        // Validate input
+        if (accountId <= 0) {
+            return false;
+        }
+        
+        Connection conn = null;
+        PreparedStatement updateStmt = null;
+        PreparedStatement transactionStmt = null;
+        
+        try {
+            // Get connection
+            conn = DatabaseManager.getInstance().getConnection();
+            
+            // Start transaction
+            conn.setAutoCommit(false);
+            
+            // Get current account details
+            SavingsAccount account = getSavingsAccountById(accountId);
+            
+            if (account == null) {
+                return false;
+            }
+            
+            // Check if balance is zero
+            if (account.getBalance() > 0) {
+                // Withdraw all balance first
+                double amount = account.getBalance();
+                
+                // Add withdrawal transaction
+                String transactionId = generateTransactionId();
+                
+                String transactionQuery = "INSERT INTO transactions (transaction_id, account_id, " +
+                        "transaction_type, amount, transaction_date, description, balance_after, performed_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                transactionStmt = conn.prepareStatement(transactionQuery);
+                transactionStmt.setString(1, transactionId);
+                transactionStmt.setInt(2, accountId);
+                transactionStmt.setString(3, Constants.TRANSACTION_WITHDRAWAL);
+                transactionStmt.setDouble(4, amount);
+                transactionStmt.setTimestamp(5, DateUtils.getCurrentTimestamp());
+                transactionStmt.setString(6, "Final withdrawal for account closure");
+                transactionStmt.setDouble(7, 0);
+                transactionStmt.setInt(8, performedById);
+                
+                transactionStmt.executeUpdate();
+            }
+            
+            // Update account status to closed
+            String updateQuery = "UPDATE savings_accounts SET balance = 0, status = ?, last_transaction_date = ? WHERE id = ?";
+            
+            updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setString(1, Constants.SAVINGS_STATUS_CLOSED);
+            updateStmt.setTimestamp(2, DateUtils.getCurrentTimestamp());
+            updateStmt.setInt(3, accountId);
+            
+            int rowsAffected = updateStmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Commit transaction
+                conn.commit();
+                return true;
+            }
+            
+            // Rollback on failure
+            conn.rollback();
+            return false;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            
+            // Rollback on exception
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            return false;
+        } finally {
+            // Close resources
+            if (transactionStmt != null) {
+                try {
+                    transactionStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (updateStmt != null) {
+                try {
+                    updateStmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Gets a transaction type display name
+     * 
+     * @param transactionType Transaction type code
+     * @return Display name
+     */
+    public static String getTransactionTypeDisplay(String transactionType) {
+        if (transactionType == null) {
+            return "";
+        }
+        
+        switch (transactionType) {
+            case Constants.TRANSACTION_DEPOSIT:
+                return "Deposit";
+            case Constants.TRANSACTION_WITHDRAWAL:
+                return "Withdrawal";
+            case Constants.TRANSACTION_INTEREST_EARNING:
+                return "Interest Earning";
+            case Constants.TRANSACTION_LOAN_RELEASE:
+                return "Loan Release";
+            case Constants.TRANSACTION_LOAN_PAYMENT:
+                return "Loan Payment";
+            default:
+                return transactionType;
+        }
+    }
+    
+    /**
+     * Maps a result set to a SavingsAccount object
+     * 
+     * @param rs Result set
+     * @return SavingsAccount object
+     * @throws SQLException if an error occurs
+     */
+    private static SavingsAccount mapResultSetToSavingsAccount(ResultSet rs) throws SQLException {
+        SavingsAccount account = new SavingsAccount();
+        account.setId(rs.getInt("id"));
+        account.setAccountNumber(rs.getString("account_number"));
+        account.setMemberId(rs.getInt("member_id"));
+        account.setAccountType(rs.getString("account_type"));
+        account.setBalance(rs.getDouble("balance"));
+        account.setInterestRate(rs.getDouble("interest_rate"));
+        account.setStatus(rs.getString("status"));
+        account.setOpenedDate(rs.getDate("opened_date"));
+        account.setLastTransactionDate(rs.getTimestamp("last_transaction_date"));
+        account.setCreatedAt(rs.getTimestamp("created_at"));
+        account.setUpdatedAt(rs.getTimestamp("updated_at"));
+        return account;
     }
     
     /**
      * Generates a unique account number
      * 
-     * @return Generated account number
+     * @param memberId Member ID
+     * @return Account number
      */
-    private static String generateAccountNumber() {
-        // Format: SA-YYYYMMDD-XXXX (where XXXX is a random 4-digit number)
-        String prefix = "SA-";
-        String datePart = new SimpleDateFormat("yyyyMMdd").format(new Date());
-        String randomPart = String.format("%04d", new Random().nextInt(10000));
-        
-        return prefix + datePart + "-" + randomPart;
+    private static String generateAccountNumber(int memberId) {
+        // Generate timestamp-based account number
+        long timestamp = System.currentTimeMillis();
+        return "SA" + memberId + timestamp % 1000000;
     }
     
     /**
-     * Generates a unique reference number for transactions
+     * Generates a unique transaction ID
      * 
-     * @param transactionType Transaction type code
-     * @return Generated reference number
+     * @return Transaction ID
      */
-    public static String generateReferenceNumber(String transactionType) {
-        // Format: [TYPE]-YYYYMMDD-HHMMSS-XXX (where XXX is a random 3-digit number)
-        String prefix = "";
-        
-        switch (transactionType) {
-            case Constants.TRANSACTION_DEPOSIT:
-                prefix = "DEP";
-                break;
-            case Constants.TRANSACTION_WITHDRAWAL:
-                prefix = "WDW";
-                break;
-            case Constants.TRANSACTION_INTEREST_EARNING:
-                prefix = "INT";
-                break;
-            case Constants.TRANSACTION_LOAN_RELEASE:
-                prefix = "LNR";
-                break;
-            case Constants.TRANSACTION_LOAN_PAYMENT:
-                prefix = "LNP";
-                break;
-            case Constants.TRANSACTION_FEE:
-                prefix = "FEE";
-                break;
-            default:
-                prefix = "TXN";
-        }
-        
-        String datePart = new SimpleDateFormat("yyyyMMdd").format(new Date());
-        String timePart = new SimpleDateFormat("HHmmss").format(new Date());
-        String randomPart = String.format("%03d", new Random().nextInt(1000));
-        
-        return prefix + "-" + datePart + "-" + timePart + "-" + randomPart;
-    }
-    
-    /**
-     * Maps a ResultSet row to a SavingsAccount object
-     * 
-     * @param rs ResultSet
-     * @return SavingsAccount object
-     * @throws SQLException If database error occurs
-     */
-    private static SavingsAccount mapResultSetToSavingsAccount(ResultSet rs) throws SQLException {
-        SavingsAccount account = new SavingsAccount();
-        account.setId(rs.getInt("id"));
-        account.setMemberId(rs.getInt("member_id"));
-        account.setAccountNumber(rs.getString("account_number"));
-        account.setBalance(rs.getDouble("balance"));
-        account.setInterestEarned(rs.getDouble("interest_earned"));
-        account.setStatus(rs.getString("status"));
-        account.setOpenDate(rs.getDate("open_date"));
-        account.setLastActivityDate(rs.getDate("last_activity_date"));
-        return account;
-    }
-    
-    /**
-     * Maps a ResultSet row to an InterestSettings object
-     * 
-     * @param rs ResultSet
-     * @return InterestSettings object
-     * @throws SQLException If database error occurs
-     */
-    private static InterestSettings mapResultSetToInterestSettings(ResultSet rs) throws SQLException {
-        InterestSettings settings = new InterestSettings();
-        settings.setId(rs.getInt("id"));
-        settings.setInterestRate(rs.getDouble("interest_rate"));
-        settings.setMinimumBalance(rs.getDouble("minimum_balance"));
-        settings.setCalculationMethod(rs.getString("calculation_method"));
-        settings.setEffectiveDate(rs.getDate("effective_date"));
-        settings.setChangeBasis(rs.getString("change_basis"));
-        settings.setStatus(rs.getString("status"));
-        settings.setCreatedAt(rs.getDate("created_at"));
-        return settings;
+    private static String generateTransactionId() {
+        // Generate timestamp-based transaction ID
+        long timestamp = System.currentTimeMillis();
+        int random = (int) (Math.random() * 1000);
+        return "TXN" + timestamp % 10000000 + random;
     }
 }

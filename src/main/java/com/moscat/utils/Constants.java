@@ -25,12 +25,24 @@ public class Constants {
     public static final String SAVINGS_STATUS_DORMANT = "Dormant";
     public static final String SAVINGS_STATUS_CLOSED = "Closed";
     
+    // Generic status constants
+    public static final String STATUS_ACTIVE = "Active";
+    public static final String STATUS_INACTIVE = "Inactive";
+    public static final String ACCOUNT_ACTIVE = "Active";
+    
     // Transaction types
     public static final String TRANSACTION_TYPE_DEPOSIT = "Deposit";
     public static final String TRANSACTION_TYPE_WITHDRAWAL = "Withdrawal";
     public static final String TRANSACTION_TYPE_TRANSFER = "Transfer";
     public static final String TRANSACTION_TYPE_INTEREST = "Interest";
     public static final String TRANSACTION_TYPE_FEE = "Fee";
+    
+    // Shorthand transaction types for code use
+    public static final String TRANSACTION_DEPOSIT = "Deposit";
+    public static final String TRANSACTION_WITHDRAWAL = "Withdrawal";
+    public static final String TRANSACTION_INTEREST_EARNING = "Interest";
+    public static final String TRANSACTION_LOAN_RELEASE = "Loan Release";
+    public static final String TRANSACTION_LOAN_PAYMENT = "Loan Payment";
     
     // Loan types
     public static final String LOAN_TYPE_PERSONAL = "Personal";
