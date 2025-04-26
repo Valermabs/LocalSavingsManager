@@ -1,6 +1,8 @@
 package com.moscat.models;
 
+import com.moscat.utils.DateUtils;
 import java.util.Date;
+import java.util.Calendar;
 
 /**
  * Model for member data
@@ -369,5 +371,63 @@ public class Member {
         }
         sb.append(" ").append(lastName);
         return sb.toString();
+    }
+    
+    /**
+     * Gets the age of the member in years
+     * 
+     * @return Age in years, or 0 if birth date is not set
+     */
+    public int getAge() {
+        if (birthDate == null) {
+            return 0;
+        }
+        
+        return DateUtils.calculateAge(birthDate);
+    }
+    
+    /**
+     * Checks if the member is active
+     * 
+     * @return true if the member is active, false otherwise
+     */
+    public boolean isActive() {
+        return status != null && status.equals(com.moscat.utils.Constants.STATUS_ACTIVE);
+    }
+    
+    /**
+     * Checks if the member is inactive
+     * 
+     * @return true if the member is inactive, false otherwise
+     */
+    public boolean isInactive() {
+        return status != null && status.equals(com.moscat.utils.Constants.STATUS_INACTIVE);
+    }
+    
+    /**
+     * Checks if the member is pending
+     * 
+     * @return true if the member is pending, false otherwise
+     */
+    public boolean isPending() {
+        return status != null && status.equals(com.moscat.utils.Constants.STATUS_PENDING);
+    }
+    
+    /**
+     * Checks if the member has a dormant status (used in some reports)
+     * 
+     * @return true if the member is considered dormant
+     */
+    public boolean isDormant() {
+        if (lastActivityDate == null) {
+            return false;
+        }
+        
+        // A member is considered dormant if no activity for 6 months
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -6);
+        Date sixMonthsAgo = cal.getTime();
+        
+        return lastActivityDate.before(sixMonthsAgo);
     }
 }

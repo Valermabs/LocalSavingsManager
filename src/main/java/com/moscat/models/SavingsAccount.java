@@ -15,6 +15,7 @@ public class SavingsAccount {
     private String status;
     private Date openDate;
     private Date lastActivityDate;
+    private Date lastInterestComputationDate;
     
     /**
      * Default constructor
@@ -167,11 +168,56 @@ public class SavingsAccount {
     }
     
     /**
+     * Gets the last interest computation date
+     * 
+     * @return Last interest computation date
+     */
+    public Date getLastInterestComputationDate() {
+        return lastInterestComputationDate;
+    }
+    
+    /**
+     * Sets the last interest computation date
+     * 
+     * @param lastInterestComputationDate Last interest computation date
+     */
+    public void setLastInterestComputationDate(Date lastInterestComputationDate) {
+        this.lastInterestComputationDate = lastInterestComputationDate;
+    }
+    
+    /**
      * Gets the total balance (balance + interest earned)
      * 
      * @return Total balance
      */
     public double getTotalBalance() {
         return balance + interestEarned;
+    }
+    
+    /**
+     * Checks if the account is active
+     * 
+     * @return true if the account is active, false otherwise
+     */
+    public boolean isActive() {
+        return status != null && status.equals(com.moscat.utils.Constants.ACCOUNT_ACTIVE);
+    }
+    
+    /**
+     * Checks if the account is dormant
+     * 
+     * @return true if the account is dormant, false otherwise
+     */
+    public boolean isDormant() {
+        return status != null && status.equals(com.moscat.utils.Constants.ACCOUNT_DORMANT);
+    }
+    
+    /**
+     * Checks if the account is closed
+     * 
+     * @return true if the account is closed, false otherwise
+     */
+    public boolean isClosed() {
+        return status != null && status.equals(com.moscat.utils.Constants.ACCOUNT_CLOSED);
     }
 }
