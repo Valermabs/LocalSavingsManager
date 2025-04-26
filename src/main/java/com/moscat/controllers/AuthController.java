@@ -29,7 +29,8 @@ public class AuthController {
      */
     public static User login(String username, String password) {
         // For testing purposes only, allow login with default admin credentials
-        if (username.equals("mmpcadmin") && password.equals("#MMPC@dmin2o25")) {
+        System.out.println("Login attempt with username: '" + username + "' and password length: " + password.length());
+        if (username.trim().equals("mmpcadmin") && password.equals("#MMPC@dmin2o25")) {
             User defaultAdmin = new User();
             defaultAdmin.setId(1);
             defaultAdmin.setUsername("mmpcadmin");
