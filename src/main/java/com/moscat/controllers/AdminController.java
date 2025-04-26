@@ -1,0 +1,462 @@
+package com.moscat.controllers;
+
+import com.moscat.models.User;
+import com.moscat.utils.Constants;
+import com.moscat.utils.DatabaseManager;
+import com.moscat.utils.PasswordHasher;
+import com.moscat.utils.DateUtils;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Controller for administrative tasks and system management
+ */
+public class AdminController {
+    
+    /**
+     * Creates a new admin user
+     * 
+     * @param user User object
+     * @param password Raw password
+     * @return true if admin created successfully, false otherwise
+     */
+    public static boolean createAdmin(User user, String password) {
+        // Only super admin can create other admin accounts
+        if (!AuthController.isSuperAdmin()) {
+            return false;
+        }
+        
+        String hashedPassword = PasswordHasher.hashPassword(password);
+        
+        String query = "INSERT INTO users (username, password, role, status, full_name, " +
+                "email, contact_number, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, hashedPassword);
+            stmt.setString(3, user.getRole());
+            stmt.setString(4, Constants.STATUS_ACTIVE);
+            stmt.setString(5, user.getFullName());
+            stmt.setString(6, user.getEmail());
+            stmt.setString(7, user.getContactNumber());
+            stmt.setDate(8, DateUtils.getCurrentDate());
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Updates an admin user's information
+     * 
+     * @param user User object
+     * @return true if admin updated successfully, false otherwise
+     */
+    public static boolean updateAdmin(User user) {
+        // Only super admin can update other admin accounts
+        if (!AuthController.isSuperAdmin()) {
+            return false;
+        }
+        
+        String query = "UPDATE users SET full_name = ?, email = ?, contact_number = ?, " +
+                "status = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, user.getFullName());
+            stmt.setString(2, user.getEmail());
+            stmt.setString(3, user.getContactNumber());
+            stmt.setString(4, user.getStatus());
+            stmt.setInt(5, user.getId());
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Updates an admin user's role
+     * 
+     * @param userId User ID
+     * @param role New role
+     * @return true if role updated successfully, false otherwise
+     */
+    public static boolean updateAdminRole(int userId, String role) {
+        // Only super admin can update roles
+        if (!AuthController.isSuperAdmin()) {
+            return false;
+        }
+        
+        // Cannot change super admin's role
+        User user = AuthController.getUserById(userId);
+        if (user != null && user.isSuperAdmin()) {
+            return false;
+        }
+        
+        String query = "UPDATE users SET role = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, role);
+            stmt.setInt(2, userId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Resets an admin user's password
+     * 
+     * @param userId User ID
+     * @param newPassword New password
+     * @return true if password reset successfully, false otherwise
+     */
+    public static boolean resetAdminPassword(int userId, String newPassword) {
+        // Only super admin can reset passwords
+        if (!AuthController.isSuperAdmin()) {
+            return false;
+        }
+        
+        String hashedPassword = PasswordHasher.hashPassword(newPassword);
+        
+        String query = "UPDATE users SET password = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, hashedPassword);
+            stmt.setInt(2, userId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Deactivates an admin user
+     * 
+     * @param userId User ID
+     * @return true if admin deactivated successfully, false otherwise
+     */
+    public static boolean deactivateAdmin(int userId) {
+        // Only super admin can deactivate accounts
+        if (!AuthController.isSuperAdmin()) {
+            return false;
+        }
+        
+        // Cannot deactivate super admin account
+        User user = AuthController.getUserById(userId);
+        if (user != null && user.isSuperAdmin()) {
+            return false;
+        }
+        
+        String query = "UPDATE users SET status = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, Constants.STATUS_INACTIVE);
+            stmt.setInt(2, userId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Activates an admin user
+     * 
+     * @param userId User ID
+     * @return true if admin activated successfully, false otherwise
+     */
+    public static boolean activateAdmin(int userId) {
+        // Only super admin can activate accounts
+        if (!AuthController.isSuperAdmin()) {
+            return false;
+        }
+        
+        String query = "UPDATE users SET status = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, Constants.STATUS_ACTIVE);
+            stmt.setInt(2, userId);
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Gets all admin users
+     * 
+     * @return List of admin users
+     */
+    public static List<User> getAllAdmins() {
+        String query = "SELECT * FROM users ORDER BY username";
+        List<User> admins = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                User admin = new User();
+                admin.setId(rs.getInt("id"));
+                admin.setUsername(rs.getString("username"));
+                admin.setRole(rs.getString("role"));
+                admin.setStatus(rs.getString("status"));
+                admin.setFullName(rs.getString("full_name"));
+                admin.setEmail(rs.getString("email"));
+                admin.setContactNumber(rs.getString("contact_number"));
+                admin.setCreatedAt(rs.getDate("created_at"));
+                admin.setLastLogin(rs.getDate("last_login"));
+                
+                admins.add(admin);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return admins;
+    }
+    
+    /**
+     * Gets all active admin users
+     * 
+     * @return List of active admin users
+     */
+    public static List<User> getActiveAdmins() {
+        String query = "SELECT * FROM users WHERE status = ? ORDER BY username";
+        List<User> admins = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, Constants.STATUS_ACTIVE);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                User admin = new User();
+                admin.setId(rs.getInt("id"));
+                admin.setUsername(rs.getString("username"));
+                admin.setRole(rs.getString("role"));
+                admin.setStatus(rs.getString("status"));
+                admin.setFullName(rs.getString("full_name"));
+                admin.setEmail(rs.getString("email"));
+                admin.setContactNumber(rs.getString("contact_number"));
+                admin.setCreatedAt(rs.getDate("created_at"));
+                admin.setLastLogin(rs.getDate("last_login"));
+                
+                admins.add(admin);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return admins;
+    }
+    
+    /**
+     * Checks if a username is available
+     * 
+     * @param username Username to check
+     * @return true if username is available, false otherwise
+     */
+    public static boolean isUsernameAvailable(String username) {
+        String query = "SELECT COUNT(*) FROM users WHERE username = ?";
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                int count = rs.getInt(1);
+                return count == 0;
+            }
+            
+            return true;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Generates system statistics
+     * 
+     * @return Statistics object with system metrics
+     */
+    public static SystemStatistics getSystemStatistics() {
+        SystemStatistics stats = new SystemStatistics();
+        
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            // Get total member count
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM members")) {
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.totalMembers = rs.getInt(1);
+                }
+            }
+            
+            // Get active member count
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM members WHERE status = ?")) {
+                stmt.setString(1, Constants.ACCOUNT_ACTIVE);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.activeMembers = rs.getInt(1);
+                }
+            }
+            
+            // Get dormant member count
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM members WHERE status = ?")) {
+                stmt.setString(1, Constants.ACCOUNT_DORMANT);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.dormantMembers = rs.getInt(1);
+                }
+            }
+            
+            // Get total savings balance
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT SUM(balance) FROM savings_accounts")) {
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.totalSavingsBalance = rs.getDouble(1);
+                }
+            }
+            
+            // Get total interest earned
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT SUM(interest_earned) FROM savings_accounts")) {
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.totalInterestEarned = rs.getDouble(1);
+                }
+            }
+            
+            // Get total active loans
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM loans WHERE status = ?")) {
+                stmt.setString(1, Constants.LOAN_ACTIVE);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.activeLoans = rs.getInt(1);
+                }
+            }
+            
+            // Get total loan portfolio
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT SUM(remaining_balance) FROM loans WHERE status = ?")) {
+                stmt.setString(1, Constants.LOAN_ACTIVE);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.totalLoanPortfolio = rs.getDouble(1);
+                }
+            }
+            
+            // Get pending loan applications
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM loans WHERE status = ?")) {
+                stmt.setString(1, Constants.LOAN_PENDING);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.pendingLoanApplications = rs.getInt(1);
+                }
+            }
+            
+            // Get transactions today
+            String today = DateUtils.formatDate(DateUtils.getCurrentDate());
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM transactions WHERE DATE(transaction_date) = ?")) {
+                stmt.setString(1, today);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.transactionsToday = rs.getInt(1);
+                }
+            }
+            
+            // Get deposits today
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT SUM(amount) FROM transactions WHERE DATE(transaction_date) = ? AND transaction_type = ?")) {
+                stmt.setString(1, today);
+                stmt.setString(2, Constants.TRANSACTION_DEPOSIT);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.depositsToday = rs.getDouble(1);
+                    if (rs.wasNull()) {
+                        stats.depositsToday = 0;
+                    }
+                }
+            }
+            
+            // Get withdrawals today
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT SUM(amount) FROM transactions WHERE DATE(transaction_date) = ? AND transaction_type = ?")) {
+                stmt.setString(1, today);
+                stmt.setString(2, Constants.TRANSACTION_WITHDRAWAL);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    stats.withdrawalsToday = rs.getDouble(1);
+                    if (rs.wasNull()) {
+                        stats.withdrawalsToday = 0;
+                    }
+                }
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return stats;
+    }
+    
+    /**
+     * Inner class for system statistics
+     */
+    public static class SystemStatistics {
+        public int totalMembers;
+        public int activeMembers;
+        public int dormantMembers;
+        public double totalSavingsBalance;
+        public double totalInterestEarned;
+        public int activeLoans;
+        public double totalLoanPortfolio;
+        public int pendingLoanApplications;
+        public int transactionsToday;
+        public double depositsToday;
+        public double withdrawalsToday;
+    }
+}
