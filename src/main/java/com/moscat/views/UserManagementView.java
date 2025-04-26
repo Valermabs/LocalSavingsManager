@@ -346,16 +346,16 @@ public class UserManagementView extends JPanel {
         
         // Find selected user
         List<User> users = AdminController.getAllAdmins();
-        User selectedUser = null;
+        User tempUser = null;
         
         for (User user : users) {
             if (user.getUsername().equals(username)) {
-                selectedUser = user;
+                tempUser = user;
                 break;
             }
         }
         
-        if (selectedUser == null) {
+        if (tempUser == null) {
             JOptionPane.showMessageDialog(parentFrame, 
                     "User not found.", 
                     "Error", 
@@ -364,13 +364,16 @@ public class UserManagementView extends JPanel {
         }
         
         // Cannot edit super admin
-        if (selectedUser.isSuperAdmin()) {
+        if (tempUser.isSuperAdmin()) {
             JOptionPane.showMessageDialog(parentFrame, 
                     "Cannot edit super admin account.", 
                     "Access Denied", 
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
+        
+        // Create a final reference to be used in inner classes
+        final User selectedUser = tempUser;
         
         // Show edit dialog
         JDialog dialog = new JDialog(parentFrame, "Edit User", true);
@@ -434,10 +437,10 @@ public class UserManagementView extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Validate input
-                String role = (String) roleComboBox.getSelectedItem();
-                String fullName = fullNameField.getText().trim();
-                String email = emailField.getText().trim();
-                String contact = contactField.getText().trim();
+                final String role = (String) roleComboBox.getSelectedItem();
+                final String fullName = fullNameField.getText().trim();
+                final String email = emailField.getText().trim();
+                final String contact = contactField.getText().trim();
                 
                 if (fullName.isEmpty()) {
                     JOptionPane.showMessageDialog(dialog, 
@@ -447,16 +450,19 @@ public class UserManagementView extends JPanel {
                     return;
                 }
                 
+                // Create a final reference to selectedUser for use in the inner class
+                final User finalSelectedUser = selectedUser;
+                
                 // Update the user
                 try {
-                    // Update user object
-                    selectedUser.setRole(role);
-                    selectedUser.setFullName(fullName);
-                    selectedUser.setEmail(email);
-                    selectedUser.setContactNumber(contact);
+                    // Update user object with final variables
+                    finalSelectedUser.setRole(role);
+                    finalSelectedUser.setFullName(fullName);
+                    finalSelectedUser.setEmail(email);
+                    finalSelectedUser.setContactNumber(contact);
                     
-                    boolean roleSuccess = AdminController.updateAdminRole(selectedUser.getId(), role);
-                    boolean infoSuccess = AdminController.updateAdmin(selectedUser);
+                    final boolean roleSuccess = AdminController.updateAdminRole(finalSelectedUser.getId(), role);
+                    final boolean infoSuccess = AdminController.updateAdmin(finalSelectedUser);
                     
                     if (roleSuccess && infoSuccess) {
                         JOptionPane.showMessageDialog(dialog, 
@@ -509,16 +515,16 @@ public class UserManagementView extends JPanel {
         
         // Find selected user
         List<User> users = AdminController.getAllAdmins();
-        User selectedUser = null;
+        User tempUser = null;
         
         for (User user : users) {
             if (user.getUsername().equals(username)) {
-                selectedUser = user;
+                tempUser = user;
                 break;
             }
         }
         
-        if (selectedUser == null) {
+        if (tempUser == null) {
             JOptionPane.showMessageDialog(parentFrame, 
                     "User not found.", 
                     "Error", 
@@ -527,13 +533,16 @@ public class UserManagementView extends JPanel {
         }
         
         // Cannot reset super admin password (for security)
-        if (selectedUser.isSuperAdmin()) {
+        if (tempUser.isSuperAdmin()) {
             JOptionPane.showMessageDialog(parentFrame, 
                     "Cannot reset super admin password.", 
                     "Access Denied", 
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
+        
+        // Create a final reference to be used in inner classes
+        final User selectedUser = tempUser;
         
         // Show reset password dialog
         JDialog dialog = new JDialog(parentFrame, "Reset Password", true);
@@ -578,8 +587,8 @@ public class UserManagementView extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Validate input
-                String newPassword = new String(newPasswordField.getPassword());
-                String confirmPassword = new String(confirmPasswordField.getPassword());
+                final String newPassword = new String(newPasswordField.getPassword());
+                final String confirmPassword = new String(confirmPasswordField.getPassword());
                 
                 if (newPassword.isEmpty()) {
                     JOptionPane.showMessageDialog(dialog, 
@@ -597,9 +606,12 @@ public class UserManagementView extends JPanel {
                     return;
                 }
                 
+                // Create a final reference to selectedUser for the inner class
+                final User finalSelectedUser = selectedUser;
+                
                 // Reset the password
                 try {
-                    boolean success = AdminController.resetAdminPassword(selectedUser.getId(), newPassword);
+                    final boolean success = AdminController.resetAdminPassword(finalSelectedUser.getId(), newPassword);
                     
                     if (success) {
                         JOptionPane.showMessageDialog(dialog, 
@@ -662,16 +674,16 @@ public class UserManagementView extends JPanel {
         
         // Find selected user
         List<User> users = AdminController.getAllAdmins();
-        User selectedUser = null;
+        User tempUser = null;
         
         for (User user : users) {
             if (user.getUsername().equals(username)) {
-                selectedUser = user;
+                tempUser = user;
                 break;
             }
         }
         
-        if (selectedUser == null) {
+        if (tempUser == null) {
             JOptionPane.showMessageDialog(parentFrame, 
                     "User not found.", 
                     "Error", 
@@ -680,7 +692,7 @@ public class UserManagementView extends JPanel {
         }
         
         // Cannot deactivate super admin
-        if (!activate && selectedUser.isSuperAdmin()) {
+        if (!activate && tempUser.isSuperAdmin()) {
             JOptionPane.showMessageDialog(parentFrame, 
                     "Cannot deactivate super admin account.", 
                     "Access Denied", 
@@ -696,6 +708,9 @@ public class UserManagementView extends JPanel {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
+        
+        // Create a final reference for inner classes
+        final User selectedUser = tempUser;
         
         int confirmResult = JOptionPane.showConfirmDialog(parentFrame, 
                 "Are you sure you want to " + (activate ? "activate" : "deactivate") + " this user?", 
