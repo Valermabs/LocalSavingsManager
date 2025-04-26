@@ -16,6 +16,10 @@ author = "agent"
 task = "workflow.run"
 args = "MOSCAT Application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "MOSCAT VNC"
+
 [[workflows.workflow]]
 name = "MOSCAT Application"
 author = "agent"
@@ -23,6 +27,14 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "mvn clean compile exec:java -Dexec.mainClass=\"com.moscat.App\""
+
+[[workflows.workflow]]
+name = "MOSCAT VNC"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "DISPLAY=:1 mvn clean compile exec:java -Dexec.mainClass=\"com.moscat.App\""
 
 [deployment]
 run = ["sh", "-c", "cd src && javac -d ../out main/java/com/moscat/App.java main/java/com/moscat/utils/*.java main/java/com/moscat/models/*.java main/java/com/moscat/controllers/*.java main/java/com/moscat/views/*.java main/java/com/moscat/views/components/*.java && cd .. && java -cp out:. com.moscat.App"]
