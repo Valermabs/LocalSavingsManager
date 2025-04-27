@@ -179,7 +179,8 @@ public class InterestController {
                 interestSetting.getInterestRate(), 
                 interestSetting.getComputationBasis());
         
-        return TransactionController.recordInterest(member.getId(), interestAmount, description, processedBy);
+        int transactionId = TransactionController.recordInterest(member.getId(), interestAmount, description, processedBy);
+        return transactionId > 0;
     }
     
     /**

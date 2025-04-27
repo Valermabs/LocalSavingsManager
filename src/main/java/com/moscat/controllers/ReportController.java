@@ -600,6 +600,11 @@ public class ReportController {
      * @return Human-readable transaction type
      */
     private static String getTransactionTypeDisplay(String transactionType) {
+        // Handle transaction fee specially since it's a double constant
+        if (transactionType.equals(String.valueOf(Constants.TRANSACTION_FEE))) {
+            return "Fee";
+        }
+        
         switch (transactionType) {
             case Constants.TRANSACTION_DEPOSIT:
                 return "Deposit";
@@ -611,8 +616,6 @@ public class ReportController {
                 return "Loan Release";
             case Constants.TRANSACTION_LOAN_PAYMENT:
                 return "Loan Payment";
-            case Constants.TRANSACTION_FEE:
-                return "Fee";
             default:
                 return transactionType;
         }

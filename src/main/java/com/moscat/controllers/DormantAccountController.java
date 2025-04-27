@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.moscat.models.DormantAccount;
@@ -89,7 +90,11 @@ public class DormantAccountController {
                 }
                 
                 // Get the last transaction date
-                LocalDateTime lastTransactionDate = TransactionController.getLastTransactionDate(memberId);
+                Date lastTxDate = TransactionController.getLastTransactionDate(memberId);
+                LocalDateTime lastTransactionDate = null;
+                if (lastTxDate != null) {
+                    lastTransactionDate = new java.sql.Date(lastTxDate.getTime()).toLocalDate().atStartOfDay();
+                }
                 
                 // Create dormant account record
                 String insertQuery = "INSERT INTO dormant_accounts (member_id, last_transaction_date, dormant_since, dormant_status, notification_sent) VALUES (?, ?, ?, ?, ?)";

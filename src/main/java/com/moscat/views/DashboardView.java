@@ -9,6 +9,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Map;
 
 /**
  * Base class for all dashboard views
@@ -358,11 +359,12 @@ public abstract class DashboardView extends JDialog {
             
             // Attempt to change password
             User currentUser = AuthController.getCurrentUser();
-            boolean success = AuthController.changePassword(
+            Map<String, Object> passwordResult = AuthController.changePassword(
                     currentUser.getId(),
                     currentPassword,
                     newPassword);
             
+            boolean success = (boolean) passwordResult.get("success");
             if (success) {
                 JOptionPane.showMessageDialog(
                         this,
