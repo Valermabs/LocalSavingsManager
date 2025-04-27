@@ -55,6 +55,7 @@ public class DatabaseInitializer {
         // Create members table
         String createMembersTable = "CREATE TABLE IF NOT EXISTS members ("
                 + "id INT PRIMARY KEY AUTO_INCREMENT, "
+                + "member_number VARCHAR(20) UNIQUE, "
                 + "first_name VARCHAR(50) NOT NULL, "
                 + "middle_name VARCHAR(50), "
                 + "last_name VARCHAR(50) NOT NULL, "
@@ -70,6 +71,8 @@ public class DatabaseInitializer {
                 + "average_net_monthly_income DECIMAL(15,2) NOT NULL, "
                 + "savings_balance DECIMAL(15,2) DEFAULT 0.00, "
                 + "interest_earned DECIMAL(15,2) DEFAULT 0.00, "
+                + "join_date DATE, "
+                + "last_activity_date DATE, "
                 + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
                 + "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
                 + "status VARCHAR(20) DEFAULT 'Active'"

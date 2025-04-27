@@ -18,6 +18,8 @@ public class Constants {
     public static final String TRANSACTION_DEPOSIT = "Deposit";
     public static final String TRANSACTION_WITHDRAWAL = "Withdrawal";
     public static final String TRANSACTION_INTEREST = "Interest";
+    public static final String TRANSACTION_INTEREST_EARNING = "Interest Earning";
+    public static final String TRANSACTION_INTEREST_WITHDRAWAL = "Interest Withdrawal";
     public static final String TRANSACTION_LOAN_RELEASE = "Loan Release";
     public static final String TRANSACTION_LOAN_PAYMENT = "Loan Payment";
     
@@ -88,6 +90,7 @@ public class Constants {
     // Savings account status (For backward compatibility)
     public static final String SAVINGS_STATUS_ACTIVE = "Active";
     public static final String SAVINGS_STATUS_DORMANT = "Dormant";
+    public static final String SAVINGS_STATUS_CLOSED = "Closed";
     
     // Permission types (For backward compatibility)
     public static final String PERMISSION_USER_MANAGEMENT = "User Management";

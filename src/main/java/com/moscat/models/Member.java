@@ -2,12 +2,14 @@ package com.moscat.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * Represents a cooperative member
  */
 public class Member {
     private int id;
+    private String memberNumber; // Member's unique identifier number
     private String firstName;
     private String middleName;
     private String lastName;
@@ -26,6 +28,8 @@ public class Member {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String status;
+    private Date joinDate;        // Date when member joined the cooperative
+    private Date lastActivityDate; // Date of last account activity
     
     // Default constructor
     public Member() {
@@ -41,6 +45,14 @@ public class Member {
     
     public void setId(int id) {
         this.id = id;
+    }
+    
+    public String getMemberNumber() {
+        return memberNumber;
+    }
+    
+    public void setMemberNumber(String memberNumber) {
+        this.memberNumber = memberNumber;
     }
     
     public String getFirstName() {
@@ -187,6 +199,22 @@ public class Member {
         this.status = status;
     }
     
+    public Date getJoinDate() {
+        return joinDate;
+    }
+    
+    public void setJoinDate(Date joinDate) {
+        this.joinDate = joinDate;
+    }
+    
+    public Date getLastActivityDate() {
+        return lastActivityDate;
+    }
+    
+    public void setLastActivityDate(Date lastActivityDate) {
+        this.lastActivityDate = lastActivityDate;
+    }
+    
     /**
      * Gets the full name of the member
      * 
@@ -207,5 +235,62 @@ public class Member {
      */
     public boolean isDormant() {
         return "Dormant".equals(status);
+    }
+    
+    /**
+     * Check if account is active
+     * 
+     * @return True if the account is active, false otherwise
+     */
+    public boolean isActive() {
+        return "Active".equals(status);
+    }
+    
+    /**
+     * Check if account is inactive
+     * 
+     * @return True if the account is inactive, false otherwise
+     */
+    public boolean isInactive() {
+        return "Inactive".equals(status);
+    }
+    
+    /**
+     * Check if member application is pending
+     * 
+     * @return True if the member application is pending, false otherwise
+     */
+    public boolean isPending() {
+        return "Pending".equals(status);
+    }
+    
+    // Alias methods for compatibility with views
+    
+    /**
+     * Alias for getEmailAddress()
+     */
+    public String getEmail() {
+        return getEmailAddress();
+    }
+    
+    /**
+     * Alias for setEmailAddress()
+     */
+    public void setEmail(String email) {
+        setEmailAddress(email);
+    }
+    
+    /**
+     * Alias for getAverageNetMonthlyIncome()
+     */
+    public double getAvgNetMonthlyIncome() {
+        return getAverageNetMonthlyIncome();
+    }
+    
+    /**
+     * Alias for setAverageNetMonthlyIncome()
+     */
+    public void setAvgNetMonthlyIncome(double income) {
+        setAverageNetMonthlyIncome(income);
     }
 }

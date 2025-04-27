@@ -276,8 +276,12 @@ public class SuperAdminDashboard extends JFrame {
         registerMemberItem.addActionListener(e -> openMemberRegistration());
         JMenuItem viewMembersItem = new JMenuItem("View/Edit Members");
         viewMembersItem.addActionListener(e -> openMembers());
+        JMenuItem dormantAccountsItem2 = new JMenuItem("Dormant Accounts");
+        dormantAccountsItem2.addActionListener(e -> JOptionPane.showMessageDialog(this, "Dormant Accounts feature will be available in the next update.", "Coming Soon", JOptionPane.INFORMATION_MESSAGE));
         membersMenu.add(registerMemberItem);
         membersMenu.add(viewMembersItem);
+        membersMenu.addSeparator();
+        membersMenu.add(dormantAccountsItem2);
         
         // Transactions menu
         JMenu transactionsMenu = new JMenu("Transactions");
@@ -306,7 +310,7 @@ public class SuperAdminDashboard extends JFrame {
         JMenuItem loanReportItem = new JMenuItem("Loan Reports");
         loanReportItem.addActionListener(e -> openReports());
         JMenuItem dormantAccountsItem = new JMenuItem("Dormant Accounts");
-        dormantAccountsItem.addActionListener(e -> openDormantAccounts());
+        dormantAccountsItem.addActionListener(e -> JOptionPane.showMessageDialog(this, "Dormant Accounts feature will be available in the next update.", "Coming Soon", JOptionPane.INFORMATION_MESSAGE));
         reportsMenu.add(memberReportItem);
         reportsMenu.add(transactionReportItem);
         reportsMenu.add(loanReportItem);
@@ -317,10 +321,7 @@ public class SuperAdminDashboard extends JFrame {
         JMenu settingsMenu = new JMenu("Settings");
         JMenuItem interestRatesItem = new JMenuItem("Interest Rates");
         interestRatesItem.addActionListener(e -> openInterestRates());
-        JMenuItem systemSettingsItem = new JMenuItem("System Settings");
-        systemSettingsItem.addActionListener(e -> openSystemSettings());
         settingsMenu.add(interestRatesItem);
-        settingsMenu.add(systemSettingsItem);
         
         // Help menu
         JMenu helpMenu = new JMenu("Help");

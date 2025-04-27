@@ -52,4 +52,57 @@ public class DatabaseManager {
     public void initializeDatabase() {
         DatabaseInitializer.initialize();
     }
+    
+    /**
+     * Safely closes database resources: ResultSet, PreparedStatement, and Connection
+     * 
+     * @param rs The ResultSet to close
+     * @param stmt The PreparedStatement to close
+     * @param conn The Connection to close
+     */
+    public static void closeResources(java.sql.ResultSet rs, java.sql.PreparedStatement stmt, java.sql.Connection conn) {
+        if (rs != null) {
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                System.err.println("Error closing ResultSet: " + e.getMessage());
+            }
+        }
+        
+        if (stmt != null) {
+            try {
+                stmt.close();
+            } catch (SQLException e) {
+                System.err.println("Error closing PreparedStatement: " + e.getMessage());
+            }
+        }
+        
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                System.err.println("Error closing Connection: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Safely closes database resources: ResultSet and PreparedStatement
+     * 
+     * @param rs The ResultSet to close
+     * @param stmt The PreparedStatement to close
+     */
+    public static void closeResources(java.sql.ResultSet rs, java.sql.PreparedStatement stmt) {
+        closeResources(rs, stmt, null);
+    }
+    
+    /**
+     * Safely closes database resources: PreparedStatement and Connection
+     * 
+     * @param stmt The PreparedStatement to close
+     * @param conn The Connection to close
+     */
+    public static void closeResources(java.sql.PreparedStatement stmt, java.sql.Connection conn) {
+        closeResources(null, stmt, conn);
+    }
 }
