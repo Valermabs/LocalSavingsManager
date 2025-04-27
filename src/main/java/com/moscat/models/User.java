@@ -3,7 +3,7 @@ package com.moscat.models;
 import java.time.LocalDateTime;
 
 /**
- * Represents a user in the system
+ * Represents a system user
  */
 public class User {
     private int id;
@@ -12,10 +12,12 @@ public class User {
     private String fullName;
     private String email;
     private String contactNumber;
+    private String role;
+    private boolean isActive;
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     
-    // Default constructor
+    // Constructor
     public User() {
         this.createdAt = LocalDateTime.now();
     }
@@ -69,6 +71,22 @@ public class User {
         this.contactNumber = contactNumber;
     }
     
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+    
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+    
     public LocalDateTime getLastLogin() {
         return lastLogin;
     }
@@ -86,25 +104,75 @@ public class User {
     }
     
     /**
-     * Checks if this user is a super admin
-     * 
-     * @return True if user is a super admin, false otherwise
-     */
-    public boolean isSuperAdmin() {
-        // In the simplified model, all users are super admin
-        return true;
-    }
-    
-    /**
-     * Get the first name from the full name
+     * Gets the user's first name (extracted from full name)
      * 
      * @return The first name
      */
     public String getFirstName() {
-        if (fullName != null && fullName.contains(" ")) {
-            return fullName.substring(0, fullName.indexOf(" "));
-        } else {
-            return fullName;
+        if (fullName != null && !fullName.isEmpty()) {
+            String[] parts = fullName.split(" ");
+            return parts[0];
         }
+        return "";
+    }
+    
+    /**
+     * Gets the user's last name (extracted from full name)
+     * 
+     * @return The last name
+     */
+    public String getLastName() {
+        if (fullName != null && !fullName.isEmpty()) {
+            String[] parts = fullName.split(" ");
+            if (parts.length > 1) {
+                return parts[parts.length - 1];
+            }
+        }
+        return "";
+    }
+    
+    /**
+     * Gets the status of the user
+     * 
+     * @return String representation of user status
+     */
+    public String getStatus() {
+        return isActive ? "Active" : "Inactive";
+    }
+    
+    /**
+     * Sets the status of the user
+     * 
+     * @param status The status string
+     */
+    public void setStatus(String status) {
+        this.isActive = "Active".equalsIgnoreCase(status);
+    }
+    
+    /**
+     * Checks if this user is a Super Administrator
+     * 
+     * @return True if the user is a Super Administrator, false otherwise
+     */
+    public boolean isSuperAdmin() {
+        return com.moscat.utils.Constants.ROLE_SUPER_ADMIN.equals(role);
+    }
+    
+    /**
+     * Checks if this user is a Treasurer
+     * 
+     * @return True if the user is a Treasurer, false otherwise
+     */
+    public boolean isTreasurer() {
+        return com.moscat.utils.Constants.ROLE_TREASURER.equals(role);
+    }
+    
+    /**
+     * Checks if this user is a Bookkeeper
+     * 
+     * @return True if the user is a Bookkeeper, false otherwise
+     */
+    public boolean isBookkeeper() {
+        return com.moscat.utils.Constants.ROLE_BOOKKEEPER.equals(role);
     }
 }

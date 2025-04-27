@@ -1,51 +1,232 @@
 package com.moscat.utils;
 
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Utility methods for date operations
+ * Utility class for date operations
  */
 public class DateUtils {
+    
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat DISPLAY_DATE_FORMAT = new SimpleDateFormat("MMM dd, yyyy");
+    private static final SimpleDateFormat DISPLAY_DATE_TIME_FORMAT = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 
+    private static final DateTimeFormatter LOCAL_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DISPLAY_LOCAL_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    private static final DateTimeFormatter DISPLAY_LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+    
     /**
-     * Get current timestamp
+     * Formats a java.util.Date object for database storage
      * 
-     * @return Current timestamp
+     * @param date The date to format
+     * @return Formatted date string (yyyy-MM-dd)
      */
-    public static Timestamp getCurrentTimestamp() {
-        return new Timestamp(System.currentTimeMillis());
+    public static String formatDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return DATE_FORMAT.format(date);
     }
     
     /**
-     * Get current date
+     * Formats a java.time.LocalDate object for database storage
      * 
-     * @return Current date
+     * @param date The date to format
+     * @return Formatted date string (yyyy-MM-dd)
+     */
+    public static String formatLocalDate(LocalDate date) {
+        if (date == null) {
+            return null;
+        }
+        return date.format(LOCAL_DATE_FORMATTER);
+    }
+    
+    /**
+     * Formats a java.time.LocalDateTime object for database storage
+     * 
+     * @param dateTime The date/time to format
+     * @return Formatted date/time string (yyyy-MM-dd HH:mm:ss)
+     */
+    public static String formatLocalDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+        return dateTime.format(LOCAL_DATE_TIME_FORMATTER);
+    }
+    
+    /**
+     * Formats a java.util.Date object for display
+     * 
+     * @param date The date to format
+     * @return Formatted date string (MMM dd, yyyy)
+     */
+    public static String formatDateForDisplay(Date date) {
+        if (date == null) {
+            return "";
+        }
+        return DISPLAY_DATE_FORMAT.format(date);
+    }
+    
+    /**
+     * Formats a java.time.LocalDate object for display
+     * 
+     * @param date The date to format
+     * @return Formatted date string (MMM dd, yyyy)
+     */
+    public static String formatLocalDateForDisplay(LocalDate date) {
+        if (date == null) {
+            return "";
+        }
+        return date.format(DISPLAY_LOCAL_DATE_FORMATTER);
+    }
+    
+    /**
+     * Formats a java.time.LocalDateTime object for display
+     * 
+     * @param dateTime The date/time to format
+     * @return Formatted date/time string (MMM dd, yyyy hh:mm a)
+     */
+    public static String formatDateForDisplay(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "";
+        }
+        return dateTime.format(DISPLAY_LOCAL_DATE_TIME_FORMATTER);
+    }
+    
+    /**
+     * Parses a date string to a java.util.Date object
+     * 
+     * @param dateStr The date string (yyyy-MM-dd)
+     * @return The parsed Date object
+     * @throws ParseException If the string cannot be parsed as a date
+     */
+    public static Date parseDate(String dateStr) throws ParseException {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        return DATE_FORMAT.parse(dateStr);
+    }
+    
+    /**
+     * Parses a date string to a java.time.LocalDate object
+     * 
+     * @param dateStr The date string (yyyy-MM-dd)
+     * @return The parsed LocalDate object
+     */
+    public static LocalDate parseLocalDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        return LocalDate.parse(dateStr, LOCAL_DATE_FORMATTER);
+    }
+    
+    /**
+     * Parses a date/time string to a java.time.LocalDateTime object
+     * 
+     * @param dateTimeStr The date/time string (yyyy-MM-dd HH:mm:ss)
+     * @return The parsed LocalDateTime object
+     */
+    public static LocalDateTime parseLocalDateTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
+            return null;
+        }
+        return LocalDateTime.parse(dateTimeStr, LOCAL_DATE_TIME_FORMATTER);
+    }
+    
+    /**
+     * Converts a java.util.Date to java.time.LocalDate
+     * 
+     * @param date The java.util.Date to convert
+     * @return The corresponding LocalDate
+     */
+    public static LocalDate convertToLocalDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+    
+    /**
+     * Converts a java.util.Date to java.time.LocalDateTime
+     * 
+     * @param date The java.util.Date to convert
+     * @return The corresponding LocalDateTime
+     */
+    public static LocalDateTime convertToLocalDateTime(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+    
+    /**
+     * Converts a java.time.LocalDate to java.util.Date
+     * 
+     * @param localDate The LocalDate to convert
+     * @return The corresponding java.util.Date
+     */
+    public static Date convertToDate(LocalDate localDate) {
+        if (localDate == null) {
+            return null;
+        }
+        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+    
+    /**
+     * Converts a java.time.LocalDateTime to java.util.Date
+     * 
+     * @param localDateTime The LocalDateTime to convert
+     * @return The corresponding java.util.Date
+     */
+    public static Date convertToDate(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+    }
+    
+    /**
+     * Get the current date as a java.util.Date
+     * 
+     * @return The current date
      */
     public static Date getCurrentDate() {
         return new Date();
     }
     
     /**
-     * Get current SQL date
+     * Get the current date as a java.time.LocalDate
      * 
-     * @return Current SQL date
+     * @return The current date
      */
-    public static java.sql.Date getCurrentSqlDate() {
-        return new java.sql.Date(System.currentTimeMillis());
+    public static LocalDate getCurrentLocalDate() {
+        return LocalDate.now();
     }
     
     /**
-     * Convert java.util.Date to java.sql.Date
+     * Get the current date and time as a java.time.LocalDateTime
      * 
-     * @param date Date to convert
-     * @return SQL date
+     * @return The current date and time
      */
-    public static java.sql.Date toSqlDate(Date date) {
+    public static LocalDateTime getCurrentLocalDateTime() {
+        return LocalDateTime.now();
+    }
+    
+    /**
+     * Converts a java.util.Date to java.sql.Date for database operations
+     * 
+     * @param date The java.util.Date to convert
+     * @return The corresponding java.sql.Date
+     */
+    public static java.sql.Date toSqlDate(java.util.Date date) {
         if (date == null) {
             return null;
         }
@@ -53,130 +234,28 @@ public class DateUtils {
     }
     
     /**
-     * Format date for display (yyyy-MM-dd)
+     * Converts a java.time.LocalDate to java.sql.Date for database operations
      * 
-     * @param date Date to format
-     * @return Formatted date string
+     * @param localDate The LocalDate to convert
+     * @return The corresponding java.sql.Date
      */
-    public static String formatDateForDisplay(Date date) {
-        return formatDate(date, "yyyy-MM-dd");
-    }
-    
-    /**
-     * Parse date string to Date
-     * 
-     * @param dateString Date string
-     * @param format Date format
-     * @return Date
-     * @throws ParseException If date format is invalid
-     */
-    public static Date parseDate(String dateString, String format) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        return sdf.parse(dateString);
-    }
-    
-    /**
-     * Format Date to string
-     * 
-     * @param date Date
-     * @param format Date format
-     * @return Formatted date string
-     */
-    public static String formatDate(Date date, String format) {
-        if (date == null) {
-            return "";
-        }
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        return sdf.format(date);
-    }
-    
-    /**
-     * Get difference between two dates in days
-     * 
-     * @param date1 First date
-     * @param date2 Second date
-     * @return Difference in days
-     */
-    public static long getDaysDifference(Date date1, Date date2) {
-        if (date1 == null || date2 == null) {
-            return 0;
-        }
-        long diffInMillies = Math.abs(date2.getTime() - date1.getTime());
-        return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
-    }
-    
-    /**
-     * Get difference between two dates in months (approximate)
-     * 
-     * @param date1 First date
-     * @param date2 Second date
-     * @return Difference in months
-     */
-    public static long getMonthsDifference(Date date1, Date date2) {
-        if (date1 == null || date2 == null) {
-            return 0;
-        }
-        // Get difference in days and approximate months (assuming 30 days per month)
-        long diffInDays = getDaysDifference(date1, date2);
-        return diffInDays / 30;
-    }
-    
-    /**
-     * Check if a date is after another date
-     * 
-     * @param date1 First date
-     * @param date2 Second date
-     * @return true if date1 is after date2, false otherwise
-     */
-    public static boolean isAfter(Date date1, Date date2) {
-        if (date1 == null || date2 == null) {
-            return false;
-        }
-        return date1.after(date2);
-    }
-    
-    /**
-     * Check if a date is before another date
-     * 
-     * @param date1 First date
-     * @param date2 Second date
-     * @return true if date1 is before date2, false otherwise
-     */
-    public static boolean isBefore(Date date1, Date date2) {
-        if (date1 == null || date2 == null) {
-            return false;
-        }
-        return date1.before(date2);
-    }
-    
-    /**
-     * Add days to a date
-     * 
-     * @param date Date
-     * @param days Days to add
-     * @return New date
-     */
-    public static Date addDays(Date date, int days) {
-        if (date == null) {
+    public static java.sql.Date toSqlDate(LocalDate localDate) {
+        if (localDate == null) {
             return null;
         }
-        return new Date(date.getTime() + TimeUnit.DAYS.toMillis(days));
+        return java.sql.Date.valueOf(localDate);
     }
     
     /**
-     * Add months to a date (accurate)
+     * Converts a java.time.LocalDateTime to java.sql.Timestamp for database operations
      * 
-     * @param date Date
-     * @param months Months to add
-     * @return New date
+     * @param localDateTime The LocalDateTime to convert
+     * @return The corresponding java.sql.Timestamp
      */
-    public static Date addMonths(Date date, int months) {
-        if (date == null) {
+    public static java.sql.Timestamp toSqlTimestamp(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
             return null;
         }
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.MONTH, months);
-        return calendar.getTime();
+        return java.sql.Timestamp.valueOf(localDateTime);
     }
 }

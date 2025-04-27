@@ -8,11 +8,15 @@ import java.time.LocalDateTime;
 public class Transaction {
     private int id;
     private int memberId;
+    private int accountId; // Savings account ID
+    private String referenceNumber; // Unique reference number for tracking
     private String transactionType;
     private double amount;
+    private double runningBalance; // Balance after transaction
     private LocalDateTime transactionDate;
     private String description;
     private String processedBy;
+    private int transactionBy; // User ID of person making the transaction
     
     // Constructor
     public Transaction() {
@@ -74,6 +78,38 @@ public class Transaction {
     
     public void setProcessedBy(String processedBy) {
         this.processedBy = processedBy;
+    }
+    
+    public int getAccountId() {
+        return accountId;
+    }
+    
+    public void setAccountId(int accountId) {
+        this.accountId = accountId;
+    }
+    
+    public String getReferenceNumber() {
+        return referenceNumber;
+    }
+    
+    public void setReferenceNumber(String referenceNumber) {
+        this.referenceNumber = referenceNumber;
+    }
+    
+    public double getRunningBalance() {
+        return runningBalance;
+    }
+    
+    public void setRunningBalance(double runningBalance) {
+        this.runningBalance = runningBalance;
+    }
+    
+    public int getTransactionBy() {
+        return transactionBy;
+    }
+    
+    public void setTransactionBy(int transactionBy) {
+        this.transactionBy = transactionBy;
     }
     
     /**

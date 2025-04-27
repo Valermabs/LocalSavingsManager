@@ -42,7 +42,9 @@ public class DatabaseManager {
      * @return A database connection
      * @throws SQLException If a database error occurs
      */
-    public Connection getConnection() throws SQLException {
+    public static Connection getConnection() throws SQLException {
+        // Ensure the instance is initialized
+        getInstance();
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
     

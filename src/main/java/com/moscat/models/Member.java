@@ -293,4 +293,27 @@ public class Member {
     public void setAvgNetMonthlyIncome(double income) {
         setAverageNetMonthlyIncome(income);
     }
+    
+    /**
+     * Alias for getBirthdate() to fix casing inconsistency
+     * 
+     * @return Member's birth date
+     */
+    public Date getBirthDate() {
+        if (birthdate != null) {
+            return com.moscat.utils.DateUtils.convertToDate(birthdate);
+        }
+        return null;
+    }
+    
+    /**
+     * Alias for setBirthdate() to fix casing inconsistency
+     * 
+     * @param date Member's birth date
+     */
+    public void setBirthDate(Date date) {
+        if (date != null) {
+            this.birthdate = com.moscat.utils.DateUtils.convertToLocalDate(date);
+        }
+    }
 }

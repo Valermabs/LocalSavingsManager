@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for report generation and export
@@ -82,7 +83,9 @@ public class ReportController {
         addLabelPair(detailsPanel, "Last Activity Date:", DateUtils.formatDateForDisplay(member.getLastActivityDate()), gbc, 14);
         
         // Get savings accounts for member
-        List<SavingsAccount> accounts = MemberController.getMemberSavingsAccounts(member.getId());
+        java.util.Map<String, Object> accountData = MemberController.getMemberSavingsAccounts(member.getId());
+        List<SavingsAccount> accounts = new java.util.ArrayList<>();
+        accounts.add(SavingsAccount.fromMap(accountData));
         
         // Create account summary panel
         JPanel accountsPanel = new JPanel(new BorderLayout());
@@ -207,7 +210,7 @@ public class ReportController {
         headerPanel.add(dateLabel, BorderLayout.EAST);
         
         // Get transaction summaries
-        List<TransactionController.TransactionSummary> summaries = TransactionController.getDailyTransactionSummary(date);
+        List<com.moscat.models.TransactionSummary> summaries = TransactionController.getDailyTransactionSummary(date);
         
         // Create summary panel
         JPanel summaryPanel = new JPanel(new BorderLayout());
@@ -226,7 +229,7 @@ public class ReportController {
         
         // Add summary data
         double grandTotal = 0;
-        for (TransactionController.TransactionSummary summary : summaries) {
+        for (com.moscat.models.TransactionSummary summary : summaries) {
             Object[] rowData = {
                 summary.getTransactionTypeDisplay(),
                 String.format("₱%.2f", summary.getTotalAmount())
@@ -445,13 +448,19 @@ public class ReportController {
         
         // Get relevant accounts based on report type
         for (Member member : members) {
-            List<SavingsAccount> memberAccounts = MemberController.getMemberSavingsAccounts(member.getId());
-            for (SavingsAccount account : memberAccounts) {
-                if (reportType.equals("All Accounts") || 
-                        (reportType.equals("Active Accounts") && account.isActive()) ||
-                        (reportType.equals("Dormant Accounts") && account.isDormant()) ||
-                        reportType.equals("Interest Earnings")) {
-                    accounts.add(account);
+            Map<String, Object> accountData = MemberController.getMemberSavingsAccounts(member.getId());
+            
+            @SuppressWarnings("unchecked")
+            List<SavingsAccount> memberAccounts = (List<SavingsAccount>) accountData.get("accounts");
+            
+            if (memberAccounts != null) {
+                for (SavingsAccount account : memberAccounts) {
+                    if (reportType.equals("All Accounts") || 
+                            (reportType.equals("Active Accounts") && account.isActive()) ||
+                            (reportType.equals("Dormant Accounts") && account.isDormant()) ||
+                            reportType.equals("Interest Earnings")) {
+                        accounts.add(account);
+                    }
                 }
             }
         }

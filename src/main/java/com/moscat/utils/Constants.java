@@ -78,6 +78,9 @@ public class Constants {
     // Default interest rates
     public static final double DEFAULT_SAVINGS_INTEREST_RATE = 2.5; // 2.5% annual interest
     public static final double DEFAULT_MINIMUM_BALANCE = 500.00; // 500 minimum balance
+    
+    // Transaction fees
+    public static final double TRANSACTION_FEE = 10.00; // Standard transaction fee
 
     // UI constants
     public static final int TEXT_FIELD_HEIGHT = 25;
@@ -86,6 +89,12 @@ public class Constants {
     public static final String ROLE_SUPER_ADMIN = "Super Administrator";
     public static final String ROLE_TREASURER = "Treasurer";
     public static final String ROLE_BOOKKEEPER = "Bookkeeper";
+    
+    // User and account status
+    public static final String ACCOUNT_ACTIVE = "Active";
+    public static final String ACCOUNT_INACTIVE = "Inactive";
+    public static final String ACCOUNT_DORMANT = "Dormant";
+    public static final String ACCOUNT_CLOSED = "Closed";
     
     // Savings account status (For backward compatibility)
     public static final String SAVINGS_STATUS_ACTIVE = "Active";

@@ -1,381 +1,87 @@
 package com.moscat.controllers;
 
+import com.moscat.models.Transaction;
+import com.moscat.models.TransactionSummary;
+import com.moscat.utils.DatabaseManager;
+import com.moscat.utils.DateUtils;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import com.moscat.models.Member;
-import com.moscat.models.Transaction;
-import com.moscat.utils.Constants;
-import com.moscat.utils.DatabaseManager;
+import java.util.Map;
+import java.util.UUID;
+import java.util.Date;
 
 /**
- * Controller for transaction-related operations
+ * Controller for transaction operations
  */
 public class TransactionController {
     
     /**
-     * Processes a deposit transaction
+     * Record a new transaction
      * 
-     * @param memberId The member ID
-     * @param amount The deposit amount
-     * @param description The transaction description
-     * @param processedBy The username of the user who processed the transaction
+     * @param transaction The transaction to record
      * @return True if successful, false otherwise
      */
-    public static boolean processDeposit(int memberId, double amount, String description, String processedBy) {
-        if (amount <= 0) {
-            return false;
+    public static boolean recordTransaction(Transaction transaction) {
+        // Generate reference number if not provided
+        if (transaction.getReferenceNumber() == null || transaction.getReferenceNumber().isEmpty()) {
+            transaction.setReferenceNumber(generateReferenceNumber());
         }
         
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            // Start a transaction
-            conn.setAutoCommit(false);
+        // Set transaction date if not provided
+        if (transaction.getTransactionDate() == null) {
+            transaction.setTransactionDate(LocalDateTime.now());
+        }
+        
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "INSERT INTO transactions (member_id, account_id, reference_number, transaction_type, " +
+                    "amount, running_balance, transaction_date, description, processed_by, transaction_by) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
-            try {
-                // Get the current balance
-                Member member = MemberController.getMemberById(memberId);
-                if (member == null) {
-                    return false;
-                }
-                
-                double newBalance = member.getSavingsBalance() + amount;
-                
-                // Update the member's balance
-                String updateQuery = "UPDATE members SET savings_balance = ?, updated_at = ? WHERE id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
-                    stmt.setDouble(1, newBalance);
-                    stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
-                    stmt.setInt(3, memberId);
-                    
-                    int rowsAffected = stmt.executeUpdate();
-                    if (rowsAffected <= 0) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                
-                // Create a transaction record
-                String insertQuery = "INSERT INTO transactions (member_id, transaction_type, amount, transaction_date, description, processed_by) VALUES (?, ?, ?, ?, ?, ?)";
-                try (PreparedStatement stmt = conn.prepareStatement(insertQuery)) {
-                    stmt.setInt(1, memberId);
-                    stmt.setString(2, Constants.TRANSACTION_DEPOSIT);
-                    stmt.setDouble(3, amount);
-                    stmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
-                    stmt.setString(5, description);
-                    stmt.setString(6, processedBy);
-                    
-                    int rowsAffected = stmt.executeUpdate();
-                    if (rowsAffected <= 0) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                
-                // Commit the transaction
-                conn.commit();
-                return true;
-            } catch (Exception e) {
-                // Rollback in case of an error
-                conn.rollback();
-                throw e;
-            } finally {
-                // Restore auto-commit
-                conn.setAutoCommit(true);
-            }
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, transaction.getMemberId());
+            stmt.setInt(2, transaction.getAccountId());
+            stmt.setString(3, transaction.getReferenceNumber());
+            stmt.setString(4, transaction.getTransactionType());
+            stmt.setDouble(5, transaction.getAmount());
+            stmt.setDouble(6, transaction.getRunningBalance());
+            stmt.setString(7, DateUtils.formatLocalDateTime(transaction.getTransactionDate()));
+            stmt.setString(8, transaction.getDescription());
+            stmt.setString(9, transaction.getProcessedBy());
+            stmt.setInt(10, transaction.getTransactionBy());
+            
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
-            System.err.println("Error processing deposit: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
     
     /**
-     * Processes a withdrawal transaction
+     * Get a transaction by ID
      * 
-     * @param memberId The member ID
-     * @param amount The withdrawal amount
-     * @param description The transaction description
-     * @param processedBy The username of the user who processed the transaction
-     * @return True if successful, false otherwise
+     * @param transactionId The transaction ID
+     * @return The transaction, or null if not found
      */
-    public static boolean processWithdrawal(int memberId, double amount, String description, String processedBy) {
-        if (amount <= 0) {
-            return false;
-        }
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            // Start a transaction
-            conn.setAutoCommit(false);
+    public static Transaction getTransactionById(int transactionId) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT * FROM transactions WHERE id = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, transactionId);
             
-            try {
-                // Get the current balance
-                Member member = MemberController.getMemberById(memberId);
-                if (member == null) {
-                    return false;
-                }
-                
-                // Check if the balance is sufficient
-                if (member.getSavingsBalance() < amount) {
-                    return false;
-                }
-                
-                double newBalance = member.getSavingsBalance() - amount;
-                
-                // Update the member's balance
-                String updateQuery = "UPDATE members SET savings_balance = ?, updated_at = ? WHERE id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
-                    stmt.setDouble(1, newBalance);
-                    stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
-                    stmt.setInt(3, memberId);
-                    
-                    int rowsAffected = stmt.executeUpdate();
-                    if (rowsAffected <= 0) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                
-                // Create a transaction record
-                String insertQuery = "INSERT INTO transactions (member_id, transaction_type, amount, transaction_date, description, processed_by) VALUES (?, ?, ?, ?, ?, ?)";
-                try (PreparedStatement stmt = conn.prepareStatement(insertQuery)) {
-                    stmt.setInt(1, memberId);
-                    stmt.setString(2, Constants.TRANSACTION_WITHDRAWAL);
-                    stmt.setDouble(3, amount);
-                    stmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
-                    stmt.setString(5, description);
-                    stmt.setString(6, processedBy);
-                    
-                    int rowsAffected = stmt.executeUpdate();
-                    if (rowsAffected <= 0) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                
-                // Commit the transaction
-                conn.commit();
-                return true;
-            } catch (Exception e) {
-                // Rollback in case of an error
-                conn.rollback();
-                throw e;
-            } finally {
-                // Restore auto-commit
-                conn.setAutoCommit(true);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapResultSetToTransaction(rs);
             }
         } catch (SQLException e) {
-            System.err.println("Error processing withdrawal: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Records an interest transaction
-     * 
-     * @param memberId The member ID
-     * @param amount The interest amount
-     * @param description The transaction description
-     * @param processedBy The username of the user who processed the transaction
-     * @return True if successful, false otherwise
-     */
-    public static boolean recordInterest(int memberId, double amount, String description, String processedBy) {
-        if (amount <= 0) {
-            return false;
-        }
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            // Start a transaction
-            conn.setAutoCommit(false);
-            
-            try {
-                // Update the member's interest earned
-                if (!MemberController.addInterestEarned(memberId, amount)) {
-                    conn.rollback();
-                    return false;
-                }
-                
-                // Create a transaction record
-                String insertQuery = "INSERT INTO transactions (member_id, transaction_type, amount, transaction_date, description, processed_by) VALUES (?, ?, ?, ?, ?, ?)";
-                try (PreparedStatement stmt = conn.prepareStatement(insertQuery)) {
-                    stmt.setInt(1, memberId);
-                    stmt.setString(2, Constants.TRANSACTION_INTEREST);
-                    stmt.setDouble(3, amount);
-                    stmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
-                    stmt.setString(5, description);
-                    stmt.setString(6, processedBy);
-                    
-                    int rowsAffected = stmt.executeUpdate();
-                    if (rowsAffected <= 0) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                
-                // Commit the transaction
-                conn.commit();
-                return true;
-            } catch (Exception e) {
-                // Rollback in case of an error
-                conn.rollback();
-                throw e;
-            } finally {
-                // Restore auto-commit
-                conn.setAutoCommit(true);
-            }
-        } catch (SQLException e) {
-            System.err.println("Error recording interest: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Gets transactions for a member
-     * 
-     * @param memberId The member ID
-     * @return List of transactions for the member
-     */
-    public static List<Transaction> getMemberTransactions(int memberId) {
-        List<Transaction> transactions = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            String query = "SELECT * FROM transactions WHERE member_id = ? ORDER BY transaction_date DESC";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(1, memberId);
-                
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        transactions.add(extractTransactionFromResultSet(rs));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting member transactions: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return transactions;
-    }
-    
-    /**
-     * Gets recent transactions
-     * 
-     * @param limit The maximum number of transactions to get
-     * @return List of recent transactions
-     */
-    public static List<Transaction> getRecentTransactions(int limit) {
-        List<Transaction> transactions = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            String query = "SELECT * FROM transactions ORDER BY transaction_date DESC LIMIT ?";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(1, limit);
-                
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        transactions.add(extractTransactionFromResultSet(rs));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting recent transactions: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return transactions;
-    }
-    
-    /**
-     * Gets the number of active loans
-     * 
-     * @return The active loan count
-     */
-    public static int getActiveLoanCount() {
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            String query = "SELECT COUNT(*) FROM loans WHERE status = ?";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setString(1, Constants.LOAN_STATUS_ACTIVE);
-                
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getInt(1);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting active loan count: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return 0;
-    }
-    
-    /**
-     * Checks if a member has any activity within a certain number of months
-     * 
-     * @param memberId The member ID
-     * @param months The number of months
-     * @return True if the member has activity, false otherwise
-     */
-    public static boolean hasMemberActivity(int memberId, int months) {
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            String query = "SELECT COUNT(*) FROM transactions WHERE member_id = ? AND transaction_date > ?";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(1, memberId);
-                
-                // Calculate the date that is 'months' months ago
-                LocalDateTime cutoffDate = LocalDateTime.now().minusMonths(months);
-                stmt.setTimestamp(2, Timestamp.valueOf(cutoffDate));
-                
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getInt(1) > 0;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error checking member activity: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Gets the last transaction date for a member
-     * 
-     * @param memberId The member ID
-     * @return The last transaction date, or null if no transactions
-     */
-    public static LocalDateTime getLastTransactionDate(int memberId) {
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            String query = "SELECT MAX(transaction_date) FROM transactions WHERE member_id = ?";
-            
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(1, memberId);
-                
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Timestamp timestamp = rs.getTimestamp(1);
-                        if (timestamp != null) {
-                            return timestamp.toLocalDateTime();
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting last transaction date: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -383,27 +89,518 @@ public class TransactionController {
     }
     
     /**
-     * Extracts a Transaction object from a ResultSet
+     * Get transactions for a specific account
      * 
-     * @param rs The ResultSet
-     * @return The extracted Transaction
-     * @throws SQLException If a database error occurs
+     * @param accountId The account ID
+     * @param limit The maximum number of transactions to retrieve (0 for all)
+     * @return List of transactions
      */
-    private static Transaction extractTransactionFromResultSet(ResultSet rs) throws SQLException {
+    public static List<Transaction> getAccountTransactions(int accountId, int limit) {
+        List<Transaction> transactions = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT * FROM transactions WHERE account_id = ? ORDER BY transaction_date DESC";
+            if (limit > 0) {
+                sql += " LIMIT ?";
+            }
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, accountId);
+            if (limit > 0) {
+                stmt.setInt(2, limit);
+            }
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                transactions.add(mapResultSetToTransaction(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return transactions;
+    }
+    
+    /**
+     * Get transactions for a specific date range
+     * 
+     * @param startDate Start date in format "yyyy-MM-dd"
+     * @param endDate End date in format "yyyy-MM-dd"
+     * @return List of transactions
+     */
+    public static List<Transaction> getTransactionsByDateRange(String startDate, String endDate) {
+        List<Transaction> transactions = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT * FROM transactions WHERE DATE(transaction_date) BETWEEN ? AND ? " +
+                    "ORDER BY transaction_date DESC";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, startDate);
+            stmt.setString(2, endDate);
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                transactions.add(mapResultSetToTransaction(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return transactions;
+    }
+    
+    /**
+     * Get a summary of transactions for a specific date
+     * 
+     * @param date Date in format "yyyy-MM-dd"
+     * @return List of transaction summaries by type
+     */
+    public static List<TransactionSummary> getDailyTransactionSummary(String date) {
+        Map<String, TransactionSummary> summaries = new HashMap<>();
+        
+        // Initialize with known transaction types
+        summaries.put("SAVINGS_DEPOSIT", new TransactionSummary("SAVINGS_DEPOSIT"));
+        summaries.put("SAVINGS_WITHDRAWAL", new TransactionSummary("SAVINGS_WITHDRAWAL"));
+        summaries.put("INTEREST_EARNED", new TransactionSummary("INTEREST_EARNED"));
+        summaries.put("LOAN_DISBURSEMENT", new TransactionSummary("LOAN_DISBURSEMENT"));
+        summaries.put("LOAN_PAYMENT", new TransactionSummary("LOAN_PAYMENT"));
+        summaries.put("SERVICE_FEE", new TransactionSummary("SERVICE_FEE"));
+        summaries.put("MEMBERSHIP_FEE", new TransactionSummary("MEMBERSHIP_FEE"));
+        summaries.put("PENALTY", new TransactionSummary("PENALTY"));
+        
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT transaction_type, SUM(amount) as total_amount, COUNT(*) as count " +
+                    "FROM transactions WHERE DATE(transaction_date) = ? " +
+                    "GROUP BY transaction_type";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, date);
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                String type = rs.getString("transaction_type");
+                double totalAmount = rs.getDouble("total_amount");
+                int count = rs.getInt("count");
+                
+                TransactionSummary summary = new TransactionSummary(type, totalAmount, count);
+                summaries.put(type, summary);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return new ArrayList<>(summaries.values());
+    }
+    
+    /**
+     * Get a summary of transactions for a specific month
+     * 
+     * @param year The year
+     * @param month The month (1-12)
+     * @return List of transaction summaries by type
+     */
+    public static List<TransactionSummary> getMonthlyTransactionSummary(int year, int month) {
+        Map<String, TransactionSummary> summaries = new HashMap<>();
+        
+        // Initialize with known transaction types
+        summaries.put("SAVINGS_DEPOSIT", new TransactionSummary("SAVINGS_DEPOSIT"));
+        summaries.put("SAVINGS_WITHDRAWAL", new TransactionSummary("SAVINGS_WITHDRAWAL"));
+        summaries.put("INTEREST_EARNED", new TransactionSummary("INTEREST_EARNED"));
+        summaries.put("LOAN_DISBURSEMENT", new TransactionSummary("LOAN_DISBURSEMENT"));
+        summaries.put("LOAN_PAYMENT", new TransactionSummary("LOAN_PAYMENT"));
+        summaries.put("SERVICE_FEE", new TransactionSummary("SERVICE_FEE"));
+        summaries.put("MEMBERSHIP_FEE", new TransactionSummary("MEMBERSHIP_FEE"));
+        summaries.put("PENALTY", new TransactionSummary("PENALTY"));
+        
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT transaction_type, SUM(amount) as total_amount, COUNT(*) as count " +
+                    "FROM transactions WHERE YEAR(transaction_date) = ? AND MONTH(transaction_date) = ? " +
+                    "GROUP BY transaction_type";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, year);
+            stmt.setInt(2, month);
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                String type = rs.getString("transaction_type");
+                double totalAmount = rs.getDouble("total_amount");
+                int count = rs.getInt("count");
+                
+                TransactionSummary summary = new TransactionSummary(type, totalAmount, count);
+                summaries.put(type, summary);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return new ArrayList<>(summaries.values());
+    }
+    
+    /**
+     * Generate a unique transaction reference number
+     * 
+     * @return The generated reference number
+     */
+    private static String generateReferenceNumber() {
+        // Format: "TR" + First 8 characters of UUID (uppercase)
+        String uuid = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return "TR" + uuid;
+    }
+    
+    /**
+     * Map a ResultSet to a Transaction object
+     * 
+     * @param rs The ResultSet to map
+     * @return The mapped Transaction
+     * @throws SQLException If mapping fails
+     */
+    private static Transaction mapResultSetToTransaction(ResultSet rs) throws SQLException {
         Transaction transaction = new Transaction();
         transaction.setId(rs.getInt("id"));
         transaction.setMemberId(rs.getInt("member_id"));
+        transaction.setAccountId(rs.getInt("account_id"));
+        transaction.setReferenceNumber(rs.getString("reference_number"));
         transaction.setTransactionType(rs.getString("transaction_type"));
         transaction.setAmount(rs.getDouble("amount"));
+        transaction.setRunningBalance(rs.getDouble("running_balance"));
         
-        Timestamp transactionDate = rs.getTimestamp("transaction_date");
-        if (transactionDate != null) {
-            transaction.setTransactionDate(transactionDate.toLocalDateTime());
+        String transactionDateStr = rs.getString("transaction_date");
+        if (transactionDateStr != null && !transactionDateStr.isEmpty()) {
+            transaction.setTransactionDate(DateUtils.parseLocalDateTime(transactionDateStr));
         }
         
         transaction.setDescription(rs.getString("description"));
         transaction.setProcessedBy(rs.getString("processed_by"));
         
+        // Add the transaction_by field if it exists in the ResultSet
+        try {
+            transaction.setTransactionBy(rs.getInt("transaction_by"));
+        } catch (SQLException e) {
+            // Ignore if the column doesn't exist
+        }
+        
         return transaction;
+    }
+    
+    /**
+     * Helper method for TransactionSummary to add deposit amount
+     * 
+     * @param summary The TransactionSummary to update
+     * @param amount The amount to add
+     */
+    public static void addDeposit(TransactionSummary summary, double amount) {
+        summary.setTransactionType("SAVINGS_DEPOSIT");
+        summary.addTransaction(amount);
+    }
+    
+    /**
+     * Helper method for TransactionSummary to add withdrawal amount
+     * 
+     * @param summary The TransactionSummary to update
+     * @param amount The amount to add
+     */
+    public static void addWithdrawal(TransactionSummary summary, double amount) {
+        summary.setTransactionType("SAVINGS_WITHDRAWAL");
+        summary.addTransaction(amount);
+    }
+    
+    /**
+     * Helper method for TransactionSummary to add interest amount
+     * 
+     * @param summary The TransactionSummary to update
+     * @param amount The amount to add
+     */
+    public static void addInterest(TransactionSummary summary, double amount) {
+        summary.setTransactionType("INTEREST_EARNED");
+        summary.addTransaction(amount);
+    }
+    
+    /**
+     * Helper method for TransactionSummary to add loan disbursement amount
+     * 
+     * @param summary The TransactionSummary to update
+     * @param amount The amount to add
+     */
+    public static void addLoan(TransactionSummary summary, double amount) {
+        summary.setTransactionType("LOAN_DISBURSEMENT");
+        summary.addTransaction(amount);
+    }
+    
+    /**
+     * Helper method for TransactionSummary to add loan payment amount
+     * 
+     * @param summary The TransactionSummary to update
+     * @param amount The amount to add
+     */
+    public static void addLoanPayment(TransactionSummary summary, double amount) {
+        summary.setTransactionType("LOAN_PAYMENT");
+        summary.addTransaction(amount);
+    }
+    
+    /**
+     * Check if a member has any transaction activity within a specified number of days
+     * 
+     * @param memberId The member ID
+     * @param days The number of days to check for activity
+     * @return True if there is activity, false otherwise
+     */
+    public static boolean hasMemberActivity(int memberId, int days) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT COUNT(*) FROM transactions WHERE member_id = ? AND " +
+                    "transaction_date >= DATE_SUB(NOW(), INTERVAL ? DAY)";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, memberId);
+            stmt.setInt(2, days);
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get the date of the last transaction for a member
+     * 
+     * @param memberId The member ID
+     * @return The date of the last transaction, or null if no transactions
+     */
+    public static Date getLastTransactionDate(int memberId) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT MAX(transaction_date) FROM transactions WHERE member_id = ?";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, memberId);
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                String dateStr = rs.getString(1);
+                if (dateStr != null) {
+                    return DateUtils.parseDate(dateStr.substring(0, 10)); // Extract date part
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Get count of active loans in the system
+     * 
+     * @return The number of active loans
+     */
+    public static int getActiveLoanCount() {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT COUNT(*) FROM loans WHERE status = 'Active'";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Process a deposit transaction
+     * 
+     * @param accountId The account ID
+     * @param amount The amount to deposit
+     * @param description The transaction description
+     * @param processedBy The name of the user processing the transaction
+     * @return True if successful, false otherwise
+     */
+    public static boolean processDeposit(int accountId, double amount, String description, String processedBy) {
+        try {
+            // Get current balance
+            double currentBalance = 0.0;
+            int memberId = 0;
+            
+            try (Connection conn = DatabaseManager.getConnection()) {
+                String sql = "SELECT m.id, m.savings_balance FROM members m WHERE m.id = ?";
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.setInt(1, accountId);
+                
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    memberId = rs.getInt("id");
+                    currentBalance = rs.getDouble("savings_balance");
+                } else {
+                    return false; // Account not found
+                }
+            }
+            
+            // Calculate new balance
+            double newBalance = currentBalance + amount;
+            
+            // Create and record transaction
+            Transaction transaction = new Transaction();
+            transaction.setMemberId(memberId);
+            transaction.setAccountId(accountId);
+            transaction.setTransactionType("SAVINGS_DEPOSIT");
+            transaction.setAmount(amount);
+            transaction.setRunningBalance(newBalance);
+            transaction.setDescription(description);
+            transaction.setProcessedBy(processedBy);
+            
+            boolean transactionSuccess = recordTransaction(transaction);
+            
+            if (transactionSuccess) {
+                // Update member balance
+                try (Connection conn = DatabaseManager.getConnection()) {
+                    String sql = "UPDATE members SET savings_balance = ?, last_activity_date = NOW() WHERE id = ?";
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    stmt.setDouble(1, newBalance);
+                    stmt.setInt(2, memberId);
+                    
+                    int rowsAffected = stmt.executeUpdate();
+                    return rowsAffected > 0;
+                }
+            }
+            
+            return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Process a withdrawal transaction
+     * 
+     * @param accountId The account ID
+     * @param amount The amount to withdraw
+     * @param description The transaction description
+     * @param processedBy The name of the user processing the transaction
+     * @return True if successful, false otherwise
+     */
+    public static boolean processWithdrawal(int accountId, double amount, String description, String processedBy) {
+        try {
+            // Get current balance
+            double currentBalance = 0.0;
+            int memberId = 0;
+            
+            try (Connection conn = DatabaseManager.getConnection()) {
+                String sql = "SELECT m.id, m.savings_balance FROM members m WHERE m.id = ?";
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.setInt(1, accountId);
+                
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    memberId = rs.getInt("id");
+                    currentBalance = rs.getDouble("savings_balance");
+                } else {
+                    return false; // Account not found
+                }
+            }
+            
+            // Check if sufficient balance
+            if (currentBalance < amount) {
+                return false;
+            }
+            
+            // Calculate new balance
+            double newBalance = currentBalance - amount;
+            
+            // Create and record transaction
+            Transaction transaction = new Transaction();
+            transaction.setMemberId(memberId);
+            transaction.setAccountId(accountId);
+            transaction.setTransactionType("SAVINGS_WITHDRAWAL");
+            transaction.setAmount(amount);
+            transaction.setRunningBalance(newBalance);
+            transaction.setDescription(description);
+            transaction.setProcessedBy(processedBy);
+            
+            boolean transactionSuccess = recordTransaction(transaction);
+            
+            if (transactionSuccess) {
+                // Update member balance
+                try (Connection conn = DatabaseManager.getConnection()) {
+                    String sql = "UPDATE members SET savings_balance = ?, last_activity_date = NOW() WHERE id = ?";
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    stmt.setDouble(1, newBalance);
+                    stmt.setInt(2, memberId);
+                    
+                    int rowsAffected = stmt.executeUpdate();
+                    return rowsAffected > 0;
+                }
+            }
+            
+            return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Export transactions from a JTable to CSV file
+     * 
+     * @param table The JTable containing transaction data
+     * @param filePath The file path to export to
+     * @return True if successful, false otherwise
+     */
+    public static boolean exportTransactionsToCSV(javax.swing.JTable table, String filePath) {
+        try {
+            javax.swing.table.TableModel model = table.getModel();
+            java.io.FileWriter csv = new java.io.FileWriter(new java.io.File(filePath));
+            
+            // Write headers
+            for (int i = 0; i < model.getColumnCount(); i++) {
+                csv.write(model.getColumnName(i));
+                if (i < model.getColumnCount() - 1) {
+                    csv.write(",");
+                }
+            }
+            csv.write("\n");
+            
+            // Write data
+            for (int i = 0; i < model.getRowCount(); i++) {
+                for (int j = 0; j < model.getColumnCount(); j++) {
+                    Object value = model.getValueAt(i, j);
+                    if (value != null) {
+                        String cellValue = value.toString();
+                        // Escape quotes and commas
+                        if (cellValue.contains("\"") || cellValue.contains(",")) {
+                            cellValue = "\"" + cellValue.replace("\"", "\"\"") + "\"";
+                        }
+                        csv.write(cellValue);
+                    }
+                    if (j < model.getColumnCount() - 1) {
+                        csv.write(",");
+                    }
+                }
+                csv.write("\n");
+            }
+            
+            csv.close();
+            return true;
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

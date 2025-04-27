@@ -3,7 +3,7 @@ package com.moscat.models;
 import java.time.LocalDate;
 
 /**
- * Represents a loan amortization payment schedule
+ * Represents a single amortization payment in a loan repayment schedule
  */
 public class LoanAmortization {
     private int id;
@@ -104,20 +104,43 @@ public class LoanAmortization {
     }
     
     /**
-     * Check if payment is due
+     * Checks if the payment is overdue
      * 
-     * @return True if payment is due, false otherwise
+     * @return true if payment is overdue, false otherwise
      */
-    public boolean isPaymentDue() {
-        return LocalDate.now().isAfter(paymentDate) && "Unpaid".equals(paymentStatus);
+    public boolean isOverdue() {
+        if ("Paid".equals(paymentStatus)) {
+            return false;
+        }
+        
+        return paymentDate.isBefore(LocalDate.now());
     }
     
     /**
-     * Check if payment is late
+     * Gets the number of days overdue
      * 
-     * @return True if payment is late, false otherwise
+     * @return The number of days overdue, or 0 if not overdue
      */
-    public boolean isPaymentLate() {
-        return LocalDate.now().isAfter(paymentDate.plusDays(5)) && "Unpaid".equals(paymentStatus);
+    public long getDaysOverdue() {
+        if (!isOverdue()) {
+            return 0;
+        }
+        
+        return java.time.temporal.ChronoUnit.DAYS.between(paymentDate, LocalDate.now());
+    }
+    
+    /**
+     * Calculates the penalty amount if payment is overdue
+     * 
+     * @param penaltyRatePercentage The penalty rate in percentage (e.g., 2 for 2%)
+     * @return The calculated penalty amount
+     */
+    public double calculatePenalty(double penaltyRatePercentage) {
+        if (!isOverdue()) {
+            return 0.0;
+        }
+        
+        // Penalty = TotalPayment × PenaltyRate
+        return totalPayment * (penaltyRatePercentage / 100.0);
     }
 }
