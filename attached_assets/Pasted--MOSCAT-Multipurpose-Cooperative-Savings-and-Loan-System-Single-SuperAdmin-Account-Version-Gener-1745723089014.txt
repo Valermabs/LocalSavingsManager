@@ -1,0 +1,80 @@
+"MOSCAT Multipurpose Cooperative" Savings and Loan System (Single SuperAdmin Account Version)
+General Instructions:
+•	Build a full Savings and Loan Web System with a working database.
+•	Only one user account (Super Administrator) will manage everything.
+•	Validate numeric fields to accept only numbers (no strings).
+•	Ensure full functionality: login, member registration, dashboard, savings, loans, transactions, reports.
+________________________________________
+Database Design:
+•	Members Table:
+Fields = FirstName, MiddleName, LastName, Age, Birthdate, PresentAddress, PermanentAddress, ContactNumber, EmailAddress, Employer, EmploymentStatus, GrossMonthlyIncome, AverageNetMonthlyIncome
+•	Transactions Table:
+Fields = MemberID, TransactionType (Deposit, Withdrawal), Amount, Date
+•	Loans Table:
+Fields = MemberID, LoanType, LoanAmount, InterestRate, PreviousLoanBalance, Deductions, RLPF, NetProceeds, AmortizationSchedule
+•	Interest Settings Table:
+Fields = InterestRate, MinimumBalanceRequired, ComputationBasis (Daily/Monthly), EffectiveDate, ReasonForChange
+•	DormantAccounts Table:
+Fields = MemberID, LastTransactionDate, DormantStatus
+•	Journals Table:
+Fields = Month, TransactionsSummary, Remarks
+________________________________________
+SuperAdmin Login Credentials:
+•	Username = mmpcadmin
+•	Password = #MMPC@dmin2o25
+•	Full Access: can perform all functions (registration, transactions, loan management, reports, settings).
+________________________________________
+Member Registration:
+•	Build a form to capture all member fields listed above.
+•	Registration must store information correctly.
+________________________________________
+Dormancy Detection:
+•	Automatically mark accounts as dormant if no deposit/withdrawal for 12 months.
+•	Display dormant accounts on a dedicated page.
+•	Notify the SuperAdmin.
+________________________________________
+Savings System:
+•	SuperAdmin can:
+o	Set or change savings interest rate.
+o	Specify Effective Date (no retroactive changes).
+o	Provide Reason for interest rate change.
+o	Set Minimum Balance to qualify for interest.
+o	Set Computation Basis:
+	"Daily" = (Annual Rate ÷ 365)
+	"Monthly" = (Annual Rate ÷ 12)
+•	Interest earnings should be recorded separately, not added to principal.
+________________________________________
+Loan System:
+•	Member Dashboard displays eligible loan amount (set by SuperAdmin manually).
+•	Loan Application Form includes:
+o	Loan Type
+o	Loan Amount
+o	Interest Rate (auto-fetched)
+o	Previous Loan Balance
+o	Loan Deductions (editable)
+o	Fixed Deduction: RLPF = (LoanAmount ÷ 1000) × 1 × Number of Term Months (not applied to Petty Cash or Bonus Loans)
+•	Loan Computation:
+makefile
+CopyEdit
+principal = total loan amount
+interest_rate = annual interest rate (%)
+term_years = number of years
+
+annual_principal_payment = principal / term_years
+
+for each year:
+  remaining_principal = starting_principal - (annual_principal_payment × (completed years))
+  annual_interest = remaining_principal × (interest_rate / 100)
+  monthly_amortization = (annual_interest / 12) + (annual_principal_payment / 12)
+________________________________________
+Reports Generation:
+•	SuperAdmin can generate:
+o	Individual Member Reports (all transactions, interest earned, loan details).
+o	Dormancy Reports.
+o	Transaction Journals (Monthly Summaries).
+________________________________________
+System Must:
+•	Validate all numeric fields.
+•	Ensure all core features (login, registration, transactions, loans, reports) are fully operational.
+•	One SuperAdmin manages everything, no other roles.
+

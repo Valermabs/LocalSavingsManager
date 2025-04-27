@@ -9,87 +9,40 @@ public class Constants {
     public static final String APP_NAME = "MOSCAT Cooperative";
     public static final String APP_VERSION = "1.0.0";
     
-    // User roles
-    public static final String ROLE_SUPER_ADMIN = "SuperAdmin";
-    public static final String ROLE_TREASURER = "Treasurer";
-    public static final String ROLE_BOOKKEEPER = "Bookkeeper";
-    
-    // User statuses
+    // Account status
     public static final String STATUS_ACTIVE = "Active";
     public static final String STATUS_INACTIVE = "Inactive";
-    public static final String STATUS_SUSPENDED = "Suspended";
     public static final String STATUS_DORMANT = "Dormant";
     
-    // Member status - aliases for user status
-    public static final String MEMBER_STATUS_ACTIVE = STATUS_ACTIVE;
-    public static final String MEMBER_STATUS_INACTIVE = STATUS_INACTIVE;
-    public static final String MEMBER_STATUS_SUSPENDED = STATUS_SUSPENDED;
-    
-    // Account statuses
-    public static final String ACCOUNT_STATUS_ACTIVE = "Active";
-    public static final String ACCOUNT_STATUS_DORMANT = "Dormant";
-    public static final String ACCOUNT_STATUS_CLOSED = "Closed";
-    public static final String ACCOUNT_STATUS_FROZEN = "Frozen";
-    
-    // Account status aliases for backward compatibility
-    public static final String ACCOUNT_ACTIVE = ACCOUNT_STATUS_ACTIVE;
-    public static final String ACCOUNT_DORMANT = ACCOUNT_STATUS_DORMANT;
-    public static final String ACCOUNT_CLOSED = ACCOUNT_STATUS_CLOSED;
-    public static final String ACCOUNT_FROZEN = ACCOUNT_STATUS_FROZEN;
-    
-    // Savings account status - aliases for account status
-    public static final String SAVINGS_STATUS_ACTIVE = ACCOUNT_STATUS_ACTIVE;
-    public static final String SAVINGS_STATUS_DORMANT = ACCOUNT_STATUS_DORMANT;
-    public static final String SAVINGS_STATUS_CLOSED = ACCOUNT_STATUS_CLOSED;
-    public static final String SAVINGS_STATUS_FROZEN = ACCOUNT_STATUS_FROZEN;
-    
-    // Account types
-    public static final String ACCOUNT_TYPE_REGULAR_SAVINGS = "Regular Savings";
-    public static final String ACCOUNT_TYPE_TIME_DEPOSIT = "Time Deposit";
-    public static final String ACCOUNT_TYPE_SHARE_CAPITAL = "Share Capital";
-    
     // Transaction types
-    public static final String TRANSACTION_TYPE_DEPOSIT = "Deposit";
-    public static final String TRANSACTION_TYPE_WITHDRAWAL = "Withdrawal";
-    public static final String TRANSACTION_TYPE_INTEREST = "Interest";
-    public static final String TRANSACTION_TYPE_FEE = "Fee";
-    public static final String TRANSACTION_TYPE_TRANSFER = "Transfer";
-    public static final String TRANSACTION_TYPE_LOAN_RELEASE = "Loan Release";
-    public static final String TRANSACTION_TYPE_LOAN_PAYMENT = "Loan Payment";
-    
-    // Transaction type aliases - for backward compatibility
-    public static final String TRANSACTION_LOAN_RELEASE = TRANSACTION_TYPE_LOAN_RELEASE;
-    public static final String TRANSACTION_LOAN_PAYMENT = TRANSACTION_TYPE_LOAN_PAYMENT;
-    public static final String TRANSACTION_DEPOSIT = TRANSACTION_TYPE_DEPOSIT;
-    public static final String TRANSACTION_WITHDRAWAL = TRANSACTION_TYPE_WITHDRAWAL;
-    public static final String TRANSACTION_INTEREST_EARNING = TRANSACTION_TYPE_INTEREST;
-    public static final String TRANSACTION_INTEREST = TRANSACTION_TYPE_INTEREST;
-    public static final String TRANSACTION_TRANSFER = TRANSACTION_TYPE_TRANSFER;
-    public static final String TRANSACTION_FEE = TRANSACTION_TYPE_FEE;
-    public static final String TRANSACTION_INTEREST_WITHDRAWAL = "Interest Withdrawal";
+    public static final String TRANSACTION_DEPOSIT = "Deposit";
+    public static final String TRANSACTION_WITHDRAWAL = "Withdrawal";
+    public static final String TRANSACTION_INTEREST = "Interest";
+    public static final String TRANSACTION_LOAN_RELEASE = "Loan Release";
+    public static final String TRANSACTION_LOAN_PAYMENT = "Loan Payment";
     
     // Loan types
-    public static final String LOAN_TYPE_PERSONAL = "Personal";
-    public static final String LOAN_TYPE_BUSINESS = "Business";
+    public static final String LOAN_TYPE_REGULAR = "Regular";
     public static final String LOAN_TYPE_EMERGENCY = "Emergency";
     public static final String LOAN_TYPE_EDUCATIONAL = "Educational";
+    public static final String LOAN_TYPE_PETTY_CASH = "Petty Cash";
+    public static final String LOAN_TYPE_BONUS = "Bonus";
     
     // Loan status
     public static final String LOAN_STATUS_PENDING = "Pending";
     public static final String LOAN_STATUS_APPROVED = "Approved";
     public static final String LOAN_STATUS_REJECTED = "Rejected";
-    public static final String LOAN_STATUS_DISBURSED = "Disbursed";
     public static final String LOAN_STATUS_ACTIVE = "Active";
     public static final String LOAN_STATUS_PAID = "Paid";
-    public static final String LOAN_STATUS_COMPLETED = "Completed";
     public static final String LOAN_STATUS_DEFAULTED = "Defaulted";
     
-    // Loan status aliases - for backward compatibility
-    public static final String LOAN_PENDING = LOAN_STATUS_PENDING;
-    public static final String LOAN_APPROVED = LOAN_STATUS_APPROVED;
-    public static final String LOAN_REJECTED = LOAN_STATUS_REJECTED;
-    public static final String LOAN_ACTIVE = LOAN_STATUS_ACTIVE;
-    public static final String LOAN_PAID = LOAN_STATUS_PAID;
+    // Loan status aliases (For compatibility with existing code)
+    public static final String LOAN_PENDING = "Pending";
+    public static final String LOAN_APPROVED = "Approved";
+    public static final String LOAN_REJECTED = "Rejected";
+    public static final String LOAN_ACTIVE = "Active";
+    public static final String LOAN_PAID = "Paid";
+    public static final String LOAN_DEFAULTED = "Defaulted";
     
     // Payment status
     public static final String PAYMENT_STATUS_PAID = "Paid";
@@ -97,47 +50,51 @@ public class Constants {
     public static final String PAYMENT_STATUS_PARTIAL = "Partial";
     public static final String PAYMENT_STATUS_LATE = "Late";
     
-    // Payment frequency
-    public static final String PAYMENT_FREQUENCY_MONTHLY = "Monthly";
-    public static final String PAYMENT_FREQUENCY_BIWEEKLY = "Bi-weekly";
-    public static final String PAYMENT_FREQUENCY_WEEKLY = "Weekly";
+    // Interest computation basis
+    public static final String INTEREST_COMPUTATION_DAILY = "Daily";
+    public static final String INTEREST_COMPUTATION_MONTHLY = "Monthly";
     
-    // Interest calculation methods
-    public static final String INTEREST_CALCULATION_DAILY = "Daily";
-    public static final String INTEREST_CALCULATION_MONTHLY = "Monthly";
-    public static final String INTEREST_CALCULATION_QUARTERLY = "Quarterly";
+    // Employment status
+    public static final String EMPLOYMENT_REGULAR = "Regular";
+    public static final String EMPLOYMENT_CONTRACTUAL = "Contractual";
+    public static final String EMPLOYMENT_SELF_EMPLOYED = "Self-Employed";
+    public static final String EMPLOYMENT_UNEMPLOYED = "Unemployed";
+    public static final String EMPLOYMENT_RETIRED = "Retired";
     
-    // Permissions
-    public static final String PERMISSION_USER_MANAGEMENT = "USER_MANAGEMENT";
-    public static final String PERMISSION_MEMBER_MANAGEMENT = "MEMBER_MANAGEMENT";
-    public static final String PERMISSION_ACCOUNT_MANAGEMENT = "ACCOUNT_MANAGEMENT";
-    public static final String PERMISSION_TRANSACTION_MANAGEMENT = "TRANSACTION_MANAGEMENT";
-    public static final String PERMISSION_LOAN_MANAGEMENT = "LOAN_MANAGEMENT";
-    public static final String PERMISSION_REPORT_GENERATION = "REPORT_GENERATION";
-    public static final String PERMISSION_SYSTEM_SETTINGS = "SYSTEM_SETTINGS";
-    
-    // Date format
+    // Date formats
     public static final String DATE_FORMAT = "yyyy-MM-dd";
     public static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String MONTH_FORMAT = "yyyy-MM";
     
-    // Dormancy period in days
-    public static final int DORMANCY_PERIOD_DAYS = 180; // 6 months
+    // System settings
+    public static final int DORMANCY_PERIOD_MONTHS = 12; // 12 months of inactivity marks account as dormant
+    
+    // Numeric validation patterns
+    public static final String NUMERIC_PATTERN = "^[0-9]+(\\.[0-9]{1,2})?$"; // Numbers with up to 2 decimal places
+    public static final String INTEGER_PATTERN = "^[0-9]+$"; // Integer numbers only
     
     // Default interest rates
-    public static final double DEFAULT_SAVINGS_INTEREST_RATE = 0.025; // 2.5%
-    public static final double DEFAULT_TIME_DEPOSIT_INTEREST_RATE = 0.04; // 4.0%
-    public static final double DEFAULT_SHARE_CAPITAL_INTEREST_RATE = 0.05; // 5.0%
-    
-    // Default minimum balances
-    public static final double DEFAULT_SAVINGS_MINIMUM_BALANCE = 500.0;
-    public static final double DEFAULT_TIME_DEPOSIT_MINIMUM_BALANCE = 5000.0;
-    public static final double DEFAULT_SHARE_CAPITAL_MINIMUM_BALANCE = 1000.0;
-    
-    // System settings keys
-    public static final String SETTING_INTEREST_RATE = "interest_rate";
-    public static final String SETTING_MINIMUM_BALANCE = "minimum_balance";
-    public static final String SETTING_DORMANCY_PERIOD = "dormancy_period";
-    
+    public static final double DEFAULT_SAVINGS_INTEREST_RATE = 2.5; // 2.5% annual interest
+    public static final double DEFAULT_MINIMUM_BALANCE = 500.00; // 500 minimum balance
+
     // UI constants
     public static final int TEXT_FIELD_HEIGHT = 25;
+    
+    // User roles (For backward compatibility as we transition to SuperAdmin-only system)
+    public static final String ROLE_SUPER_ADMIN = "Super Administrator";
+    public static final String ROLE_TREASURER = "Treasurer";
+    public static final String ROLE_BOOKKEEPER = "Bookkeeper";
+    
+    // Savings account status (For backward compatibility)
+    public static final String SAVINGS_STATUS_ACTIVE = "Active";
+    public static final String SAVINGS_STATUS_DORMANT = "Dormant";
+    
+    // Permission types (For backward compatibility)
+    public static final String PERMISSION_USER_MANAGEMENT = "User Management";
+    public static final String PERMISSION_MEMBER_MANAGEMENT = "Member Management";
+    public static final String PERMISSION_ACCOUNT_MANAGEMENT = "Account Management";
+    public static final String PERMISSION_TRANSACTION_MANAGEMENT = "Transaction Management";
+    public static final String PERMISSION_LOAN_MANAGEMENT = "Loan Management";
+    public static final String PERMISSION_REPORT_GENERATION = "Report Generation";
+    public static final String PERMISSION_SYSTEM_SETTINGS = "System Settings";
 }

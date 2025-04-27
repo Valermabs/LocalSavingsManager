@@ -1,96 +1,37 @@
 package com.moscat.models;
 
-import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model class for loans
+ * Represents a loan in the system
  */
 public class Loan {
     private int id;
     private int memberId;
-    private String loanNumber;
-    private String loanType; // REGULAR, PETTY_CASH, BONUS
-    private String purpose;
-    private double principalAmount;
+    private String loanType;
+    private double loanAmount;
     private double interestRate;
-    private int termYears;
     private double previousLoanBalance;
-    private double totalDeductions;
-    private double netLoanProceeds;
-    private double monthlyAmortization;
-    private double remainingBalance;
-    private Date applicationDate;
-    private Date approvalDate;
-    private Date releaseDate;
-    private Date maturityDate;
-    private Date lastPaymentDate;
-    private String status; // PENDING, APPROVED, REJECTED, ACTIVE, PAID
-    private int processedBy; // User ID who processed the loan
-    
-    private List<LoanDeduction> deductions;
+    private double deductions;
+    private double rlpf; // Risk Loss Provision Fund
+    private double netProceeds;
+    private int termMonths;
+    private LocalDateTime applicationDate;
+    private LocalDateTime approvalDate;
+    private String status;
     private List<LoanAmortization> amortizationSchedule;
     
-    /**
-     * Default constructor
-     */
+    // Constructor
     public Loan() {
-        this.deductions = new ArrayList<>();
+        this.applicationDate = LocalDateTime.now();
         this.amortizationSchedule = new ArrayList<>();
+        this.status = "Pending";
     }
     
-    /**
-     * Parameterized constructor
-     * 
-     * @param id Loan ID
-     * @param memberId Member ID
-     * @param loanNumber Loan number
-     * @param loanType Loan type
-     * @param principalAmount Principal amount
-     * @param interestRate Interest rate
-     * @param termYears Term in years
-     * @param previousLoanBalance Previous loan balance
-     * @param totalDeductions Total deductions
-     * @param netLoanProceeds Net loan proceeds
-     * @param monthlyAmortization Monthly amortization
-     * @param remainingBalance Remaining balance
-     * @param applicationDate Application date
-     * @param approvalDate Approval date
-     * @param releaseDate Release date
-     * @param maturityDate Maturity date
-     * @param status Loan status
-     * @param processedBy User ID who processed the loan
-     */
-    public Loan(int id, int memberId, String loanNumber, String loanType, double principalAmount,
-            double interestRate, int termYears, double previousLoanBalance, double totalDeductions,
-            double netLoanProceeds, double monthlyAmortization, double remainingBalance,
-            Date applicationDate, Date approvalDate, Date releaseDate, Date maturityDate,
-            String status, int processedBy) {
-        this.id = id;
-        this.memberId = memberId;
-        this.loanNumber = loanNumber;
-        this.loanType = loanType;
-        this.principalAmount = principalAmount;
-        this.interestRate = interestRate;
-        this.termYears = termYears;
-        this.previousLoanBalance = previousLoanBalance;
-        this.totalDeductions = totalDeductions;
-        this.netLoanProceeds = netLoanProceeds;
-        this.monthlyAmortization = monthlyAmortization;
-        this.remainingBalance = remainingBalance;
-        this.applicationDate = applicationDate;
-        this.approvalDate = approvalDate;
-        this.releaseDate = releaseDate;
-        this.maturityDate = maturityDate;
-        this.status = status;
-        this.processedBy = processedBy;
-        this.deductions = new ArrayList<>();
-        this.amortizationSchedule = new ArrayList<>();
-    }
-    
-    // Getters and Setters
-    
+    // Getters and setters
     public int getId() {
         return id;
     }
@@ -107,14 +48,6 @@ public class Loan {
         this.memberId = memberId;
     }
     
-    public String getLoanNumber() {
-        return loanNumber;
-    }
-    
-    public void setLoanNumber(String loanNumber) {
-        this.loanNumber = loanNumber;
-    }
-    
     public String getLoanType() {
         return loanType;
     }
@@ -123,20 +56,12 @@ public class Loan {
         this.loanType = loanType;
     }
     
-    public String getPurpose() {
-        return purpose;
+    public double getLoanAmount() {
+        return loanAmount;
     }
     
-    public void setPurpose(String purpose) {
-        this.purpose = purpose;
-    }
-    
-    public double getPrincipalAmount() {
-        return principalAmount;
-    }
-    
-    public void setPrincipalAmount(double principalAmount) {
-        this.principalAmount = principalAmount;
+    public void setLoanAmount(double loanAmount) {
+        this.loanAmount = loanAmount;
     }
     
     public double getInterestRate() {
@@ -147,14 +72,6 @@ public class Loan {
         this.interestRate = interestRate;
     }
     
-    public int getTermYears() {
-        return termYears;
-    }
-    
-    public void setTermYears(int termYears) {
-        this.termYears = termYears;
-    }
-    
     public double getPreviousLoanBalance() {
         return previousLoanBalance;
     }
@@ -163,76 +80,52 @@ public class Loan {
         this.previousLoanBalance = previousLoanBalance;
     }
     
-    public double getTotalDeductions() {
-        return totalDeductions;
+    public double getDeductions() {
+        return deductions;
     }
     
-    public void setTotalDeductions(double totalDeductions) {
-        this.totalDeductions = totalDeductions;
+    public void setDeductions(double deductions) {
+        this.deductions = deductions;
     }
     
-    public double getNetLoanProceeds() {
-        return netLoanProceeds;
+    public double getRlpf() {
+        return rlpf;
     }
     
-    public void setNetLoanProceeds(double netLoanProceeds) {
-        this.netLoanProceeds = netLoanProceeds;
+    public void setRlpf(double rlpf) {
+        this.rlpf = rlpf;
     }
     
-    public double getMonthlyAmortization() {
-        return monthlyAmortization;
+    public double getNetProceeds() {
+        return netProceeds;
     }
     
-    public void setMonthlyAmortization(double monthlyAmortization) {
-        this.monthlyAmortization = monthlyAmortization;
+    public void setNetProceeds(double netProceeds) {
+        this.netProceeds = netProceeds;
     }
     
-    public double getRemainingBalance() {
-        return remainingBalance;
+    public int getTermMonths() {
+        return termMonths;
     }
     
-    public void setRemainingBalance(double remainingBalance) {
-        this.remainingBalance = remainingBalance;
+    public void setTermMonths(int termMonths) {
+        this.termMonths = termMonths;
     }
     
-    public Date getApplicationDate() {
+    public LocalDateTime getApplicationDate() {
         return applicationDate;
     }
     
-    public void setApplicationDate(Date applicationDate) {
+    public void setApplicationDate(LocalDateTime applicationDate) {
         this.applicationDate = applicationDate;
     }
     
-    public Date getApprovalDate() {
+    public LocalDateTime getApprovalDate() {
         return approvalDate;
     }
     
-    public void setApprovalDate(Date approvalDate) {
+    public void setApprovalDate(LocalDateTime approvalDate) {
         this.approvalDate = approvalDate;
-    }
-    
-    public Date getReleaseDate() {
-        return releaseDate;
-    }
-    
-    public void setReleaseDate(Date releaseDate) {
-        this.releaseDate = releaseDate;
-    }
-    
-    public Date getMaturityDate() {
-        return maturityDate;
-    }
-    
-    public void setMaturityDate(Date maturityDate) {
-        this.maturityDate = maturityDate;
-    }
-    
-    public Date getLastPaymentDate() {
-        return lastPaymentDate;
-    }
-    
-    public void setLastPaymentDate(Date lastPaymentDate) {
-        this.lastPaymentDate = lastPaymentDate;
     }
     
     public String getStatus() {
@@ -241,22 +134,6 @@ public class Loan {
     
     public void setStatus(String status) {
         this.status = status;
-    }
-    
-    public int getProcessedBy() {
-        return processedBy;
-    }
-    
-    public void setProcessedBy(int processedBy) {
-        this.processedBy = processedBy;
-    }
-    
-    public List<LoanDeduction> getDeductions() {
-        return deductions;
-    }
-    
-    public void setDeductions(List<LoanDeduction> deductions) {
-        this.deductions = deductions;
     }
     
     public List<LoanAmortization> getAmortizationSchedule() {
@@ -268,121 +145,84 @@ public class Loan {
     }
     
     /**
-     * Adds a deduction to the loan
+     * Calculate the RLPF (Risk Loss Provision Fund) for this loan
      * 
-     * @param deduction Deduction to add
-     */
-    public void addDeduction(LoanDeduction deduction) {
-        this.deductions.add(deduction);
-        this.totalDeductions += deduction.getAmount();
-        recalculateNetProceeds();
-    }
-    
-    /**
-     * Adds an amortization schedule entry
-     * 
-     * @param amortization Amortization schedule entry
-     */
-    public void addAmortization(LoanAmortization amortization) {
-        this.amortizationSchedule.add(amortization);
-    }
-    
-    /**
-     * Recalculates the net loan proceeds
-     */
-    public void recalculateNetProceeds() {
-        this.netLoanProceeds = this.principalAmount - this.totalDeductions - this.previousLoanBalance;
-    }
-    
-    /**
-     * Calculates the RLPF amount (₱1 per ₱1,000 computed monthly)
-     * 
-     * @return RLPF amount
+     * @return The calculated RLPF value
      */
     public double calculateRLPF() {
-        // RLPF is not applicable for Petty Cash and Bonus Loan
-        if ("PETTY_CASH".equals(loanType) || "BONUS".equals(loanType)) {
-            return 0;
+        // RLPF = (LoanAmount ÷ 1000) × 1 × Number of Term Months
+        // Not applied to Petty Cash or Bonus Loans
+        if ("Petty Cash".equals(loanType) || "Bonus".equals(loanType)) {
+            return 0.0;
         }
         
-        // RLPF = (Principal / 1000) * 1 * (termYears * 12)
-        return (principalAmount / 1000) * 1 * (termYears * 12);
+        return (loanAmount / 1000.0) * 1 * termMonths;
     }
     
     /**
-     * Calculates loan amortization schedule using straight-line diminishing principal method
+     * Calculate the net proceeds of the loan
+     * 
+     * @return The calculated net proceeds
      */
-    public void calculateAmortizationSchedule() {
+    public double calculateNetProceeds() {
+        return loanAmount - previousLoanBalance - deductions - rlpf;
+    }
+    
+    /**
+     * Generate the amortization schedule for this loan
+     */
+    public void generateAmortizationSchedule() {
         amortizationSchedule.clear();
         
-        double annualPrincipalPayment = principalAmount / termYears;
-        double remainingPrincipal = principalAmount;
+        // Number of years in the term
+        double termYears = termMonths / 12.0;
         
-        for (int year = 1; year <= termYears; year++) {
+        // Annual principal payment
+        double annualPrincipalPayment = loanAmount / termYears;
+        
+        // Convert monthly value to yearly for the calculation
+        LocalDate currentDate = LocalDate.now();
+        
+        // Generate for each year
+        for (int year = 0; year < Math.ceil(termYears); year++) {
+            // Calculate remaining principal
+            double remainingPrincipal = loanAmount - (annualPrincipalPayment * year);
+            if (remainingPrincipal < 0) {
+                remainingPrincipal = 0;
+            }
+            
+            // Calculate annual interest
             double annualInterest = remainingPrincipal * (interestRate / 100);
-            double monthlyAmortization = (annualInterest / 12) + (annualPrincipalPayment / 12);
             
-            LoanAmortization amortization = new LoanAmortization();
-            amortization.setLoanId(id);
-            amortization.setYear(year);
-            amortization.setRemainingPrincipal(remainingPrincipal);
-            amortization.setAnnualInterest(annualInterest);
-            amortization.setAnnualPrincipalPayment(annualPrincipalPayment);
-            amortization.setMonthlyAmortization(monthlyAmortization);
+            // Monthly amortization = (annual interest / 12) + (annual principal payment / 12)
+            double monthlyInterest = annualInterest / 12;
+            double monthlyPrincipal = annualPrincipalPayment / 12;
+            double monthlyAmortization = monthlyInterest + monthlyPrincipal;
             
-            amortizationSchedule.add(amortization);
-            
-            remainingPrincipal -= annualPrincipalPayment;
+            // Generate monthly amortization entries
+            for (int month = 0; month < 12; month++) {
+                // Skip if we've exceeded the term months
+                if ((year * 12) + month >= termMonths) {
+                    break;
+                }
+                
+                LocalDate paymentDate = currentDate.plusMonths((year * 12) + month);
+                double remainingBalance = remainingPrincipal - (monthlyPrincipal * month);
+                if (remainingBalance < 0) {
+                    remainingBalance = 0;
+                }
+                
+                LoanAmortization amortization = new LoanAmortization();
+                amortization.setPaymentNumber((year * 12) + month + 1);
+                amortization.setPaymentDate(paymentDate);
+                amortization.setPrincipalAmount(monthlyPrincipal);
+                amortization.setInterestAmount(monthlyInterest);
+                amortization.setTotalPayment(monthlyAmortization);
+                amortization.setRemainingBalance(remainingBalance);
+                amortization.setPaymentStatus("Unpaid");
+                
+                amortizationSchedule.add(amortization);
+            }
         }
-        
-        // Set the monthly amortization for the first year
-        if (!amortizationSchedule.isEmpty()) {
-            this.monthlyAmortization = amortizationSchedule.get(0).getMonthlyAmortization();
-        }
-    }
-    
-    /**
-     * Checks if the loan is pending
-     * 
-     * @return true if pending, false otherwise
-     */
-    public boolean isPending() {
-        return "PENDING".equals(status);
-    }
-    
-    /**
-     * Checks if the loan is approved
-     * 
-     * @return true if approved, false otherwise
-     */
-    public boolean isApproved() {
-        return "APPROVED".equals(status);
-    }
-    
-    /**
-     * Checks if the loan is rejected
-     * 
-     * @return true if rejected, false otherwise
-     */
-    public boolean isRejected() {
-        return "REJECTED".equals(status);
-    }
-    
-    /**
-     * Checks if the loan is active
-     * 
-     * @return true if active, false otherwise
-     */
-    public boolean isActive() {
-        return "ACTIVE".equals(status);
-    }
-    
-    /**
-     * Checks if the loan is paid
-     * 
-     * @return true if paid, false otherwise
-     */
-    public boolean isPaid() {
-        return "PAID".equals(status);
     }
 }

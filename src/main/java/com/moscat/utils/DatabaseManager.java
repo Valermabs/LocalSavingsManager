@@ -1,6 +1,5 @@
 package com.moscat.utils;
 
-import com.moscat.controllers.PermissionController;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -9,27 +8,26 @@ import java.sql.SQLException;
  * Singleton class for managing database connections
  */
 public class DatabaseManager {
-    
     private static DatabaseManager instance;
-    private String jdbcUrl;
-    private String username;
-    private String password;
+    private static final String DB_URL = "jdbc:h2:./data/moscatdb;AUTO_SERVER=TRUE";
+    private static final String DB_USER = "sa";
+    private static final String DB_PASSWORD = "";
     
-    /**
-     * Private constructor
-     */
+    // Private constructor to enforce singleton pattern
     private DatabaseManager() {
-        // Configure H2 database
-        String dbName = "moscat_db";
-        this.jdbcUrl = "jdbc:h2:./data/" + dbName;
-        this.username = "moscat";
-        this.password = "moscat";
+        try {
+            // Load the H2 JDBC driver
+            Class.forName("org.h2.Driver");
+        } catch (ClassNotFoundException e) {
+            System.err.println("H2 JDBC Driver not found: " + e.getMessage());
+            throw new RuntimeException("H2 JDBC Driver not found", e);
+        }
     }
     
     /**
-     * Gets the singleton instance
+     * Gets the singleton instance of the DatabaseManager
      * 
-     * @return DatabaseManager instance
+     * @return The DatabaseManager instance
      */
     public static synchronized DatabaseManager getInstance() {
         if (instance == null) {
@@ -39,72 +37,19 @@ public class DatabaseManager {
     }
     
     /**
-     * Gets a database connection
+     * Gets a connection to the database
      * 
-     * @return Database connection
-     * @throws SQLException if connection fails
+     * @return A database connection
+     * @throws SQLException If a database error occurs
      */
     public Connection getConnection() throws SQLException {
-        try {
-            // Load driver
-            Class.forName("org.h2.Driver");
-            
-            // Get connection
-            return DriverManager.getConnection(jdbcUrl, username, password);
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("H2 JDBC driver not found", e);
-        }
+        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
     
     /**
-     * Safely closes database resources
-     * 
-     * @param rs ResultSet to close
-     * @param stmt Statement or PreparedStatement to close
-     * @param conn Connection to close
+     * Initializes the database
      */
-    public static void closeResources(java.sql.ResultSet rs, java.sql.Statement stmt, java.sql.Connection conn) {
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        try {
-            if (stmt != null) {
-                stmt.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        try {
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Initializes the database schema
-     */
-    public static void initializeDatabase() {
-        try {
-            // Create tables for permissions management
-            PermissionController.createPermissionsTableIfNotExists();
-            PermissionController.createUserPermissionsTableIfNotExists();
-            
-            // Initialize default permissions
-            PermissionController.initializeDefaultPermissions();
-            
-            System.out.println("Database initialized successfully.");
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Error initializing database: " + e.getMessage());
-        }
+    public void initializeDatabase() {
+        DatabaseInitializer.initialize();
     }
 }

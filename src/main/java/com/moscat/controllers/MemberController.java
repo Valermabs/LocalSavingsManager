@@ -1,72 +1,132 @@
 package com.moscat.controllers;
 
-import com.moscat.models.Member;
-import com.moscat.models.SavingsAccount;
-import com.moscat.utils.Constants;
-import com.moscat.utils.DatabaseManager;
-import com.moscat.utils.DateUtils;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Random;
+
+import com.moscat.models.Member;
+import com.moscat.utils.Constants;
+import com.moscat.utils.DatabaseManager;
 
 /**
- * Controller for member management
+ * Controller for member-related operations
  */
 public class MemberController {
     
     /**
-     * Gets a member by ID
+     * Creates a new member
      * 
-     * @param memberId Member ID
-     * @return Member or null if not found
+     * @param member The member to create
+     * @return True if successful, false otherwise
      */
-    public static Member getMemberById(int memberId) {
-        String query = "SELECT * FROM members WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public static boolean createMember(Member member) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "INSERT INTO members "
+                    + "(first_name, middle_name, last_name, age, birthdate, present_address, permanent_address, "
+                    + "contact_number, email_address, employer, employment_status, gross_monthly_income, average_net_monthly_income, "
+                    + "created_at, updated_at, status) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
-            stmt.setInt(1, memberId);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                return mapResultSetToMember(rs);
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, member.getFirstName());
+                stmt.setString(2, member.getMiddleName());
+                stmt.setString(3, member.getLastName());
+                stmt.setInt(4, member.getAge());
+                stmt.setDate(5, java.sql.Date.valueOf(member.getBirthdate()));
+                stmt.setString(6, member.getPresentAddress());
+                stmt.setString(7, member.getPermanentAddress());
+                stmt.setString(8, member.getContactNumber());
+                stmt.setString(9, member.getEmailAddress());
+                stmt.setString(10, member.getEmployer());
+                stmt.setString(11, member.getEmploymentStatus());
+                stmt.setDouble(12, member.getGrossMonthlyIncome());
+                stmt.setDouble(13, member.getAverageNetMonthlyIncome());
+                
+                LocalDateTime now = LocalDateTime.now();
+                stmt.setTimestamp(14, Timestamp.valueOf(now));
+                stmt.setTimestamp(15, Timestamp.valueOf(now));
+                stmt.setString(16, Constants.STATUS_ACTIVE);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
             }
-            
         } catch (SQLException e) {
+            System.err.println("Error creating member: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
-        
-        return null;
     }
     
     /**
-     * Gets a member by member number
+     * Updates an existing member
      * 
-     * @param memberNumber Member number
-     * @return Member or null if not found
+     * @param member The member to update
+     * @return True if successful, false otherwise
      */
-    public static Member getMemberByNumber(String memberNumber) {
-        String query = "SELECT * FROM members WHERE member_number = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public static boolean updateMember(Member member) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "UPDATE members SET "
+                    + "first_name = ?, middle_name = ?, last_name = ?, age = ?, birthdate = ?, "
+                    + "present_address = ?, permanent_address = ?, contact_number = ?, email_address = ?, "
+                    + "employer = ?, employment_status = ?, gross_monthly_income = ?, average_net_monthly_income = ?, "
+                    + "updated_at = ?, status = ? "
+                    + "WHERE id = ?";
             
-            stmt.setString(1, memberNumber);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                return mapResultSetToMember(rs);
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, member.getFirstName());
+                stmt.setString(2, member.getMiddleName());
+                stmt.setString(3, member.getLastName());
+                stmt.setInt(4, member.getAge());
+                stmt.setDate(5, java.sql.Date.valueOf(member.getBirthdate()));
+                stmt.setString(6, member.getPresentAddress());
+                stmt.setString(7, member.getPermanentAddress());
+                stmt.setString(8, member.getContactNumber());
+                stmt.setString(9, member.getEmailAddress());
+                stmt.setString(10, member.getEmployer());
+                stmt.setString(11, member.getEmploymentStatus());
+                stmt.setDouble(12, member.getGrossMonthlyIncome());
+                stmt.setDouble(13, member.getAverageNetMonthlyIncome());
+                stmt.setTimestamp(14, Timestamp.valueOf(LocalDateTime.now()));
+                stmt.setString(15, member.getStatus());
+                stmt.setInt(16, member.getId());
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
             }
-            
         } catch (SQLException e) {
+            System.err.println("Error updating member: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Gets a member by ID
+     * 
+     * @param memberId The member ID
+     * @return The member, or null if not found
+     */
+    public static Member getMemberById(int memberId) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT * FROM members WHERE id = ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, memberId);
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return extractMemberFromResultSet(rs);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting member: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -79,18 +139,20 @@ public class MemberController {
      * @return List of all members
      */
     public static List<Member> getAllMembers() {
-        String query = "SELECT * FROM members ORDER BY last_name, first_name";
         List<Member> members = new ArrayList<>();
         
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT * FROM members ORDER BY last_name, first_name";
             
-            while (rs.next()) {
-                members.add(mapResultSetToMember(rs));
+            try (PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+                
+                while (rs.next()) {
+                    members.add(extractMemberFromResultSet(rs));
+                }
             }
-            
         } catch (SQLException e) {
+            System.err.println("Error getting members: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -98,25 +160,27 @@ public class MemberController {
     }
     
     /**
-     * Gets active members
+     * Gets dormant members
      * 
-     * @return List of active members
+     * @return List of dormant members
      */
-    public static List<Member> getActiveMembers() {
-        String query = "SELECT * FROM members WHERE status = ? ORDER BY last_name, first_name";
+    public static List<Member> getDormantMembers() {
         List<Member> members = new ArrayList<>();
         
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT * FROM members WHERE status = ? ORDER BY last_name, first_name";
             
-            stmt.setString(1, Constants.STATUS_ACTIVE);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                members.add(mapResultSetToMember(rs));
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, Constants.STATUS_DORMANT);
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        members.add(extractMemberFromResultSet(rs));
+                    }
+                }
             }
-            
         } catch (SQLException e) {
+            System.err.println("Error getting dormant members: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -124,300 +188,193 @@ public class MemberController {
     }
     
     /**
-     * Searches for members
+     * Updates a member's savings balance
      * 
-     * @param searchTerm Search term
-     * @return List of matching members
+     * @param memberId The member ID
+     * @param newBalance The new balance
+     * @return True if successful, false otherwise
      */
-    public static List<Member> searchMembers(String searchTerm) {
-        String query = "SELECT * FROM members WHERE member_number LIKE ? OR first_name LIKE ? OR " +
-                "middle_name LIKE ? OR last_name LIKE ? OR contact_number LIKE ? OR email LIKE ? " +
-                "ORDER BY last_name, first_name";
-        
-        List<Member> members = new ArrayList<>();
-        String searchPattern = "%" + searchTerm + "%";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public static boolean updateSavingsBalance(int memberId, double newBalance) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "UPDATE members SET savings_balance = ?, updated_at = ? WHERE id = ?";
             
-            stmt.setString(1, searchPattern);
-            stmt.setString(2, searchPattern);
-            stmt.setString(3, searchPattern);
-            stmt.setString(4, searchPattern);
-            stmt.setString(5, searchPattern);
-            stmt.setString(6, searchPattern);
-            
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                members.add(mapResultSetToMember(rs));
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setDouble(1, newBalance);
+                stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+                stmt.setInt(3, memberId);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
             }
-            
         } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return members;
-    }
-    
-    /**
-     * Registers a new member
-     * 
-     * @param member Member object
-     * @return true if registration successful, false otherwise
-     */
-    public static boolean registerMember(Member member) {
-        if (member.getFirstName() == null || member.getLastName() == null) {
-            return false;
-        }
-        
-        // Generate member number
-        String memberNumber = generateMemberNumber();
-        member.setMemberNumber(memberNumber);
-        
-        // Set status and join date if not set
-        if (member.getStatus() == null) {
-            member.setStatus(Constants.STATUS_ACTIVE);
-        }
-        if (member.getJoinDate() == null) {
-            member.setJoinDate(new Date());
-        }
-        
-        String query = "INSERT INTO members (member_number, first_name, middle_name, last_name, " +
-                "birth_date, contact_number, email, present_address, permanent_address, " +
-                "employer, employment_status, gross_monthly_income, avg_net_monthly_income, " +
-                "status, join_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, member.getMemberNumber());
-            stmt.setString(2, member.getFirstName());
-            stmt.setString(3, member.getMiddleName());
-            stmt.setString(4, member.getLastName());
-            stmt.setDate(5, member.getBirthDate() != null ? DateUtils.toSqlDate(member.getBirthDate()) : null);
-            stmt.setString(6, member.getContactNumber());
-            stmt.setString(7, member.getEmail());
-            stmt.setString(8, member.getPresentAddress());
-            stmt.setString(9, member.getPermanentAddress());
-            stmt.setString(10, member.getEmployer());
-            stmt.setString(11, member.getEmploymentStatus());
-            stmt.setDouble(12, member.getGrossMonthlyIncome());
-            stmt.setDouble(13, member.getAvgNetMonthlyIncome());
-            stmt.setString(14, member.getStatus());
-            stmt.setDate(15, member.getJoinDate() != null ? DateUtils.toSqlDate(member.getJoinDate()) : null);
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
+            System.err.println("Error updating savings balance: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
     
     /**
-     * Updates a member
+     * Updates a member's interest earned
      * 
-     * @param member Member object
-     * @return true if update successful, false otherwise
+     * @param memberId The member ID
+     * @param additionalInterest The additional interest to add
+     * @return True if successful, false otherwise
      */
-    public static boolean updateMember(Member member) {
-        if (member.getId() <= 0 || member.getMemberNumber() == null) {
-            return false;
-        }
-        
-        String query = "UPDATE members SET first_name = ?, middle_name = ?, last_name = ?, " +
-                "birth_date = ?, contact_number = ?, email = ?, present_address = ?, " +
-                "permanent_address = ?, employer = ?, employment_status = ?, " +
-                "gross_monthly_income = ?, avg_net_monthly_income = ? WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public static boolean addInterestEarned(int memberId, double additionalInterest) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "UPDATE members SET interest_earned = interest_earned + ?, updated_at = ? WHERE id = ?";
             
-            stmt.setString(1, member.getFirstName());
-            stmt.setString(2, member.getMiddleName());
-            stmt.setString(3, member.getLastName());
-            stmt.setDate(4, member.getBirthDate() != null ? DateUtils.toSqlDate(member.getBirthDate()) : null);
-            stmt.setString(5, member.getContactNumber());
-            stmt.setString(6, member.getEmail());
-            stmt.setString(7, member.getPresentAddress());
-            stmt.setString(8, member.getPermanentAddress());
-            stmt.setString(9, member.getEmployer());
-            stmt.setString(10, member.getEmploymentStatus());
-            stmt.setDouble(11, member.getGrossMonthlyIncome());
-            stmt.setDouble(12, member.getAvgNetMonthlyIncome());
-            stmt.setInt(13, member.getId());
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Activates a member
-     * 
-     * @param memberNumber Member number
-     * @return true if activation successful, false otherwise
-     */
-    public static boolean activateMember(String memberNumber) {
-        return updateMemberStatus(memberNumber, Constants.STATUS_ACTIVE);
-    }
-    
-    /**
-     * Deactivates a member
-     * 
-     * @param memberNumber Member number
-     * @return true if deactivation successful, false otherwise
-     */
-    public static boolean deactivateMember(String memberNumber) {
-        return updateMemberStatus(memberNumber, Constants.STATUS_INACTIVE);
-    }
-    
-    /**
-     * Updates a member's status
-     * 
-     * @param memberNumber Member number
-     * @param status New status
-     * @return true if update successful, false otherwise
-     */
-    private static boolean updateMemberStatus(String memberNumber, String status) {
-        String query = "UPDATE members SET status = ? WHERE member_number = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, status);
-            stmt.setString(2, memberNumber);
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Gets savings accounts for a member
-     * 
-     * @param memberId Member ID
-     * @return List of savings accounts
-     */
-    public static List<SavingsAccount> getMemberSavingsAccounts(int memberId) {
-        String query = "SELECT * FROM savings_accounts WHERE member_id = ? ORDER BY open_date DESC";
-        List<SavingsAccount> accounts = new ArrayList<>();
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, memberId);
-            ResultSet rs = stmt.executeQuery();
-            
-            while (rs.next()) {
-                SavingsAccount account = new SavingsAccount();
-                account.setId(rs.getInt("id"));
-                account.setMemberId(rs.getInt("member_id"));
-                account.setAccountNumber(rs.getString("account_number"));
-                account.setBalance(rs.getDouble("balance"));
-                account.setInterestEarned(rs.getDouble("interest_earned"));
-                account.setStatus(rs.getString("status"));
-                account.setOpenDate(rs.getDate("open_date"));
-                account.setLastActivityDate(rs.getDate("last_activity_date"));
-                accounts.add(account);
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setDouble(1, additionalInterest);
+                stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+                stmt.setInt(3, memberId);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
             }
-            
         } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return accounts;
-    }
-    
-    /**
-     * Gets a member's primary savings account
-     * 
-     * @param memberId Member ID
-     * @return SavingsAccount or null if not found
-     */
-    public static SavingsAccount getMemberSavingsAccount(int memberId) {
-        List<SavingsAccount> accounts = getMemberSavingsAccounts(memberId);
-        if (!accounts.isEmpty()) {
-            return accounts.get(0); // Return the first (primary) account
-        }
-        return null;
-    }
-    
-    /**
-     * Updates a member's last activity date to current date
-     * 
-     * @param memberId Member ID
-     * @return true if update successful, false otherwise
-     */
-    public static boolean updateLastActivityDate(int memberId) {
-        String query = "UPDATE members SET last_activity_date = ? WHERE id = ?";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setDate(1, DateUtils.toSqlDate(new Date()));
-            stmt.setInt(2, memberId);
-            
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
+            System.err.println("Error updating interest earned: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
     
     /**
-     * Maps a ResultSet row to a Member object
+     * Gets the total number of members
      * 
-     * @param rs ResultSet
-     * @return Member object
-     * @throws SQLException If database error occurs
+     * @return The member count
      */
-    private static Member mapResultSetToMember(ResultSet rs) throws SQLException {
+    public static int getMemberCount() {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT COUNT(*) FROM members";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+                
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting member count: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Gets the total savings balance of all members
+     * 
+     * @return The total savings balance
+     */
+    public static double getTotalSavingsBalance() {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "SELECT SUM(savings_balance) FROM members";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+                
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting total savings balance: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0.0;
+    }
+    
+    /**
+     * Sets a member's account as dormant
+     * 
+     * @param memberId The member ID
+     * @return True if successful, false otherwise
+     */
+    public static boolean setMemberDormant(int memberId) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "UPDATE members SET status = ?, updated_at = ? WHERE id = ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, Constants.STATUS_DORMANT);
+                stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+                stmt.setInt(3, memberId);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error setting member dormant: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Reactivates a dormant member account
+     * 
+     * @param memberId The member ID
+     * @return True if successful, false otherwise
+     */
+    public static boolean reactivateMember(int memberId) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            String query = "UPDATE members SET status = ?, updated_at = ? WHERE id = ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, Constants.STATUS_ACTIVE);
+                stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+                stmt.setInt(3, memberId);
+                
+                int rowsAffected = stmt.executeUpdate();
+                return rowsAffected > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error reactivating member: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Extracts a Member object from a ResultSet
+     * 
+     * @param rs The ResultSet
+     * @return The extracted Member
+     * @throws SQLException If a database error occurs
+     */
+    private static Member extractMemberFromResultSet(ResultSet rs) throws SQLException {
         Member member = new Member();
         member.setId(rs.getInt("id"));
-        member.setMemberNumber(rs.getString("member_number"));
         member.setFirstName(rs.getString("first_name"));
         member.setMiddleName(rs.getString("middle_name"));
         member.setLastName(rs.getString("last_name"));
-        member.setBirthDate(rs.getDate("birth_date"));
-        member.setContactNumber(rs.getString("contact_number"));
-        member.setEmail(rs.getString("email"));
+        member.setAge(rs.getInt("age"));
+        member.setBirthdate(rs.getDate("birthdate").toLocalDate());
         member.setPresentAddress(rs.getString("present_address"));
         member.setPermanentAddress(rs.getString("permanent_address"));
+        member.setContactNumber(rs.getString("contact_number"));
+        member.setEmailAddress(rs.getString("email_address"));
         member.setEmployer(rs.getString("employer"));
         member.setEmploymentStatus(rs.getString("employment_status"));
         member.setGrossMonthlyIncome(rs.getDouble("gross_monthly_income"));
-        member.setAvgNetMonthlyIncome(rs.getDouble("avg_net_monthly_income"));
-        member.setStatus(rs.getString("status"));
-        member.setJoinDate(rs.getDate("join_date"));
-        member.setLastActivityDate(rs.getDate("last_activity_date"));
-        member.setLoanEligibilityAmount(rs.getDouble("loan_eligibility_amount"));
-        return member;
-    }
-    
-    /**
-     * Generates a unique member number
-     * 
-     * @return Generated member number
-     */
-    private static String generateMemberNumber() {
-        // Format: MM-YYYYMMDD-XXXX (where XXXX is a random 4-digit number)
-        String prefix = "MM-";
-        String datePart = new SimpleDateFormat("yyyyMMdd").format(new Date());
-        String randomPart = String.format("%04d", new Random().nextInt(10000));
+        member.setAverageNetMonthlyIncome(rs.getDouble("average_net_monthly_income"));
+        member.setSavingsBalance(rs.getDouble("savings_balance"));
+        member.setInterestEarned(rs.getDouble("interest_earned"));
         
-        return prefix + datePart + "-" + randomPart;
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            member.setCreatedAt(createdAt.toLocalDateTime());
+        }
+        
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        if (updatedAt != null) {
+            member.setUpdatedAt(updatedAt.toLocalDateTime());
+        }
+        
+        member.setStatus(rs.getString("status"));
+        
+        return member;
     }
 }

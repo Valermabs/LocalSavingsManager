@@ -1,47 +1,28 @@
 package com.moscat.models;
 
+import java.time.LocalDate;
+
 /**
- * Model class for loan amortization schedule
+ * Represents a loan amortization payment schedule
  */
 public class LoanAmortization {
     private int id;
     private int loanId;
-    private int year;
-    private double remainingPrincipal;
-    private double annualInterest;
-    private double annualPrincipalPayment;
-    private double monthlyAmortization;
+    private int paymentNumber;
+    private LocalDate paymentDate;
+    private double principalAmount;
+    private double interestAmount;
+    private double totalPayment;
+    private double remainingBalance;
+    private String paymentStatus;
+    private LocalDate actualPaymentDate;
     
-    /**
-     * Default constructor
-     */
+    // Constructor
     public LoanAmortization() {
+        this.paymentStatus = "Unpaid";
     }
     
-    /**
-     * Parameterized constructor
-     * 
-     * @param id Amortization ID
-     * @param loanId Loan ID
-     * @param year Year number
-     * @param remainingPrincipal Remaining principal at the start of the year
-     * @param annualInterest Annual interest amount
-     * @param annualPrincipalPayment Annual principal payment
-     * @param monthlyAmortization Monthly amortization amount
-     */
-    public LoanAmortization(int id, int loanId, int year, double remainingPrincipal,
-            double annualInterest, double annualPrincipalPayment, double monthlyAmortization) {
-        this.id = id;
-        this.loanId = loanId;
-        this.year = year;
-        this.remainingPrincipal = remainingPrincipal;
-        this.annualInterest = annualInterest;
-        this.annualPrincipalPayment = annualPrincipalPayment;
-        this.monthlyAmortization = monthlyAmortization;
-    }
-    
-    // Getters and Setters
-    
+    // Getters and setters
     public int getId() {
         return id;
     }
@@ -58,70 +39,85 @@ public class LoanAmortization {
         this.loanId = loanId;
     }
     
-    public int getYear() {
-        return year;
+    public int getPaymentNumber() {
+        return paymentNumber;
     }
     
-    public void setYear(int year) {
-        this.year = year;
+    public void setPaymentNumber(int paymentNumber) {
+        this.paymentNumber = paymentNumber;
     }
     
-    public double getRemainingPrincipal() {
-        return remainingPrincipal;
+    public LocalDate getPaymentDate() {
+        return paymentDate;
     }
     
-    public void setRemainingPrincipal(double remainingPrincipal) {
-        this.remainingPrincipal = remainingPrincipal;
+    public void setPaymentDate(LocalDate paymentDate) {
+        this.paymentDate = paymentDate;
     }
     
-    public double getAnnualInterest() {
-        return annualInterest;
+    public double getPrincipalAmount() {
+        return principalAmount;
     }
     
-    public void setAnnualInterest(double annualInterest) {
-        this.annualInterest = annualInterest;
+    public void setPrincipalAmount(double principalAmount) {
+        this.principalAmount = principalAmount;
     }
     
-    public double getAnnualPrincipalPayment() {
-        return annualPrincipalPayment;
+    public double getInterestAmount() {
+        return interestAmount;
     }
     
-    public void setAnnualPrincipalPayment(double annualPrincipalPayment) {
-        this.annualPrincipalPayment = annualPrincipalPayment;
+    public void setInterestAmount(double interestAmount) {
+        this.interestAmount = interestAmount;
     }
     
-    public double getMonthlyAmortization() {
-        return monthlyAmortization;
+    public double getTotalPayment() {
+        return totalPayment;
     }
     
-    public void setMonthlyAmortization(double monthlyAmortization) {
-        this.monthlyAmortization = monthlyAmortization;
+    public void setTotalPayment(double totalPayment) {
+        this.totalPayment = totalPayment;
+    }
+    
+    public double getRemainingBalance() {
+        return remainingBalance;
+    }
+    
+    public void setRemainingBalance(double remainingBalance) {
+        this.remainingBalance = remainingBalance;
+    }
+    
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+    
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+    
+    public LocalDate getActualPaymentDate() {
+        return actualPaymentDate;
+    }
+    
+    public void setActualPaymentDate(LocalDate actualPaymentDate) {
+        this.actualPaymentDate = actualPaymentDate;
     }
     
     /**
-     * Gets the monthly principal payment
+     * Check if payment is due
      * 
-     * @return Monthly principal payment
+     * @return True if payment is due, false otherwise
      */
-    public double getMonthlyPrincipalPayment() {
-        return annualPrincipalPayment / 12;
+    public boolean isPaymentDue() {
+        return LocalDate.now().isAfter(paymentDate) && "Unpaid".equals(paymentStatus);
     }
     
     /**
-     * Gets the monthly interest payment
+     * Check if payment is late
      * 
-     * @return Monthly interest payment
+     * @return True if payment is late, false otherwise
      */
-    public double getMonthlyInterestPayment() {
-        return annualInterest / 12;
-    }
-    
-    /**
-     * Gets the total annual payment (principal + interest)
-     * 
-     * @return Total annual payment
-     */
-    public double getAnnualPayment() {
-        return annualPrincipalPayment + annualInterest;
+    public boolean isPaymentLate() {
+        return LocalDate.now().isAfter(paymentDate.plusDays(5)) && "Unpaid".equals(paymentStatus);
     }
 }

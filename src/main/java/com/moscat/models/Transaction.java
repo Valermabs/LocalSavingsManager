@@ -1,272 +1,114 @@
 package com.moscat.models;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
- * Model for transaction data
+ * Represents a financial transaction in the system
  */
 public class Transaction {
-    
     private int id;
-    private String transactionId;
-    private String referenceNumber;   // Added for compatibility
-    private int accountId;
+    private int memberId;
     private String transactionType;
     private double amount;
-    private Date transactionDate;
+    private LocalDateTime transactionDate;
     private String description;
-    private double balanceAfter;
-    private double runningBalance;    // Added for compatibility
-    private int performedById;
-    private String performedByUsername;
-    private Date createdAt;
+    private String processedBy;
     
-    /**
-     * Default constructor
-     */
+    // Constructor
     public Transaction() {
+        this.transactionDate = LocalDateTime.now();
     }
     
-    /**
-     * Gets the ID
-     * 
-     * @return ID
-     */
+    // Getters and setters
     public int getId() {
         return id;
     }
     
-    /**
-     * Sets the ID
-     * 
-     * @param id ID
-     */
     public void setId(int id) {
         this.id = id;
     }
     
-    /**
-     * Gets the transaction ID
-     * 
-     * @return Transaction ID
-     */
-    public String getTransactionId() {
-        return transactionId;
+    public int getMemberId() {
+        return memberId;
     }
     
-    /**
-     * Sets the transaction ID
-     * 
-     * @param transactionId Transaction ID
-     */
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
+    public void setMemberId(int memberId) {
+        this.memberId = memberId;
     }
     
-    /**
-     * Gets the reference number
-     * 
-     * @return Reference number
-     */
-    public String getReferenceNumber() {
-        return referenceNumber;
-    }
-    
-    /**
-     * Sets the reference number
-     * 
-     * @param referenceNumber Reference number
-     */
-    public void setReferenceNumber(String referenceNumber) {
-        this.referenceNumber = referenceNumber;
-    }
-    
-    /**
-     * Gets the account ID
-     * 
-     * @return Account ID
-     */
-    public int getAccountId() {
-        return accountId;
-    }
-    
-    /**
-     * Sets the account ID
-     * 
-     * @param accountId Account ID
-     */
-    public void setAccountId(int accountId) {
-        this.accountId = accountId;
-    }
-    
-    /**
-     * Gets the transaction type
-     * 
-     * @return Transaction type
-     */
     public String getTransactionType() {
         return transactionType;
     }
     
-    /**
-     * Sets the transaction type
-     * 
-     * @param transactionType Transaction type
-     */
     public void setTransactionType(String transactionType) {
         this.transactionType = transactionType;
     }
     
-    /**
-     * Gets the amount
-     * 
-     * @return Amount
-     */
     public double getAmount() {
         return amount;
     }
     
-    /**
-     * Sets the amount
-     * 
-     * @param amount Amount
-     */
     public void setAmount(double amount) {
         this.amount = amount;
     }
     
-    /**
-     * Gets the transaction date
-     * 
-     * @return Transaction date
-     */
-    public Date getTransactionDate() {
+    public LocalDateTime getTransactionDate() {
         return transactionDate;
     }
     
-    /**
-     * Sets the transaction date
-     * 
-     * @param transactionDate Transaction date
-     */
-    public void setTransactionDate(Date transactionDate) {
+    public void setTransactionDate(LocalDateTime transactionDate) {
         this.transactionDate = transactionDate;
     }
     
-    /**
-     * Gets the description
-     * 
-     * @return Description
-     */
     public String getDescription() {
         return description;
     }
     
-    /**
-     * Sets the description
-     * 
-     * @param description Description
-     */
     public void setDescription(String description) {
         this.description = description;
     }
     
-    /**
-     * Gets the balance after transaction
-     * 
-     * @return Balance after transaction
-     */
-    public double getBalanceAfter() {
-        return balanceAfter;
+    public String getProcessedBy() {
+        return processedBy;
+    }
+    
+    public void setProcessedBy(String processedBy) {
+        this.processedBy = processedBy;
     }
     
     /**
-     * Sets the balance after transaction
+     * Check if this is a deposit transaction
      * 
-     * @param balanceAfter Balance after transaction
+     * @return True if deposit, false otherwise
      */
-    public void setBalanceAfter(double balanceAfter) {
-        this.balanceAfter = balanceAfter;
+    public boolean isDeposit() {
+        return "Deposit".equals(transactionType);
     }
     
     /**
-     * Gets the running balance (alias for balanceAfter)
+     * Check if this is a withdrawal transaction
      * 
-     * @return Running balance
+     * @return True if withdrawal, false otherwise
      */
-    public double getRunningBalance() {
-        return runningBalance;
+    public boolean isWithdrawal() {
+        return "Withdrawal".equals(transactionType);
     }
     
     /**
-     * Sets the running balance
+     * Check if this is an interest transaction
      * 
-     * @param runningBalance Running balance
+     * @return True if interest, false otherwise
      */
-    public void setRunningBalance(double runningBalance) {
-        this.runningBalance = runningBalance;
+    public boolean isInterest() {
+        return "Interest".equals(transactionType);
     }
     
     /**
-     * Gets the performed by user ID
+     * Check if this is a loan-related transaction
      * 
-     * @return Performed by user ID
+     * @return True if loan-related, false otherwise
      */
-    public int getPerformedById() {
-        return performedById;
-    }
-    
-    /**
-     * Sets the performed by user ID
-     * 
-     * @param performedById Performed by user ID
-     */
-    public void setPerformedById(int performedById) {
-        this.performedById = performedById;
-    }
-    
-    /**
-     * Sets the user ID (alias for performedById)
-     * 
-     * @param userId User ID
-     */
-    public void setUserId(int userId) {
-        this.performedById = userId;
-    }
-    
-    /**
-     * Gets the performed by username
-     * 
-     * @return Performed by username
-     */
-    public String getPerformedByUsername() {
-        return performedByUsername;
-    }
-    
-    /**
-     * Sets the performed by username
-     * 
-     * @param performedByUsername Performed by username
-     */
-    public void setPerformedByUsername(String performedByUsername) {
-        this.performedByUsername = performedByUsername;
-    }
-    
-    /**
-     * Gets the created at date
-     * 
-     * @return Created at date
-     */
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    
-    /**
-     * Sets the created at date
-     * 
-     * @param createdAt Created at date
-     */
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public boolean isLoanRelated() {
+        return "Loan Release".equals(transactionType) || "Loan Payment".equals(transactionType);
     }
 }
